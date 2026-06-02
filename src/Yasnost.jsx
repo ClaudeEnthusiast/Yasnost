@@ -5,7 +5,7 @@ const TODAY = new Date().toISOString().slice(0, 10);
 const PRIORITIES = {
   urgent:    { label: "Срочно",  emoji: "🔴", color: "#C0392B", bg: "#FDEDEC" },
   important: { label: "Важно",   emoji: "🟡", color: "#B8860B", bg: "#FEFDE7" },
-  normal:    { label: "Обычно",  emoji: "🟢", color: "#6B7280", bg: "#F2F4F7" },
+  normal:    { label: "Обычно",  emoji: "⚪", color: "#6B7280", bg: "#F2F4F7" },
 };
 
 const COLUMNS = [
