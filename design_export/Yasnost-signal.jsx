@@ -3,9 +3,9 @@ import React, { useState, useEffect, useRef } from "react";
 const TODAY = new Date().toISOString().slice(0, 10);
 
 const PRIORITIES = {
-  urgent:    { label: "Срочно",  emoji: "🔴", color: "#FF4444", bg: "rgba(255,68,68,0.12)" },
-  important: { label: "Важно",   emoji: "🟡", color: "#FFB800", bg: "rgba(255,184,0,0.12)" },
-  normal:    { label: "Обычно",  emoji: "⚪", color: "#9a9a9a", bg: "rgba(255,255,255,0.05)" },
+  urgent:    { label: "Срочно",  emoji: "🔴", color: "#C0392B", bg: "#FDEDEC" },
+  important: { label: "Важно",   emoji: "🟡", color: "#B8860B", bg: "#FEFDE7" },
+  normal:    { label: "Обычно",  emoji: "⚪", color: "#6B7280", bg: "#F2F4F7" },
 };
 
 const COLUMNS = [
@@ -34,14 +34,10 @@ export default function Yasnost() {
   const [view,           setView]           = useState("board");
   const [selectedCardId, setSelectedCardId] = useState(null);
   const [newCheckItem,   setNewCheckItem]   = useState("");
-  const [aiLoading,      setAiLoading]      = useState(null);
   const wasDragging    = useRef(false);
   const saveTimer      = useRef(null);
   const isInitialLoad  = useRef(true);
   const touchState     = useRef({ id: null, moved: false, ghost: null, el: null, offset: { x: 0, y: 0 }, startX: 0, startY: 0, rect: null });
-  const mainRef        = useRef(null);
-  const cursorDot      = useRef(null);
-  const cursorHalo     = useRef(null);
 
   // Загрузка при старте
   useEffect(() => {
@@ -163,65 +159,6 @@ export default function Yasnost() {
     return () => document.removeEventListener("touchend", onEnd);
   }, []);
 
-  // Кастомный курсор (точка + ореол с lerp) и spotlight за курсором — только для точного указателя
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia || !window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
-    const dot = cursorDot.current, halo = cursorHalo.current;
-    let mx = window.innerWidth / 2, my = window.innerHeight / 2, hx = mx, hy = my, raf;
-    const onMove = (e) => {
-      mx = e.clientX; my = e.clientY;
-      if (dot) dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%, -50%)`;
-      const main = mainRef.current;
-      if (main) {
-        const r = main.getBoundingClientRect();
-        main.style.setProperty("--mx", (e.clientX - r.left) + "px");
-        main.style.setProperty("--my", (e.clientY - r.top) + "px");
-      }
-    };
-    const loop = () => {
-      hx += (mx - hx) * 0.22; hy += (my - hy) * 0.22;
-      if (halo) halo.style.transform = `translate(${hx}px, ${hy}px) translate(-50%, -50%)`;
-      raf = requestAnimationFrame(loop);
-    };
-    const onOver = (e) => { if (halo && e.target.closest && e.target.closest(".ys-card")) halo.classList.add("ys-halo-lg"); };
-    const onOut  = (e) => { if (halo && e.target.closest && e.target.closest(".ys-card")) halo.classList.remove("ys-halo-lg"); };
-    window.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseover", onOver);
-    document.addEventListener("mouseout", onOut);
-    raf = requestAnimationFrame(loop);
-    return () => { window.removeEventListener("mousemove", onMove); document.removeEventListener("mouseover", onOver); document.removeEventListener("mouseout", onOut); cancelAnimationFrame(raf); };
-  }, []);
-
-  // 3D-наклон карточки + свечение-бордер по курсору
-  const onCardTilt = (e) => {
-    const el = e.currentTarget;
-    const r = el.getBoundingClientRect();
-    const dx = (e.clientX - r.left) / r.width - 0.5;
-    const dy = (e.clientY - r.top) / r.height - 0.5;
-    el.style.transition = "transform .08s ease-out";
-    el.style.transform = `perspective(600px) rotateX(${-dy * 5}deg) rotateY(${dx * 5}deg) translateZ(4px)`;
-    el.style.setProperty("--bx", ((e.clientX - r.left) / r.width * 100) + "%");
-    el.style.setProperty("--by", ((e.clientY - r.top) / r.height * 100) + "%");
-  };
-  const onCardLeave = (e) => {
-    const el = e.currentTarget;
-    el.style.transition = "transform .4s ease";
-    el.style.transform = "none";
-  };
-
-  // «Анализ через AI» — разбор карточки (демо-генерация, работает офлайн)
-  const buildAnalysis = (c) => {
-    const pr = (PRIORITIES[c.priority] || PRIORITIES.normal).label;
-    const d = c.due ? new Date(c.due + "T00:00:00").toLocaleDateString("ru-RU", { day: "numeric", month: "long" }) : "не задан";
-    const cl = c.checklist || [];
-    const done = cl.filter((i) => i.done).length;
-    return `✦ Разбор задачи\n«${c.title}»\n\nСуть: ${c.desc || "описание не указано"}.\nПриоритет: ${pr}. Дедлайн: ${d}.\nДокументов: ${c.docs || 0}. Чеклист: ${done}/${cl.length}.\n\nРекомендации\n1. Назначить ответственного и контрольную дату.\n2. ${c.docs ? ("Свериться с вложениями (" + c.docs + ") перед стартом.") : "Приложить исходные документы для контекста."}\n3. ${cl.length ? ("Закрыть оставшиеся пункты чеклиста (" + (cl.length - done) + ").") : "Разбить задачу на 3–5 проверяемых шагов."}`;
-  };
-  const runAnalysis = (card) => {
-    setAiLoading(card.id);
-    setTimeout(() => { updateCard(card.id, { ai: buildAnalysis(card) }); setAiLoading(null); }, 1600);
-  };
-
   const updateCard = (id, changes) =>
     setCards((cs) => cs.map((c) => (c.id === id ? { ...c, ...changes } : c)));
 
@@ -296,11 +233,9 @@ export default function Yasnost() {
       <article
         key={c.id}
         draggable
-        onDragStart={(e) => { e.currentTarget.style.transform = "none"; setDragId(c.id); wasDragging.current = true; }}
+        onDragStart={() => { setDragId(c.id); wasDragging.current = true; }}
         onDragEnd={() => { setDragId(null); setOverCol(null); setTimeout(() => { wasDragging.current = false; }, 0); }}
         onClick={() => { if (!wasDragging.current) setSelectedCardId(c.id); }}
-        onMouseMove={onCardTilt}
-        onMouseLeave={onCardLeave}
         onTouchStart={(e) => onCardTouchStart(e, c.id)}
         style={{ ...st.card, opacity: dragId === c.id ? 0.4 : 1 }}
         className="ys-card"
@@ -314,7 +249,7 @@ export default function Yasnost() {
         </div>
         {c.desc && <div style={st.cardDesc}>{c.desc}</div>}
         <div style={st.cardMeta}>
-          <span style={{ ...st.metaChip, color: pr.color, borderColor: pr.color + "33", background: pr.bg }} className={"ys-pr ys-pr-" + c.priority}>
+          <span style={{ ...st.metaChip, color: pr.color, borderColor: pr.color + "33", background: pr.bg }}>
             {pr.emoji} {pr.label}
           </span>
           {d && (
@@ -331,8 +266,8 @@ export default function Yasnost() {
   };
 
   if (loading) return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100vh", fontFamily: "'Manrope', system-ui, sans-serif", background: "#080808", gap: 14, color: "#6a6a6a" }}>
-      <div style={{ width: 44, height: 44, borderRadius: 12, background: "linear-gradient(135deg, #4D7CFF, #7C3AFF)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 22, color: "#fff", boxShadow: "0 0 24px rgba(77,124,255,.5)" }}>Я</div>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100vh", fontFamily: "'Manrope', system-ui, sans-serif", background: "#F2F4F7", gap: 14, color: "#6B7280" }}>
+      <div style={{ width: 44, height: 44, borderRadius: 12, background: "linear-gradient(135deg, #1B4F8A, #2D6FBF)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 22, color: "#fff", boxShadow: "0 4px 14px rgba(27,79,138,.3)" }}>Я</div>
       <div style={{ fontSize: 14 }}>Загрузка…</div>
     </div>
   );
@@ -340,8 +275,6 @@ export default function Yasnost() {
   return (
     <div style={st.app} className="ys-app">
       <style>{css}</style>
-      <div ref={cursorDot} style={st.cursorDot} className="ys-cursor-dot" aria-hidden="true" />
-      <div ref={cursorHalo} style={st.cursorHalo} className="ys-cursor-halo" aria-hidden="true" />
 
       {/* ── Sidebar ── */}
       <aside style={st.sidebar} className="ys-sidebar">
@@ -377,10 +310,7 @@ export default function Yasnost() {
       </aside>
 
       {/* ── Main ── */}
-      <main style={st.main} className="ys-main" ref={mainRef}>
-        <div style={st.blob1} className="ys-blob ys-blob1" aria-hidden="true" />
-        <div style={st.blob2} className="ys-blob ys-blob2" aria-hidden="true" />
-        <div style={st.blob3} className="ys-blob ys-blob3" aria-hidden="true" />
+      <main style={st.main} className="ys-main">
         <header style={st.header} className="ys-header">
           <div>
             <h1 style={st.h1} className="ys-h1">{view === "board" ? "Доска задач" : "Сегодня"}</h1>
@@ -425,7 +355,6 @@ export default function Yasnost() {
                   </div>
                   <button
                     style={st.colAdd}
-                    className="ys-add"
                     onClick={() => { setAdding(col.id); setDraft({ title: "", desc: "", due: "", priority: "normal" }); }}
                   >+</button>
                 </div>
@@ -491,7 +420,7 @@ export default function Yasnost() {
             {visibleToday.length === 0 ? (
               <div style={st.todayEmpty}>
                 <div style={{ fontSize: 40 }}>✅</div>
-                <div style={{ fontWeight: 700, fontSize: 17, color: "#e0e0e0", marginTop: 14 }}>
+                <div style={{ fontWeight: 700, fontSize: 17, color: "#2C2C2C", marginTop: 14 }}>
                   {q ? "Ничего не найдено" : "Всё под контролем"}
                 </div>
                 <div style={{ color: "#6B7280", fontSize: 13, marginTop: 5 }}>
@@ -577,11 +506,11 @@ export default function Yasnost() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 }}>
                   {(selectedCard.checklist || []).map((item) => (
                     <div key={item.id} style={st.checkItem}>
-                      <input type="checkbox" checked={item.done} style={{ cursor: "pointer", accentColor: "#4D7CFF", flexShrink: 0 }}
+                      <input type="checkbox" checked={item.done} style={{ cursor: "pointer", accentColor: "#1B4F8A", flexShrink: 0 }}
                         onChange={() => updateCard(selectedCard.id, {
                           checklist: selectedCard.checklist.map((i) => i.id === item.id ? { ...i, done: !i.done } : i),
                         })} />
-                      <span style={{ ...st.checkText, textDecoration: item.done ? "line-through" : "none", color: item.done ? "#5a5a5a" : "#e0e0e0" }}>
+                      <span style={{ ...st.checkText, textDecoration: item.done ? "line-through" : "none", color: item.done ? "#9AA3B2" : "#2C2C2C" }}>
                         {item.text}
                       </span>
                       <button style={st.checkDel}
@@ -598,36 +527,6 @@ export default function Yasnost() {
                   <button style={{ ...st.btnPrimary, padding: "9px 16px", flexShrink: 0 }}
                     onClick={() => addCheckItem(selectedCard.id, selectedCard.checklist || [])}>+</button>
                 </div>
-              </div>
-
-              <div style={st.modalSection}>
-                <div style={st.modalLabel}>
-                  Документы
-                  {(selectedCard.docs || 0) > 0 && (
-                    <span style={{ color: "#5a5a5a", fontWeight: 400, marginLeft: 6, fontSize: 12 }}>{selectedCard.docs}</span>
-                  )}
-                </div>
-                {(selectedCard.docs || 0) > 0 && (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
-                    {Array.from({ length: selectedCard.docs }).map((_, i) => (
-                      <span key={i} style={st.docChip}><Icon name="doc" color="#4D7CFF" /> Документ {i + 1}.pdf</span>
-                    ))}
-                  </div>
-                )}
-                <div style={st.docZone} className="ys-doc-zone"
-                  onClick={() => updateCard(selectedCard.id, { docs: (selectedCard.docs || 0) + 1 })}>
-                  + Прикрепить документ
-                </div>
-              </div>
-
-              <div style={{ ...st.modalSection, borderBottom: "none", marginBottom: 0, paddingBottom: 0 }}>
-                <button style={st.aiBtn} className="ys-ai-btn" disabled={aiLoading === selectedCard.id}
-                  onClick={() => runAnalysis(selectedCard)}>
-                  {aiLoading === selectedCard.id ? "Анализирую…" : "✦ Анализ через AI"}
-                </button>
-                {selectedCard.ai && aiLoading !== selectedCard.id && (
-                  <div style={st.aiPanel}>{selectedCard.ai}</div>
-                )}
               </div>
             </div>
           </div>
@@ -652,130 +551,142 @@ function Icon({ name, color = "currentColor" }) {
 }
 
 const st = {
-  app:          { display: "flex", height: "100vh", fontFamily: "'Manrope', system-ui, sans-serif", background: "#080808", color: "#e0e0e0", overflow: "hidden", position: "relative" },
-  sidebar:      { width: 244, background: "#0d0d0d", color: "#c2c6cc", display: "flex", flexDirection: "column", padding: "22px 14px", flexShrink: 0, borderRight: "1px solid rgba(255,255,255,.06)" },
+  app:          { display: "flex", height: "100vh", fontFamily: "'Geist', 'Inter', system-ui, sans-serif", background: "radial-gradient(120% 90% at 18% -10%, #16181F 0%, #0A0B0D 58%)", color: "#EDEEF0", overflow: "hidden" },
+  sidebar:      { width: 244, background: "#0C0D10", color: "#C2C6CC", display: "flex", flexDirection: "column", padding: "22px 14px", flexShrink: 0, borderRight: "1px solid rgba(255,255,255,.06)" },
   brand:        { display: "flex", alignItems: "center", gap: 12, marginBottom: 30, padding: "0 6px" },
-  logo:         { width: 38, height: 38, borderRadius: 11, background: "linear-gradient(135deg, #4D7CFF, #7C3AFF)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 19, color: "#fff", boxShadow: "0 0 24px rgba(77,124,255,.5)", flexShrink: 0 },
-  brandName:    { fontWeight: 700, fontSize: 16, letterSpacing: "-0.01em", color: "#ffffff" },
-  brandSub:     { fontSize: 10.5, color: "#5a5a5a", letterSpacing: "0.14em", textTransform: "uppercase", marginTop: 3, fontWeight: 600 },
+  logo:         { width: 38, height: 38, borderRadius: 12, background: "linear-gradient(150deg, #D4FF5E, #A6E22E)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 19, color: "#0A0B0D", boxShadow: "0 6px 20px rgba(198,242,77,.32)", flexShrink: 0 },
+  brandName:    { fontWeight: 700, fontSize: 16, letterSpacing: "-0.02em", color: "#FFFFFF" },
+  brandSub:     { fontSize: 10.5, color: "#7C8290", letterSpacing: "0.16em", textTransform: "uppercase", marginTop: 3, fontWeight: 600, fontFamily: "'Geist Mono', monospace" },
   nav:          { display: "flex", flexDirection: "column", gap: 3, flex: 1 },
-  navItem:      { display: "flex", alignItems: "center", gap: 11, padding: "10px 13px", borderRadius: 8, fontSize: 13.5, fontWeight: 500, color: "#8a8a8a", cursor: "pointer", transition: "all .16s" },
-  navActive:    { background: "rgba(77,124,255,.08)", color: "#ffffff", boxShadow: "inset 2px 0 0 #4D7CFF" },
-  navDivider:   { height: 1, background: "rgba(255,255,255,.06)", margin: "12px 8px" },
-  navBadge:     { marginLeft: "auto", background: "#4D7CFF", color: "#fff", borderRadius: 999, fontSize: 11, fontWeight: 700, padding: "1px 8px", lineHeight: 1.6, boxShadow: "0 0 10px rgba(77,124,255,.6)" },
-  sidebarFoot:  { fontSize: 10.5, color: "#4a4a4a", paddingLeft: 8, lineHeight: 1.8 },
+  navItem:      { display: "flex", alignItems: "center", gap: 11, padding: "10px 13px", borderRadius: 11, fontSize: 13.5, fontWeight: 500, color: "#8A9099", cursor: "pointer", transition: "all .16s cubic-bezier(.2,.7,.3,1)" },
+  navActive:    { background: "rgba(198,242,77,.13)", color: "#D9FF73", boxShadow: "inset 0 0 0 1px rgba(198,242,77,.22)", textShadow: "0 0 14px rgba(198,242,77,.55)" },
+  navDivider:   { height: 1, background: "rgba(255,255,255,.07)", margin: "12px 8px" },
+  navBadge:     { marginLeft: "auto", background: "#FF4D4D", color: "#fff", borderRadius: 999, fontSize: 11, fontWeight: 700, padding: "1px 8px", lineHeight: 1.6, fontFamily: "'Geist Mono', monospace" },
+  sidebarFoot:  { fontSize: 10.5, color: "#5B616D", paddingLeft: 8, lineHeight: 1.8, fontFamily: "'Geist Mono', monospace" },
   sidebarFootLine: {},
-  resetBtn:     { marginTop: 10, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)", color: "#7a7a7a", borderRadius: 8, padding: "7px 10px", fontSize: 11, cursor: "pointer", fontFamily: "inherit", width: "100%" },
-  main:         { flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative", backgroundColor: "#080808", backgroundImage: "radial-gradient(500px at var(--mx,50%) var(--my,50%), rgba(77,124,255,.04), transparent 70%), radial-gradient(rgba(255,255,255,.04) 1px, transparent 1px)", backgroundSize: "auto, 28px 28px" },
-  header:       { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "22px 30px", borderBottom: "1px solid rgba(255,255,255,.06)", background: "#0a0a0a", flexShrink: 0, position: "relative", zIndex: 2 },
-  h1:           { fontSize: 28, fontWeight: 800, letterSpacing: "-0.02em", margin: 0, color: "#ffffff" },
-  sub:          { fontSize: 13, color: "#5a5a5a", margin: "5px 0 0" },
+  resetBtn:     { marginTop: 10, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.1)", color: "#8A9099", borderRadius: 9, padding: "7px 10px", fontSize: 11, cursor: "pointer", fontFamily: "inherit", width: "100%" },
+  main:         { flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" },
+  header:       { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 30px", borderBottom: "1px solid rgba(255,255,255,.07)", background: "#0C0D10", flexShrink: 0, position: "sticky", top: 0, zIndex: 5 },
+  h1:           { fontSize: 24, fontWeight: 700, letterSpacing: "-0.035em", margin: 0, color: "#FFFFFF" },
+  sub:          { fontSize: 12.5, color: "#7C8290", margin: "5px 0 0", fontFamily: "'Geist Mono', monospace", letterSpacing: "0.01em" },
   headerRight:  { display: "flex", alignItems: "center", gap: 14 },
-  searchWrap:   { display: "flex", alignItems: "center", gap: 8, background: "#141414", border: "1px solid rgba(255,255,255,.08)", borderRadius: 10, padding: "9px 14px", width: 230, cursor: "text", color: "#5a5a5a" },
-  searchInput:  { border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#e0e0e0", fontFamily: "inherit", width: "100%" },
-  avatar:       { width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg, #4D7CFF, #7C3AFF)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, flexShrink: 0, boxShadow: "0 0 16px rgba(77,124,255,.45)" },
+  searchWrap:   { display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 999, padding: "9px 16px", width: 230, cursor: "text", color: "#7C8290", transition: "border-color .15s, box-shadow .15s" },
+  searchInput:  { border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#EDEEF0", fontFamily: "inherit", width: "100%" },
+  avatar:       { width: 36, height: 36, borderRadius: "50%", background: "#141518", color: "#D9FF73", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, flexShrink: 0, border: "1.5px solid rgba(198,242,77,.45)" },
   board:        { display: "grid", gridTemplateColumns: "repeat(3, minmax(310px, 1fr))", gap: 18, padding: 26, overflowX: "auto", overflowY: "auto", flex: 1, alignItems: "stretch", position: "relative", zIndex: 1 },
-  column:       { background: "#0d0d0d", borderRadius: 16, padding: 14, minHeight: 200, transition: "background .15s, box-shadow .15s", border: "1px solid rgba(255,255,255,.06)", display: "flex", flexDirection: "column" },
-  columnOver:   { background: "#101010", border: "1px solid rgba(77,124,255,.5)", boxShadow: "inset 0 0 0 1px rgba(77,124,255,.2), 0 0 28px rgba(77,124,255,.14)" },
+  column:       { background: "rgba(255,255,255,.025)", borderRadius: 18, padding: 14, minHeight: 200, transition: "background .15s, box-shadow .15s", border: "1px solid rgba(255,255,255,.07)", display: "flex", flexDirection: "column" },
+  columnOver:   { background: "rgba(198,242,77,.05)", border: "1px dashed rgba(198,242,77,.5)", boxShadow: "inset 0 0 0 1px rgba(198,242,77,.12)" },
   colHead:      { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, padding: "2px 4px" },
   colTitleWrap: { display: "flex", alignItems: "center", gap: 9 },
   colDot:       { width: 8, height: 8, borderRadius: "50%", flexShrink: 0 },
-  colTitle:     { fontWeight: 600, fontSize: 11, color: "#3a3a3a", letterSpacing: "0.12em", textTransform: "uppercase" },
-  colCount:     { fontSize: 11.5, fontWeight: 600, color: "#7a7a7a", background: "rgba(255,255,255,.05)", borderRadius: 999, padding: "1px 8px" },
-  colAdd:       { width: 25, height: 25, borderRadius: 8, border: "1px solid rgba(255,255,255,.08)", background: "transparent", color: "#4D7CFF", fontSize: 17, fontWeight: 600, cursor: "pointer", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" },
+  colTitle:     { fontWeight: 600, fontSize: 11.5, color: "#A6ACB6", letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "'Geist Mono', monospace" },
+  colCount:     { fontSize: 11.5, fontWeight: 600, color: "#8A9099", background: "rgba(255,255,255,.06)", borderRadius: 999, padding: "1px 8px", fontFamily: "'Geist Mono', monospace" },
+  colAdd:       { width: 26, height: 26, borderRadius: 9, border: "1px solid rgba(255,255,255,.1)", background: "transparent", color: "#D9FF73", fontSize: 17, fontWeight: 600, cursor: "pointer", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", transition: "all .14s" },
   cardList:     { display: "flex", flexDirection: "column", gap: 10, flex: 1 },
-  card:         { background: "#141414", borderRadius: 14, padding: "14px 15px 13px", cursor: "pointer", border: "1px solid rgba(255,255,255,.08)", position: "relative", transformStyle: "preserve-3d", willChange: "transform" },
-  cardTop:      { display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "absolute", top: 0, left: 0, right: 0, zIndex: 2 },
+  card:         { background: "rgba(20,21,25,.82)", borderRadius: 16, padding: "14px 15px 13px", boxShadow: "0 1px 2px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06)", cursor: "pointer", border: "1px solid rgba(255,255,255,.08)", transition: "box-shadow .18s cubic-bezier(.2,.7,.3,1), transform .18s cubic-bezier(.2,.7,.3,1), border-color .18s", position: "relative" },
+  cardTop:      { display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "absolute", top: 0, left: 0, right: 0 },
   cardStripe:   { width: 26, height: 3, borderRadius: 3, margin: "13px 0 0 15px" },
-  cardDel:      { border: "none", background: "transparent", color: "#3a3a3a", fontSize: 18, cursor: "pointer", padding: "6px 10px", lineHeight: 1 },
-  cardTitle:    { fontWeight: 600, fontSize: 15, color: "#e0e0e0", marginTop: 11, lineHeight: 1.38, cursor: "pointer", position: "relative", zIndex: 1 },
-  cardDesc:     { fontSize: 13, color: "#6a6a6a", marginTop: 5, lineHeight: 1.45, position: "relative", zIndex: 1 },
-  cardMeta:     { display: "flex", gap: 6, marginTop: 12, flexWrap: "wrap", position: "relative", zIndex: 1 },
-  metaChip:     { display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 600, color: "#8a8a8a", border: "1px solid rgba(255,255,255,.08)", borderRadius: 999, padding: "3px 9px", background: "rgba(255,255,255,.03)" },
-  composer:     { background: "#141414", borderRadius: 14, padding: 13, boxShadow: "0 8px 28px rgba(0,0,0,.6)", display: "flex", flexDirection: "column", gap: 8, border: "1px solid rgba(77,124,255,.3)" },
-  input:        { border: "1px solid rgba(255,255,255,.1)", borderRadius: 10, padding: "9px 12px", fontSize: 13, fontFamily: "inherit", outline: "none", color: "#e0e0e0", width: "100%", boxSizing: "border-box", background: "#0d0d0d" },
+  cardDel:      { border: "none", background: "transparent", color: "#5B616D", fontSize: 18, cursor: "pointer", padding: "6px 10px", lineHeight: 1 },
+  cardTitle:    { fontWeight: 600, fontSize: 14.5, color: "#F4F5F6", marginTop: 11, lineHeight: 1.38, cursor: "pointer", letterSpacing: "-0.01em" },
+  cardDesc:     { fontSize: 12.5, color: "#8A9099", marginTop: 5, lineHeight: 1.45 },
+  cardMeta:     { display: "flex", gap: 6, marginTop: 12, flexWrap: "wrap" },
+  metaChip:     { display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 600, color: "#A6ACB6", border: "1px solid rgba(255,255,255,.1)", borderRadius: 999, padding: "3px 9px", background: "rgba(255,255,255,.03)", fontFamily: "'Geist Mono', monospace" },
+  composer:     { background: "#141518", borderRadius: 16, padding: 13, boxShadow: "0 8px 28px rgba(0,0,0,.55)", display: "flex", flexDirection: "column", gap: 8, border: "1px solid rgba(198,242,77,.28)" },
+  input:        { border: "1px solid rgba(255,255,255,.12)", borderRadius: 10, padding: "9px 12px", fontSize: 13, fontFamily: "inherit", outline: "none", color: "#EDEEF0", width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,.04)" },
   priorityPicker: { display: "flex", gap: 6, flexWrap: "wrap" },
-  prBtn:        { border: "1px solid rgba(255,255,255,.1)", borderRadius: 999, padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all .12s" },
+  prBtn:        { border: "1px solid rgba(255,255,255,.12)", borderRadius: 999, padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all .12s" },
   composerRow:  { display: "flex", gap: 8, marginTop: 2 },
-  btnPrimary:   { flex: 1, background: "linear-gradient(135deg, #4D7CFF, #7C3AFF)", color: "#fff", border: "none", borderRadius: 10, padding: "10px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 18px rgba(77,124,255,.3)" },
-  btnGhost:     { background: "transparent", color: "#8a8a8a", border: "1px solid rgba(255,255,255,.1)", borderRadius: 10, padding: "10px 16px", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit" },
-  empty:        { textAlign: "center", color: "#3a3a3a", fontSize: 12, padding: "26px 0", border: "1.5px dashed rgba(255,255,255,.08)", borderRadius: 12 },
-  todayView:    { flex: 1, overflowY: "auto", padding: 26, position: "relative", zIndex: 1 },
+  btnPrimary:   { flex: 1, background: "linear-gradient(150deg, #D4FF5E, #B6EE3C)", color: "#0A0B0D", border: "none", borderRadius: 10, padding: "10px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 18px rgba(198,242,77,.28)" },
+  btnGhost:     { background: "transparent", color: "#8A9099", border: "1px solid rgba(255,255,255,.12)", borderRadius: 10, padding: "10px 16px", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit" },
+  empty:        { textAlign: "center", color: "#5B616D", fontSize: 12, padding: "26px 0", border: "1.5px dashed rgba(255,255,255,.1)", borderRadius: 14 },
+  todayView:    { flex: 1, overflowY: "auto", padding: 26 },
   todayList:    { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(330px, 1fr))", gap: 13 },
-  todayEmpty:   { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", maxWidth: 380, margin: "48px auto", padding: "44px 32px", background: "#0d0d0d", border: "1px solid rgba(255,255,255,.08)", borderRadius: 18, color: "#8a8a8a" },
-  overlay:      { position: "fixed", inset: 0, background: "rgba(0,0,0,.72)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, backdropFilter: "blur(6px)" },
-  modal:        { background: "#0f0f0f", borderRadius: 20, width: "min(640px, 94vw)", maxHeight: "88vh", display: "flex", flexDirection: "column", boxShadow: "0 30px 80px rgba(0,0,0,.7)", overflow: "hidden", border: "1px solid rgba(255,255,255,.1)" },
-  modalHeader:  { display: "flex", alignItems: "center", gap: 12, padding: "20px 22px 16px", borderBottom: "1px solid rgba(255,255,255,.07)", flexShrink: 0 },
-  modalTitle:   { flex: 1, border: "none", outline: "none", fontSize: 20, fontWeight: 700, color: "#ffffff", fontFamily: "inherit", letterSpacing: "-0.01em", background: "transparent" },
-  modalClose:   { border: "none", background: "transparent", color: "#5a5a5a", fontSize: 22, cursor: "pointer", lineHeight: 1, padding: "0 2px" },
+  todayEmpty:   { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", maxWidth: 380, margin: "48px auto", padding: "44px 32px", background: "#141518", border: "1px solid rgba(255,255,255,.08)", borderRadius: 18, color: "#8A9099" },
+  overlay:      { position: "fixed", inset: 0, background: "rgba(4,5,7,.74)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, backdropFilter: "blur(6px)" },
+  modal:        { background: "rgba(18,19,23,.78)", backdropFilter: "blur(22px) saturate(1.3)", WebkitBackdropFilter: "blur(22px) saturate(1.3)", borderRadius: 22, width: "min(620px, 94vw)", maxHeight: "88vh", display: "flex", flexDirection: "column", boxShadow: "0 30px 80px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,255,255,.1)", overflow: "hidden", border: "1px solid rgba(255,255,255,.12)" },
+  modalHeader:  { display: "flex", alignItems: "center", gap: 12, padding: "20px 22px 16px", borderBottom: "1px solid rgba(255,255,255,.08)", flexShrink: 0 },
+  modalTitle:   { flex: 1, border: "none", outline: "none", fontSize: 18, fontWeight: 700, color: "#FFFFFF", fontFamily: "inherit", letterSpacing: "-0.02em", background: "transparent" },
+  modalClose:   { border: "none", background: "transparent", color: "#7C8290", fontSize: 22, cursor: "pointer", lineHeight: 1, padding: "0 2px" },
   modalBody:    { overflowY: "auto", padding: "16px 22px 24px", display: "flex", flexDirection: "column", gap: 4 },
   modalSection: { paddingBottom: 16, borderBottom: "1px solid rgba(255,255,255,.06)", marginBottom: 4 },
-  modalLabel:   { fontSize: 11, fontWeight: 700, color: "#5a5a5a", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 9 },
-  textarea:     { border: "1px solid rgba(255,255,255,.1)", borderRadius: 10, padding: "10px 12px", fontSize: 13, fontFamily: "inherit", outline: "none", color: "#e0e0e0", width: "100%", boxSizing: "border-box", resize: "vertical", minHeight: 64, lineHeight: 1.5, background: "#0d0d0d" },
+  modalLabel:   { fontSize: 11, fontWeight: 600, color: "#7C8290", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 9, fontFamily: "'Geist Mono', monospace" },
+  textarea:     { border: "1px solid rgba(255,255,255,.12)", borderRadius: 10, padding: "10px 12px", fontSize: 13, fontFamily: "inherit", outline: "none", color: "#EDEEF0", width: "100%", boxSizing: "border-box", resize: "vertical", minHeight: 64, lineHeight: 1.5, background: "rgba(255,255,255,.04)" },
   checkItem:    { display: "flex", alignItems: "center", gap: 10, padding: "5px 0" },
   checkText:    { flex: 1, fontSize: 13, lineHeight: 1.4 },
-  checkDel:     { border: "none", background: "transparent", color: "#3a3a3a", fontSize: 16, cursor: "pointer", padding: "2px 4px", lineHeight: 1 },
+  checkDel:     { border: "none", background: "transparent", color: "#5B616D", fontSize: 16, cursor: "pointer", padding: "2px 4px", lineHeight: 1 },
   checkAdd:     { display: "flex", gap: 8, alignItems: "center" },
-
-  /* cosmos extras */
-  texture:      { position: "fixed", inset: 0, pointerEvents: "none", zIndex: 998, opacity: 0.035, backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E")` },
-  cursorDot:    { position: "fixed", top: 0, left: 0, width: 12, height: 12, borderRadius: "50%", background: "#ffffff", boxShadow: "0 0 6px rgba(255,255,255,.9)", pointerEvents: "none", zIndex: 1000, transform: "translate(-50%, -50%)" },
-  cursorHalo:   { position: "fixed", top: 0, left: 0, width: 40, height: 40, borderRadius: "50%", border: "1.5px solid rgba(77,124,255,.8)", background: "rgba(77,124,255,.12)", pointerEvents: "none", zIndex: 1000, transform: "translate(-50%, -50%)", transition: "width .25s ease, height .25s ease, background .25s ease, border-color .25s ease" },
-  blob1:        { position: "absolute", width: 500, height: 500, top: "-8%", left: "-6%", borderRadius: "50%", background: "rgba(77,124,255,.07)", filter: "blur(100px)", pointerEvents: "none", zIndex: 0 },
-  blob2:        { position: "absolute", width: 420, height: 420, top: "26%", right: "-5%", borderRadius: "50%", background: "rgba(124,58,255,.05)", filter: "blur(100px)", pointerEvents: "none", zIndex: 0 },
-  blob3:        { position: "absolute", width: 360, height: 360, bottom: "4%", left: "42%", borderRadius: "50%", background: "rgba(77,124,255,.04)", filter: "blur(100px)", pointerEvents: "none", zIndex: 0 },
-  aiBtn:        { width: "100%", background: "linear-gradient(135deg, #4D7CFF, #7C3AFF)", color: "#fff", border: "none", borderRadius: 12, padding: "13px", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 20px rgba(77,124,255,.35)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 },
-  aiPanel:      { marginTop: 12, background: "#0d0d0d", border: "1px solid rgba(77,124,255,.25)", borderRadius: 12, padding: "14px 16px", fontSize: 13, lineHeight: 1.6, color: "#c0c0c0", whiteSpace: "pre-wrap" },
-  docChip:      { display: "inline-flex", alignItems: "center", gap: 6, background: "#141414", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: "6px 10px", fontSize: 12, color: "#c0c0c0" },
-  docZone:      { border: "1.5px dashed rgba(255,255,255,.12)", borderRadius: 12, padding: "14px", textAlign: "center", color: "#5a5a5a", fontSize: 12.5, cursor: "pointer", transition: "border-color .15s, color .15s" },
 };
 
 const css = `
-  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap');
   * { box-sizing: border-box; }
-
-  /* aurora blobs drifting evenly across the board */
-  @media (prefers-reduced-motion: no-preference) {
-    .ys-blob1 { animation: ys-b1 22s ease-in-out infinite alternate; }
-    .ys-blob2 { animation: ys-b2 30s ease-in-out infinite alternate-reverse; }
-    .ys-blob3 { animation: ys-b3 18s ease-in-out infinite alternate; }
-    @keyframes ys-b1 { from { transform: translate(0,0) scale(1); } to { transform: translate(46px,34px) scale(1.18); } }
-    @keyframes ys-b2 { from { transform: translate(0,0) scale(1); } to { transform: translate(-54px,-22px) scale(1.22); } }
-    @keyframes ys-b3 { from { transform: translate(0,0) scale(1); } to { transform: translate(24px,-34px) scale(1.12); } }
-  }
-
-  /* card border-glow that follows the cursor (::before) */
-  .ys-card::before {
-    content: ""; position: absolute; inset: 0; border-radius: 14px; z-index: 0; pointer-events: none;
-    background: radial-gradient(120px at var(--bx, 50%) var(--by, 50%), rgba(77,124,255,.16), transparent 70%);
-    opacity: 0; transition: opacity .25s ease;
-  }
-  .ys-card:hover::before { opacity: 1; }
-  .ys-card:hover { border-color: rgba(77,124,255,.4); }
-  .ys-pr-urgent { box-shadow: 0 0 10px rgba(255,68,68,.35); }
-
-  .ys-nav-item:hover { background: rgba(255,255,255,.04); color: #ffffff; }
-  .ys-search:focus-within { border-color: rgba(77,124,255,.55) !important; box-shadow: 0 0 0 3px rgba(77,124,255,.12); }
-  .ys-doc-zone:hover { border-color: rgba(77,124,255,.5); color: #4D7CFF; }
-  .ys-ai-btn:hover { box-shadow: 0 6px 28px rgba(77,124,255,.55); }
-  .ys-add:hover { background: rgba(77,124,255,.1); }
-
+  .ys-card:hover { box-shadow: 0 12px 30px rgba(0,0,0,.55), 0 0 0 1px rgba(198,242,77,.18) !important; transform: translateY(-2px); border-color: rgba(198,242,77,.32) !important; }
+  .ys-card:active { transform: scale(0.985); }
+  .ys-nav-item:hover { background: rgba(255,255,255,.05); color: #EDEEF0; }
+  .ys-search:focus-within { border-color: rgba(198,242,77,.55) !important; box-shadow: 0 0 0 3px rgba(198,242,77,.12); }
   ::-webkit-scrollbar { width: 9px; height: 9px; }
-  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 999px; }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(77,124,255,.5); }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(198,242,77,.45); }
   ::-webkit-scrollbar-track { background: transparent; }
-  input::placeholder, textarea::placeholder { color: #4a4a4a; }
+  input::placeholder, textarea::placeholder { color: #5B616D; }
   input[type="date"] { color-scheme: dark; }
 
-  /* hide native cursor only on precise pointers (desktop); custom cursor takes over */
-  @media (hover: hover) and (pointer: fine) {
-    .ys-app, .ys-app * { cursor: none !important; }
+  /* ── 2026 · living ambient + glass ── */
+  .ys-board { isolation: isolate; }
+  @media (prefers-reduced-motion: no-preference) {
+    /* drifting aurora behind the board */
+    .ys-main::before {
+      content: ""; position: absolute; left: -8%; right: -8%; top: -18%; height: 72%;
+      z-index: 0; pointer-events: none;
+      background:
+        radial-gradient(38% 48% at 26% 30%, rgba(198,242,77,.17), transparent 68%),
+        radial-gradient(42% 52% at 76% 16%, rgba(96,128,255,.16), transparent 70%),
+        radial-gradient(36% 46% at 58% 64%, rgba(140,90,255,.11), transparent 72%);
+      animation: ys-aurora 24s ease-in-out infinite alternate;
+    }
+    @keyframes ys-aurora {
+      0%   { transform: translate3d(-3%, 0, 0)   scale(1);    }
+      50%  { transform: translate3d(5%, 3%, 0)   scale(1.15); }
+      100% { transform: translate3d(-1%, -2%, 0) scale(1.07); }
+    }
+    /* second, slower cool-toned glow layer drifting the other way */
+    .ys-main::after {
+      content: ""; position: absolute; left: -10%; right: -6%; top: -10%; height: 82%;
+      z-index: 0; pointer-events: none; mix-blend-mode: screen;
+      background:
+        radial-gradient(34% 44% at 62% 24%, rgba(64,224,208,.13), transparent 70%),
+        radial-gradient(40% 50% at 16% 58%, rgba(0,196,255,.11), transparent 72%),
+        radial-gradient(30% 40% at 88% 72%, rgba(198,242,77,.10), transparent 72%);
+      animation: ys-aurora2 34s ease-in-out infinite alternate;
+    }
+    @keyframes ys-aurora2 {
+      0%   { transform: translate3d(4%, 2%, 0)   scale(1.05); }
+      50%  { transform: translate3d(-5%, -3%, 0) scale(1.20); }
+      100% { transform: translate3d(2%, 1%, 0)   scale(1.08); }
+    }
+    /* cards rise in with a gentle stagger — transform only, never hide content
+       (a frozen animation clock in a throttled iframe must still leave opacity:1) */
+    .ys-card { animation: ys-rise .5s cubic-bezier(.2,.7,.3,1) both; }
+    .ys-card:nth-child(2){ animation-delay: .05s; }
+    .ys-card:nth-child(3){ animation-delay: .10s; }
+    .ys-card:nth-child(4){ animation-delay: .15s; }
+    .ys-card:nth-child(5){ animation-delay: .20s; }
+    .ys-card:nth-child(n+6){ animation-delay: .24s; }
+    @keyframes ys-rise { from { transform: translateY(10px); } to { transform: none; } }
+    /* breathing glow on the brand mark */
+    .ys-brand > div:first-child { animation: ys-logo-glow 3.6s ease-in-out infinite; }
+    @keyframes ys-logo-glow { 0%,100% { box-shadow: 0 6px 20px rgba(198,242,77,.30); } 50% { box-shadow: 0 8px 30px rgba(198,242,77,.6); } }
+    /* the page title softly breathes a luminous glow */
+    .ys-h1 { animation: ys-title-glow 5s ease-in-out infinite; }
+    @keyframes ys-title-glow {
+      0%,100% { text-shadow: 0 0 18px rgba(198,242,77,.10); }
+      50%     { text-shadow: 0 0 26px rgba(198,242,77,.30), 0 0 9px rgba(150,195,255,.18); }
+    }
   }
-  /* the custom cursor is meaningless on touch — hide it there */
-  @media (pointer: coarse) {
-    .ys-cursor-dot, .ys-cursor-halo { display: none !important; }
-  }
-  .ys-halo-lg { width: 56px !important; height: 56px !important; background: rgba(77,124,255,.22) !important; border-color: rgba(77,124,255,1) !important; }
+
+  /* keep checklist text legible on the dark modal regardless of the inline color */
+  .ys-modal input[type="checkbox"] + span { color: #E7E9EC !important; }
+  .ys-modal input[type="checkbox"]:checked + span { color: #6B7280 !important; }
 
   /* ── Mobile ── */
   @media (max-width: 768px) {
@@ -783,7 +694,7 @@ const css = `
     .ys-sidebar {
       width: 100% !important; flex-direction: row !important; flex-wrap: wrap;
       padding: 12px 16px !important; gap: 0; flex-shrink: 0 !important; border-right: none !important;
-      border-bottom: 1px solid rgba(255,255,255,.06) !important;
+      border-bottom: 1px solid rgba(255,255,255,.08) !important;
     }
     .ys-brand  { margin-bottom: 0 !important; flex: 1; }
     .ys-nav    { flex-direction: row !important; flex: none; gap: 4px !important; align-items: center; }
@@ -791,12 +702,11 @@ const css = `
     .ys-sidebar-foot { display: none !important; }
     .ys-main   { overflow: visible !important; flex: none !important; }
     .ys-header { padding: 16px !important; flex-wrap: wrap; gap: 10px; position: static !important; }
-    .ys-h1     { font-size: 21px !important; }
+    .ys-h1     { font-size: 19px !important; }
     .ys-search { width: 100% !important; }
     .ys-board  { grid-template-columns: 1fr !important; padding: 12px !important; gap: 12px !important; overflow: visible !important; flex: none !important; }
     .ys-column { min-height: 80px !important; }
-    .ys-card   { transform: none !important; }
-    .ys-modal  { border-radius: 20px 20px 0 0 !important; width: 100vw !important; max-height: 92dvh !important; position: fixed !important; bottom: 0 !important; left: 0 !important; }
+    .ys-modal  { border-radius: 22px 22px 0 0 !important; width: 100vw !important; max-height: 92dvh !important; position: fixed !important; bottom: 0 !important; left: 0 !important; }
     .ys-overlay { align-items: flex-end !important; }
   }
 `;

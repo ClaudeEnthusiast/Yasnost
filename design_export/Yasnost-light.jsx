@@ -3,9 +3,9 @@ import React, { useState, useEffect, useRef } from "react";
 const TODAY = new Date().toISOString().slice(0, 10);
 
 const PRIORITIES = {
-  urgent:    { label: "Срочно",  emoji: "🔴", color: "#FF4444", bg: "rgba(255,68,68,0.12)" },
-  important: { label: "Важно",   emoji: "🟡", color: "#FFB800", bg: "rgba(255,184,0,0.12)" },
-  normal:    { label: "Обычно",  emoji: "⚪", color: "#9a9a9a", bg: "rgba(255,255,255,0.05)" },
+  urgent:    { label: "Срочно",  emoji: "🔴", color: "#C0392B", bg: "#FDEDEC" },
+  important: { label: "Важно",   emoji: "🟡", color: "#B8860B", bg: "#FEFDE7" },
+  normal:    { label: "Обычно",  emoji: "⚪", color: "#6B7280", bg: "#F2F4F7" },
 };
 
 const COLUMNS = [
@@ -34,14 +34,10 @@ export default function Yasnost() {
   const [view,           setView]           = useState("board");
   const [selectedCardId, setSelectedCardId] = useState(null);
   const [newCheckItem,   setNewCheckItem]   = useState("");
-  const [aiLoading,      setAiLoading]      = useState(null);
   const wasDragging    = useRef(false);
   const saveTimer      = useRef(null);
   const isInitialLoad  = useRef(true);
   const touchState     = useRef({ id: null, moved: false, ghost: null, el: null, offset: { x: 0, y: 0 }, startX: 0, startY: 0, rect: null });
-  const mainRef        = useRef(null);
-  const cursorDot      = useRef(null);
-  const cursorHalo     = useRef(null);
 
   // Загрузка при старте
   useEffect(() => {
@@ -163,65 +159,6 @@ export default function Yasnost() {
     return () => document.removeEventListener("touchend", onEnd);
   }, []);
 
-  // Кастомный курсор (точка + ореол с lerp) и spotlight за курсором — только для точного указателя
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia || !window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
-    const dot = cursorDot.current, halo = cursorHalo.current;
-    let mx = window.innerWidth / 2, my = window.innerHeight / 2, hx = mx, hy = my, raf;
-    const onMove = (e) => {
-      mx = e.clientX; my = e.clientY;
-      if (dot) dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%, -50%)`;
-      const main = mainRef.current;
-      if (main) {
-        const r = main.getBoundingClientRect();
-        main.style.setProperty("--mx", (e.clientX - r.left) + "px");
-        main.style.setProperty("--my", (e.clientY - r.top) + "px");
-      }
-    };
-    const loop = () => {
-      hx += (mx - hx) * 0.22; hy += (my - hy) * 0.22;
-      if (halo) halo.style.transform = `translate(${hx}px, ${hy}px) translate(-50%, -50%)`;
-      raf = requestAnimationFrame(loop);
-    };
-    const onOver = (e) => { if (halo && e.target.closest && e.target.closest(".ys-card")) halo.classList.add("ys-halo-lg"); };
-    const onOut  = (e) => { if (halo && e.target.closest && e.target.closest(".ys-card")) halo.classList.remove("ys-halo-lg"); };
-    window.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseover", onOver);
-    document.addEventListener("mouseout", onOut);
-    raf = requestAnimationFrame(loop);
-    return () => { window.removeEventListener("mousemove", onMove); document.removeEventListener("mouseover", onOver); document.removeEventListener("mouseout", onOut); cancelAnimationFrame(raf); };
-  }, []);
-
-  // 3D-наклон карточки + свечение-бордер по курсору
-  const onCardTilt = (e) => {
-    const el = e.currentTarget;
-    const r = el.getBoundingClientRect();
-    const dx = (e.clientX - r.left) / r.width - 0.5;
-    const dy = (e.clientY - r.top) / r.height - 0.5;
-    el.style.transition = "transform .08s ease-out";
-    el.style.transform = `perspective(600px) rotateX(${-dy * 5}deg) rotateY(${dx * 5}deg) translateZ(4px)`;
-    el.style.setProperty("--bx", ((e.clientX - r.left) / r.width * 100) + "%");
-    el.style.setProperty("--by", ((e.clientY - r.top) / r.height * 100) + "%");
-  };
-  const onCardLeave = (e) => {
-    const el = e.currentTarget;
-    el.style.transition = "transform .4s ease";
-    el.style.transform = "none";
-  };
-
-  // «Анализ через AI» — разбор карточки (демо-генерация, работает офлайн)
-  const buildAnalysis = (c) => {
-    const pr = (PRIORITIES[c.priority] || PRIORITIES.normal).label;
-    const d = c.due ? new Date(c.due + "T00:00:00").toLocaleDateString("ru-RU", { day: "numeric", month: "long" }) : "не задан";
-    const cl = c.checklist || [];
-    const done = cl.filter((i) => i.done).length;
-    return `✦ Разбор задачи\n«${c.title}»\n\nСуть: ${c.desc || "описание не указано"}.\nПриоритет: ${pr}. Дедлайн: ${d}.\nДокументов: ${c.docs || 0}. Чеклист: ${done}/${cl.length}.\n\nРекомендации\n1. Назначить ответственного и контрольную дату.\n2. ${c.docs ? ("Свериться с вложениями (" + c.docs + ") перед стартом.") : "Приложить исходные документы для контекста."}\n3. ${cl.length ? ("Закрыть оставшиеся пункты чеклиста (" + (cl.length - done) + ").") : "Разбить задачу на 3–5 проверяемых шагов."}`;
-  };
-  const runAnalysis = (card) => {
-    setAiLoading(card.id);
-    setTimeout(() => { updateCard(card.id, { ai: buildAnalysis(card) }); setAiLoading(null); }, 1600);
-  };
-
   const updateCard = (id, changes) =>
     setCards((cs) => cs.map((c) => (c.id === id ? { ...c, ...changes } : c)));
 
@@ -296,11 +233,9 @@ export default function Yasnost() {
       <article
         key={c.id}
         draggable
-        onDragStart={(e) => { e.currentTarget.style.transform = "none"; setDragId(c.id); wasDragging.current = true; }}
+        onDragStart={() => { setDragId(c.id); wasDragging.current = true; }}
         onDragEnd={() => { setDragId(null); setOverCol(null); setTimeout(() => { wasDragging.current = false; }, 0); }}
         onClick={() => { if (!wasDragging.current) setSelectedCardId(c.id); }}
-        onMouseMove={onCardTilt}
-        onMouseLeave={onCardLeave}
         onTouchStart={(e) => onCardTouchStart(e, c.id)}
         style={{ ...st.card, opacity: dragId === c.id ? 0.4 : 1 }}
         className="ys-card"
@@ -314,7 +249,7 @@ export default function Yasnost() {
         </div>
         {c.desc && <div style={st.cardDesc}>{c.desc}</div>}
         <div style={st.cardMeta}>
-          <span style={{ ...st.metaChip, color: pr.color, borderColor: pr.color + "33", background: pr.bg }} className={"ys-pr ys-pr-" + c.priority}>
+          <span style={{ ...st.metaChip, color: pr.color, borderColor: pr.color + "33", background: pr.bg }}>
             {pr.emoji} {pr.label}
           </span>
           {d && (
@@ -331,8 +266,8 @@ export default function Yasnost() {
   };
 
   if (loading) return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100vh", fontFamily: "'Manrope', system-ui, sans-serif", background: "#080808", gap: 14, color: "#6a6a6a" }}>
-      <div style={{ width: 44, height: 44, borderRadius: 12, background: "linear-gradient(135deg, #4D7CFF, #7C3AFF)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 22, color: "#fff", boxShadow: "0 0 24px rgba(77,124,255,.5)" }}>Я</div>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100vh", fontFamily: "'Manrope', system-ui, sans-serif", background: "#F2F4F7", gap: 14, color: "#6B7280" }}>
+      <div style={{ width: 44, height: 44, borderRadius: 12, background: "linear-gradient(135deg, #1B4F8A, #2D6FBF)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 22, color: "#fff", boxShadow: "0 4px 14px rgba(27,79,138,.3)" }}>Я</div>
       <div style={{ fontSize: 14 }}>Загрузка…</div>
     </div>
   );
@@ -340,8 +275,6 @@ export default function Yasnost() {
   return (
     <div style={st.app} className="ys-app">
       <style>{css}</style>
-      <div ref={cursorDot} style={st.cursorDot} className="ys-cursor-dot" aria-hidden="true" />
-      <div ref={cursorHalo} style={st.cursorHalo} className="ys-cursor-halo" aria-hidden="true" />
 
       {/* ── Sidebar ── */}
       <aside style={st.sidebar} className="ys-sidebar">
@@ -377,10 +310,7 @@ export default function Yasnost() {
       </aside>
 
       {/* ── Main ── */}
-      <main style={st.main} className="ys-main" ref={mainRef}>
-        <div style={st.blob1} className="ys-blob ys-blob1" aria-hidden="true" />
-        <div style={st.blob2} className="ys-blob ys-blob2" aria-hidden="true" />
-        <div style={st.blob3} className="ys-blob ys-blob3" aria-hidden="true" />
+      <main style={st.main} className="ys-main">
         <header style={st.header} className="ys-header">
           <div>
             <h1 style={st.h1} className="ys-h1">{view === "board" ? "Доска задач" : "Сегодня"}</h1>
@@ -425,7 +355,6 @@ export default function Yasnost() {
                   </div>
                   <button
                     style={st.colAdd}
-                    className="ys-add"
                     onClick={() => { setAdding(col.id); setDraft({ title: "", desc: "", due: "", priority: "normal" }); }}
                   >+</button>
                 </div>
@@ -491,7 +420,7 @@ export default function Yasnost() {
             {visibleToday.length === 0 ? (
               <div style={st.todayEmpty}>
                 <div style={{ fontSize: 40 }}>✅</div>
-                <div style={{ fontWeight: 700, fontSize: 17, color: "#e0e0e0", marginTop: 14 }}>
+                <div style={{ fontWeight: 700, fontSize: 17, color: "#2C2C2C", marginTop: 14 }}>
                   {q ? "Ничего не найдено" : "Всё под контролем"}
                 </div>
                 <div style={{ color: "#6B7280", fontSize: 13, marginTop: 5 }}>
@@ -577,11 +506,11 @@ export default function Yasnost() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 }}>
                   {(selectedCard.checklist || []).map((item) => (
                     <div key={item.id} style={st.checkItem}>
-                      <input type="checkbox" checked={item.done} style={{ cursor: "pointer", accentColor: "#4D7CFF", flexShrink: 0 }}
+                      <input type="checkbox" checked={item.done} style={{ cursor: "pointer", accentColor: "#1B4F8A", flexShrink: 0 }}
                         onChange={() => updateCard(selectedCard.id, {
                           checklist: selectedCard.checklist.map((i) => i.id === item.id ? { ...i, done: !i.done } : i),
                         })} />
-                      <span style={{ ...st.checkText, textDecoration: item.done ? "line-through" : "none", color: item.done ? "#5a5a5a" : "#e0e0e0" }}>
+                      <span style={{ ...st.checkText, textDecoration: item.done ? "line-through" : "none", color: item.done ? "#9AA3B2" : "#2C2C2C" }}>
                         {item.text}
                       </span>
                       <button style={st.checkDel}
@@ -598,36 +527,6 @@ export default function Yasnost() {
                   <button style={{ ...st.btnPrimary, padding: "9px 16px", flexShrink: 0 }}
                     onClick={() => addCheckItem(selectedCard.id, selectedCard.checklist || [])}>+</button>
                 </div>
-              </div>
-
-              <div style={st.modalSection}>
-                <div style={st.modalLabel}>
-                  Документы
-                  {(selectedCard.docs || 0) > 0 && (
-                    <span style={{ color: "#5a5a5a", fontWeight: 400, marginLeft: 6, fontSize: 12 }}>{selectedCard.docs}</span>
-                  )}
-                </div>
-                {(selectedCard.docs || 0) > 0 && (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
-                    {Array.from({ length: selectedCard.docs }).map((_, i) => (
-                      <span key={i} style={st.docChip}><Icon name="doc" color="#4D7CFF" /> Документ {i + 1}.pdf</span>
-                    ))}
-                  </div>
-                )}
-                <div style={st.docZone} className="ys-doc-zone"
-                  onClick={() => updateCard(selectedCard.id, { docs: (selectedCard.docs || 0) + 1 })}>
-                  + Прикрепить документ
-                </div>
-              </div>
-
-              <div style={{ ...st.modalSection, borderBottom: "none", marginBottom: 0, paddingBottom: 0 }}>
-                <button style={st.aiBtn} className="ys-ai-btn" disabled={aiLoading === selectedCard.id}
-                  onClick={() => runAnalysis(selectedCard)}>
-                  {aiLoading === selectedCard.id ? "Анализирую…" : "✦ Анализ через AI"}
-                </button>
-                {selectedCard.ai && aiLoading !== selectedCard.id && (
-                  <div style={st.aiPanel}>{selectedCard.ai}</div>
-                )}
               </div>
             </div>
           </div>
@@ -652,130 +551,83 @@ function Icon({ name, color = "currentColor" }) {
 }
 
 const st = {
-  app:          { display: "flex", height: "100vh", fontFamily: "'Manrope', system-ui, sans-serif", background: "#080808", color: "#e0e0e0", overflow: "hidden", position: "relative" },
-  sidebar:      { width: 244, background: "#0d0d0d", color: "#c2c6cc", display: "flex", flexDirection: "column", padding: "22px 14px", flexShrink: 0, borderRight: "1px solid rgba(255,255,255,.06)" },
-  brand:        { display: "flex", alignItems: "center", gap: 12, marginBottom: 30, padding: "0 6px" },
-  logo:         { width: 38, height: 38, borderRadius: 11, background: "linear-gradient(135deg, #4D7CFF, #7C3AFF)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 19, color: "#fff", boxShadow: "0 0 24px rgba(77,124,255,.5)", flexShrink: 0 },
-  brandName:    { fontWeight: 700, fontSize: 16, letterSpacing: "-0.01em", color: "#ffffff" },
-  brandSub:     { fontSize: 10.5, color: "#5a5a5a", letterSpacing: "0.14em", textTransform: "uppercase", marginTop: 3, fontWeight: 600 },
-  nav:          { display: "flex", flexDirection: "column", gap: 3, flex: 1 },
-  navItem:      { display: "flex", alignItems: "center", gap: 11, padding: "10px 13px", borderRadius: 8, fontSize: 13.5, fontWeight: 500, color: "#8a8a8a", cursor: "pointer", transition: "all .16s" },
-  navActive:    { background: "rgba(77,124,255,.08)", color: "#ffffff", boxShadow: "inset 2px 0 0 #4D7CFF" },
-  navDivider:   { height: 1, background: "rgba(255,255,255,.06)", margin: "12px 8px" },
-  navBadge:     { marginLeft: "auto", background: "#4D7CFF", color: "#fff", borderRadius: 999, fontSize: 11, fontWeight: 700, padding: "1px 8px", lineHeight: 1.6, boxShadow: "0 0 10px rgba(77,124,255,.6)" },
-  sidebarFoot:  { fontSize: 10.5, color: "#4a4a4a", paddingLeft: 8, lineHeight: 1.8 },
+  app:          { display: "flex", height: "100vh", fontFamily: "'Inter', system-ui, sans-serif", background: "#FBFBFA", color: "#37352F", overflow: "hidden" },
+  sidebar:      { width: 248, background: "#F7F6F3", color: "#37352F", display: "flex", flexDirection: "column", padding: "20px 12px", flexShrink: 0, borderRight: "1px solid #ECEAE4" },
+  brand:        { display: "flex", alignItems: "center", gap: 11, marginBottom: 26, padding: "0 6px" },
+  logo:         { width: 36, height: 36, borderRadius: 9, background: "linear-gradient(135deg, #1B4F8A, #0D2240)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 18, color: "#fff", boxShadow: "0 2px 8px rgba(13,34,64,.2)", flexShrink: 0 },
+  brandName:    { fontWeight: 700, fontSize: 15.5, letterSpacing: "-0.01em", color: "#37352F" },
+  brandSub:     { fontSize: 10.5, color: "#9B948A", letterSpacing: "0.1em", textTransform: "uppercase", marginTop: 2, fontWeight: 600 },
+  nav:          { display: "flex", flexDirection: "column", gap: 1, flex: 1 },
+  navItem:      { display: "flex", alignItems: "center", gap: 10, padding: "7px 10px", borderRadius: 6, fontSize: 14, fontWeight: 500, color: "#6F6A60", cursor: "pointer", transition: "all .12s" },
+  navActive:    { background: "#ECEAE4", color: "#37352F" },
+  navDivider:   { height: 1, background: "#ECEAE4", margin: "10px 8px" },
+  navBadge:     { marginLeft: "auto", background: "#E03E3E", color: "#fff", borderRadius: 20, fontSize: 11, fontWeight: 700, padding: "1px 7px", lineHeight: 1.6 },
+  sidebarFoot:  { fontSize: 11, color: "#9B948A", paddingLeft: 8, lineHeight: 1.7 },
   sidebarFootLine: {},
-  resetBtn:     { marginTop: 10, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)", color: "#7a7a7a", borderRadius: 8, padding: "7px 10px", fontSize: 11, cursor: "pointer", fontFamily: "inherit", width: "100%" },
-  main:         { flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative", backgroundColor: "#080808", backgroundImage: "radial-gradient(500px at var(--mx,50%) var(--my,50%), rgba(77,124,255,.04), transparent 70%), radial-gradient(rgba(255,255,255,.04) 1px, transparent 1px)", backgroundSize: "auto, 28px 28px" },
-  header:       { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "22px 30px", borderBottom: "1px solid rgba(255,255,255,.06)", background: "#0a0a0a", flexShrink: 0, position: "relative", zIndex: 2 },
-  h1:           { fontSize: 28, fontWeight: 800, letterSpacing: "-0.02em", margin: 0, color: "#ffffff" },
-  sub:          { fontSize: 13, color: "#5a5a5a", margin: "5px 0 0" },
+  resetBtn:     { marginTop: 8, background: "#fff", border: "1px solid #E5E2DB", color: "#787066", borderRadius: 7, padding: "6px 10px", fontSize: 11, cursor: "pointer", fontFamily: "inherit", width: "100%" },
+  main:         { flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" },
+  header:       { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 32px", borderBottom: "1px solid #ECEAE4", background: "#fff", flexShrink: 0 },
+  h1:           { fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", margin: 0, color: "#1F1B16" },
+  sub:          { fontSize: 13, color: "#9B948A", margin: "4px 0 0" },
   headerRight:  { display: "flex", alignItems: "center", gap: 14 },
-  searchWrap:   { display: "flex", alignItems: "center", gap: 8, background: "#141414", border: "1px solid rgba(255,255,255,.08)", borderRadius: 10, padding: "9px 14px", width: 230, cursor: "text", color: "#5a5a5a" },
-  searchInput:  { border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#e0e0e0", fontFamily: "inherit", width: "100%" },
-  avatar:       { width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg, #4D7CFF, #7C3AFF)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, flexShrink: 0, boxShadow: "0 0 16px rgba(77,124,255,.45)" },
-  board:        { display: "grid", gridTemplateColumns: "repeat(3, minmax(310px, 1fr))", gap: 18, padding: 26, overflowX: "auto", overflowY: "auto", flex: 1, alignItems: "stretch", position: "relative", zIndex: 1 },
-  column:       { background: "#0d0d0d", borderRadius: 16, padding: 14, minHeight: 200, transition: "background .15s, box-shadow .15s", border: "1px solid rgba(255,255,255,.06)", display: "flex", flexDirection: "column" },
-  columnOver:   { background: "#101010", border: "1px solid rgba(77,124,255,.5)", boxShadow: "inset 0 0 0 1px rgba(77,124,255,.2), 0 0 28px rgba(77,124,255,.14)" },
-  colHead:      { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, padding: "2px 4px" },
+  searchWrap:   { display: "flex", alignItems: "center", gap: 8, background: "#F4F3F0", border: "1px solid #E5E2DB", borderRadius: 8, padding: "8px 13px", width: 220, cursor: "text", color: "#9B948A" },
+  searchInput:  { border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#37352F", fontFamily: "inherit", width: "100%" },
+  avatar:       { width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg, #1B4F8A, #0D2240)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, flexShrink: 0 },
+  board:        { display: "grid", gridTemplateColumns: "repeat(3, minmax(300px, 1fr))", gap: 18, padding: 26, overflowX: "auto", overflowY: "auto", flex: 1, alignItems: "stretch" },
+  column:       { background: "#F4F3F1", borderRadius: 12, padding: 13, minHeight: 200, transition: "background .15s, box-shadow .15s", border: "1px solid transparent", display: "flex", flexDirection: "column" },
+  columnOver:   { background: "#EAF1FA", border: "1px dashed #1B4F8A", boxShadow: "inset 0 0 0 1px rgba(27,79,138,.08)" },
+  colHead:      { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, padding: "2px 4px" },
   colTitleWrap: { display: "flex", alignItems: "center", gap: 9 },
-  colDot:       { width: 8, height: 8, borderRadius: "50%", flexShrink: 0 },
-  colTitle:     { fontWeight: 600, fontSize: 11, color: "#3a3a3a", letterSpacing: "0.12em", textTransform: "uppercase" },
-  colCount:     { fontSize: 11.5, fontWeight: 600, color: "#7a7a7a", background: "rgba(255,255,255,.05)", borderRadius: 999, padding: "1px 8px" },
-  colAdd:       { width: 25, height: 25, borderRadius: 8, border: "1px solid rgba(255,255,255,.08)", background: "transparent", color: "#4D7CFF", fontSize: 17, fontWeight: 600, cursor: "pointer", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" },
-  cardList:     { display: "flex", flexDirection: "column", gap: 10, flex: 1 },
-  card:         { background: "#141414", borderRadius: 14, padding: "14px 15px 13px", cursor: "pointer", border: "1px solid rgba(255,255,255,.08)", position: "relative", transformStyle: "preserve-3d", willChange: "transform" },
-  cardTop:      { display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "absolute", top: 0, left: 0, right: 0, zIndex: 2 },
-  cardStripe:   { width: 26, height: 3, borderRadius: 3, margin: "13px 0 0 15px" },
-  cardDel:      { border: "none", background: "transparent", color: "#3a3a3a", fontSize: 18, cursor: "pointer", padding: "6px 10px", lineHeight: 1 },
-  cardTitle:    { fontWeight: 600, fontSize: 15, color: "#e0e0e0", marginTop: 11, lineHeight: 1.38, cursor: "pointer", position: "relative", zIndex: 1 },
-  cardDesc:     { fontSize: 13, color: "#6a6a6a", marginTop: 5, lineHeight: 1.45, position: "relative", zIndex: 1 },
-  cardMeta:     { display: "flex", gap: 6, marginTop: 12, flexWrap: "wrap", position: "relative", zIndex: 1 },
-  metaChip:     { display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 600, color: "#8a8a8a", border: "1px solid rgba(255,255,255,.08)", borderRadius: 999, padding: "3px 9px", background: "rgba(255,255,255,.03)" },
-  composer:     { background: "#141414", borderRadius: 14, padding: 13, boxShadow: "0 8px 28px rgba(0,0,0,.6)", display: "flex", flexDirection: "column", gap: 8, border: "1px solid rgba(77,124,255,.3)" },
-  input:        { border: "1px solid rgba(255,255,255,.1)", borderRadius: 10, padding: "9px 12px", fontSize: 13, fontFamily: "inherit", outline: "none", color: "#e0e0e0", width: "100%", boxSizing: "border-box", background: "#0d0d0d" },
+  colDot:       { width: 9, height: 9, borderRadius: "50%", flexShrink: 0 },
+  colTitle:     { fontWeight: 600, fontSize: 13.5, color: "#57534C", letterSpacing: "-0.01em" },
+  colCount:     { fontSize: 12, fontWeight: 600, color: "#9B948A", background: "rgba(0,0,0,.05)", borderRadius: 20, padding: "1px 8px" },
+  colAdd:       { width: 26, height: 26, borderRadius: 7, border: "1px solid #E5E2DB", background: "#fff", color: "#1B4F8A", fontSize: 18, fontWeight: 600, cursor: "pointer", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" },
+  cardList:     { display: "flex", flexDirection: "column", gap: 9, flex: 1 },
+  card:         { background: "#fff", borderRadius: 9, padding: "13px 14px 12px", boxShadow: "0 1px 2px rgba(15,15,15,.04)", cursor: "pointer", border: "1px solid #ECEAE4", transition: "box-shadow .15s, transform .15s, border-color .15s", position: "relative" },
+  cardTop:      { display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "absolute", top: 0, left: 0, right: 0 },
+  cardStripe:   { width: 28, height: 3, borderRadius: 3, margin: "12px 0 0 14px" },
+  cardDel:      { border: "none", background: "transparent", color: "#C4C0B6", fontSize: 18, cursor: "pointer", padding: "6px 10px", lineHeight: 1 },
+  cardTitle:    { fontWeight: 600, fontSize: 14, color: "#37352F", marginTop: 10, lineHeight: 1.35, cursor: "pointer" },
+  cardDesc:     { fontSize: 12.5, color: "#787066", marginTop: 5, lineHeight: 1.45 },
+  cardMeta:     { display: "flex", gap: 6, marginTop: 11, flexWrap: "wrap" },
+  metaChip:     { display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11.5, fontWeight: 600, color: "#787066", border: "1px solid #E5E2DB", borderRadius: 6, padding: "3px 8px", background: "#FBFBFA" },
+  composer:     { background: "#fff", borderRadius: 9, padding: 12, boxShadow: "0 6px 20px rgba(15,15,15,.1)", display: "flex", flexDirection: "column", gap: 8, border: "1px solid #D9E2EF" },
+  input:        { border: "1px solid #E5E2DB", borderRadius: 7, padding: "9px 11px", fontSize: 13, fontFamily: "inherit", outline: "none", color: "#37352F", width: "100%", boxSizing: "border-box", background: "#fff" },
   priorityPicker: { display: "flex", gap: 6, flexWrap: "wrap" },
-  prBtn:        { border: "1px solid rgba(255,255,255,.1)", borderRadius: 999, padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all .12s" },
+  prBtn:        { border: "1px solid #E5E2DB", borderRadius: 7, padding: "6px 11px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all .12s" },
   composerRow:  { display: "flex", gap: 8, marginTop: 2 },
-  btnPrimary:   { flex: 1, background: "linear-gradient(135deg, #4D7CFF, #7C3AFF)", color: "#fff", border: "none", borderRadius: 10, padding: "10px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 18px rgba(77,124,255,.3)" },
-  btnGhost:     { background: "transparent", color: "#8a8a8a", border: "1px solid rgba(255,255,255,.1)", borderRadius: 10, padding: "10px 16px", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit" },
-  empty:        { textAlign: "center", color: "#3a3a3a", fontSize: 12, padding: "26px 0", border: "1.5px dashed rgba(255,255,255,.08)", borderRadius: 12 },
-  todayView:    { flex: 1, overflowY: "auto", padding: 26, position: "relative", zIndex: 1 },
-  todayList:    { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(330px, 1fr))", gap: 13 },
-  todayEmpty:   { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", maxWidth: 380, margin: "48px auto", padding: "44px 32px", background: "#0d0d0d", border: "1px solid rgba(255,255,255,.08)", borderRadius: 18, color: "#8a8a8a" },
-  overlay:      { position: "fixed", inset: 0, background: "rgba(0,0,0,.72)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, backdropFilter: "blur(6px)" },
-  modal:        { background: "#0f0f0f", borderRadius: 20, width: "min(640px, 94vw)", maxHeight: "88vh", display: "flex", flexDirection: "column", boxShadow: "0 30px 80px rgba(0,0,0,.7)", overflow: "hidden", border: "1px solid rgba(255,255,255,.1)" },
-  modalHeader:  { display: "flex", alignItems: "center", gap: 12, padding: "20px 22px 16px", borderBottom: "1px solid rgba(255,255,255,.07)", flexShrink: 0 },
-  modalTitle:   { flex: 1, border: "none", outline: "none", fontSize: 20, fontWeight: 700, color: "#ffffff", fontFamily: "inherit", letterSpacing: "-0.01em", background: "transparent" },
-  modalClose:   { border: "none", background: "transparent", color: "#5a5a5a", fontSize: 22, cursor: "pointer", lineHeight: 1, padding: "0 2px" },
-  modalBody:    { overflowY: "auto", padding: "16px 22px 24px", display: "flex", flexDirection: "column", gap: 4 },
-  modalSection: { paddingBottom: 16, borderBottom: "1px solid rgba(255,255,255,.06)", marginBottom: 4 },
-  modalLabel:   { fontSize: 11, fontWeight: 700, color: "#5a5a5a", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 9 },
-  textarea:     { border: "1px solid rgba(255,255,255,.1)", borderRadius: 10, padding: "10px 12px", fontSize: 13, fontFamily: "inherit", outline: "none", color: "#e0e0e0", width: "100%", boxSizing: "border-box", resize: "vertical", minHeight: 64, lineHeight: 1.5, background: "#0d0d0d" },
+  btnPrimary:   { flex: 1, background: "#1B4F8A", color: "#fff", border: "none", borderRadius: 7, padding: "9px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" },
+  btnGhost:     { background: "transparent", color: "#787066", border: "1px solid #E5E2DB", borderRadius: 7, padding: "9px 14px", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit" },
+  empty:        { textAlign: "center", color: "#B0A99D", fontSize: 12.5, padding: "24px 0", border: "1.5px dashed #E0DCD3", borderRadius: 9 },
+  todayView:    { flex: 1, overflowY: "auto", padding: 26 },
+  todayList:    { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 12 },
+  todayEmpty:   { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "60%", color: "#787066" },
+  overlay:      { position: "fixed", inset: 0, background: "rgba(15,15,15,.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, backdropFilter: "blur(2px)" },
+  modal:        { background: "#fff", borderRadius: 14, width: "min(620px, 94vw)", maxHeight: "88vh", display: "flex", flexDirection: "column", boxShadow: "0 24px 60px rgba(15,15,15,.22)", overflow: "hidden", border: "1px solid #ECEAE4" },
+  modalHeader:  { display: "flex", alignItems: "center", gap: 12, padding: "18px 20px 16px", borderBottom: "1px solid #F0EEE9", flexShrink: 0 },
+  modalTitle:   { flex: 1, border: "none", outline: "none", fontSize: 17, fontWeight: 700, color: "#1F1B16", fontFamily: "inherit", letterSpacing: "-0.01em", background: "transparent" },
+  modalClose:   { border: "none", background: "transparent", color: "#9B948A", fontSize: 22, cursor: "pointer", lineHeight: 1, padding: "0 2px" },
+  modalBody:    { overflowY: "auto", padding: "16px 20px 24px", display: "flex", flexDirection: "column", gap: 4 },
+  modalSection: { paddingBottom: 16, borderBottom: "1px solid #F4F3F0", marginBottom: 4 },
+  modalLabel:   { fontSize: 11, fontWeight: 700, color: "#9B948A", letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: 8 },
+  textarea:     { border: "1px solid #E5E2DB", borderRadius: 7, padding: "9px 11px", fontSize: 13, fontFamily: "inherit", outline: "none", color: "#37352F", width: "100%", boxSizing: "border-box", resize: "vertical", minHeight: 64, lineHeight: 1.5, background: "#fff" },
   checkItem:    { display: "flex", alignItems: "center", gap: 10, padding: "5px 0" },
   checkText:    { flex: 1, fontSize: 13, lineHeight: 1.4 },
-  checkDel:     { border: "none", background: "transparent", color: "#3a3a3a", fontSize: 16, cursor: "pointer", padding: "2px 4px", lineHeight: 1 },
+  checkDel:     { border: "none", background: "transparent", color: "#C4C0B6", fontSize: 16, cursor: "pointer", padding: "2px 4px", lineHeight: 1 },
   checkAdd:     { display: "flex", gap: 8, alignItems: "center" },
-
-  /* cosmos extras */
-  texture:      { position: "fixed", inset: 0, pointerEvents: "none", zIndex: 998, opacity: 0.035, backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E")` },
-  cursorDot:    { position: "fixed", top: 0, left: 0, width: 12, height: 12, borderRadius: "50%", background: "#ffffff", boxShadow: "0 0 6px rgba(255,255,255,.9)", pointerEvents: "none", zIndex: 1000, transform: "translate(-50%, -50%)" },
-  cursorHalo:   { position: "fixed", top: 0, left: 0, width: 40, height: 40, borderRadius: "50%", border: "1.5px solid rgba(77,124,255,.8)", background: "rgba(77,124,255,.12)", pointerEvents: "none", zIndex: 1000, transform: "translate(-50%, -50%)", transition: "width .25s ease, height .25s ease, background .25s ease, border-color .25s ease" },
-  blob1:        { position: "absolute", width: 500, height: 500, top: "-8%", left: "-6%", borderRadius: "50%", background: "rgba(77,124,255,.07)", filter: "blur(100px)", pointerEvents: "none", zIndex: 0 },
-  blob2:        { position: "absolute", width: 420, height: 420, top: "26%", right: "-5%", borderRadius: "50%", background: "rgba(124,58,255,.05)", filter: "blur(100px)", pointerEvents: "none", zIndex: 0 },
-  blob3:        { position: "absolute", width: 360, height: 360, bottom: "4%", left: "42%", borderRadius: "50%", background: "rgba(77,124,255,.04)", filter: "blur(100px)", pointerEvents: "none", zIndex: 0 },
-  aiBtn:        { width: "100%", background: "linear-gradient(135deg, #4D7CFF, #7C3AFF)", color: "#fff", border: "none", borderRadius: 12, padding: "13px", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 20px rgba(77,124,255,.35)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 },
-  aiPanel:      { marginTop: 12, background: "#0d0d0d", border: "1px solid rgba(77,124,255,.25)", borderRadius: 12, padding: "14px 16px", fontSize: 13, lineHeight: 1.6, color: "#c0c0c0", whiteSpace: "pre-wrap" },
-  docChip:      { display: "inline-flex", alignItems: "center", gap: 6, background: "#141414", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: "6px 10px", fontSize: 12, color: "#c0c0c0" },
-  docZone:      { border: "1.5px dashed rgba(255,255,255,.12)", borderRadius: 12, padding: "14px", textAlign: "center", color: "#5a5a5a", fontSize: 12.5, cursor: "pointer", transition: "border-color .15s, color .15s" },
 };
 
 const css = `
-  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
   * { box-sizing: border-box; }
-
-  /* aurora blobs drifting evenly across the board */
-  @media (prefers-reduced-motion: no-preference) {
-    .ys-blob1 { animation: ys-b1 22s ease-in-out infinite alternate; }
-    .ys-blob2 { animation: ys-b2 30s ease-in-out infinite alternate-reverse; }
-    .ys-blob3 { animation: ys-b3 18s ease-in-out infinite alternate; }
-    @keyframes ys-b1 { from { transform: translate(0,0) scale(1); } to { transform: translate(46px,34px) scale(1.18); } }
-    @keyframes ys-b2 { from { transform: translate(0,0) scale(1); } to { transform: translate(-54px,-22px) scale(1.22); } }
-    @keyframes ys-b3 { from { transform: translate(0,0) scale(1); } to { transform: translate(24px,-34px) scale(1.12); } }
-  }
-
-  /* card border-glow that follows the cursor (::before) */
-  .ys-card::before {
-    content: ""; position: absolute; inset: 0; border-radius: 14px; z-index: 0; pointer-events: none;
-    background: radial-gradient(120px at var(--bx, 50%) var(--by, 50%), rgba(77,124,255,.16), transparent 70%);
-    opacity: 0; transition: opacity .25s ease;
-  }
-  .ys-card:hover::before { opacity: 1; }
-  .ys-card:hover { border-color: rgba(77,124,255,.4); }
-  .ys-pr-urgent { box-shadow: 0 0 10px rgba(255,68,68,.35); }
-
-  .ys-nav-item:hover { background: rgba(255,255,255,.04); color: #ffffff; }
-  .ys-search:focus-within { border-color: rgba(77,124,255,.55) !important; box-shadow: 0 0 0 3px rgba(77,124,255,.12); }
-  .ys-doc-zone:hover { border-color: rgba(77,124,255,.5); color: #4D7CFF; }
-  .ys-ai-btn:hover { box-shadow: 0 6px 28px rgba(77,124,255,.55); }
-  .ys-add:hover { background: rgba(77,124,255,.1); }
-
-  ::-webkit-scrollbar { width: 9px; height: 9px; }
-  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 999px; }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(77,124,255,.5); }
+  .ys-card:hover { box-shadow: 0 4px 14px rgba(15,15,15,.1) !important; transform: translateY(-1px); border-color: #DAD7CF !important; }
+  .ys-card:active { transform: scale(0.98); }
+  .ys-nav-item:hover { background: #EFEDE8; color: #37352F; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #DAD7CF; border-radius: 5px; }
+  ::-webkit-scrollbar-thumb:hover { background: #C4C0B6; }
   ::-webkit-scrollbar-track { background: transparent; }
-  input::placeholder, textarea::placeholder { color: #4a4a4a; }
-  input[type="date"] { color-scheme: dark; }
-
-  /* hide native cursor only on precise pointers (desktop); custom cursor takes over */
-  @media (hover: hover) and (pointer: fine) {
-    .ys-app, .ys-app * { cursor: none !important; }
-  }
-  /* the custom cursor is meaningless on touch — hide it there */
-  @media (pointer: coarse) {
-    .ys-cursor-dot, .ys-cursor-halo { display: none !important; }
-  }
-  .ys-halo-lg { width: 56px !important; height: 56px !important; background: rgba(77,124,255,.22) !important; border-color: rgba(77,124,255,1) !important; }
+  input::placeholder, textarea::placeholder { color: #B0A99D; }
 
   /* ── Mobile ── */
   @media (max-width: 768px) {
@@ -783,20 +635,19 @@ const css = `
     .ys-sidebar {
       width: 100% !important; flex-direction: row !important; flex-wrap: wrap;
       padding: 12px 16px !important; gap: 0; flex-shrink: 0 !important; border-right: none !important;
-      border-bottom: 1px solid rgba(255,255,255,.06) !important;
+      border-bottom: 1px solid #ECEAE4 !important;
     }
     .ys-brand  { margin-bottom: 0 !important; flex: 1; }
     .ys-nav    { flex-direction: row !important; flex: none; gap: 4px !important; align-items: center; }
-    .ys-nav-item { padding: 8px 11px !important; font-size: 12px !important; gap: 6px !important; }
+    .ys-nav-item { padding: 8px 10px !important; font-size: 12px !important; gap: 6px !important; }
     .ys-sidebar-foot { display: none !important; }
     .ys-main   { overflow: visible !important; flex: none !important; }
-    .ys-header { padding: 16px !important; flex-wrap: wrap; gap: 10px; position: static !important; }
-    .ys-h1     { font-size: 21px !important; }
+    .ys-header { padding: 16px !important; flex-wrap: wrap; gap: 10px; }
+    .ys-h1     { font-size: 18px !important; }
     .ys-search { width: 100% !important; }
     .ys-board  { grid-template-columns: 1fr !important; padding: 12px !important; gap: 12px !important; overflow: visible !important; flex: none !important; }
     .ys-column { min-height: 80px !important; }
-    .ys-card   { transform: none !important; }
-    .ys-modal  { border-radius: 20px 20px 0 0 !important; width: 100vw !important; max-height: 92dvh !important; position: fixed !important; bottom: 0 !important; left: 0 !important; }
+    .ys-modal  { border-radius: 14px 14px 0 0 !important; width: 100vw !important; max-height: 92dvh !important; position: fixed !important; bottom: 0 !important; left: 0 !important; }
     .ys-overlay { align-items: flex-end !important; }
   }
 `;
