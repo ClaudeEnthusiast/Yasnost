@@ -4,7 +4,7 @@ import os
 HOST = "89.22.231.102"
 USER = "root"
 PASSWORD = os.environ.get("VPS_PASS") or input("Пароль VPS: ")
-DIST_DIR = r"C:\Users\Илья\OneDrive\Desktop\yasnost-deploy\dist"
+DIST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dist")
 REMOTE_DIR = "/var/www/yasnost"
 
 def run(client, cmd):
