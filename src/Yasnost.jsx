@@ -30,8 +30,8 @@ const THEMES = {
       normal:    { label: "Обычно",  emoji: "⚪", color: "#9a9a9a", bg: "rgba(255,255,255,0.05)" },
     },
     st: {
-      app:          { display: "flex", height: "100vh", fontFamily: "'Manrope', system-ui, sans-serif", background: "#080808", color: "#e0e0e0", overflow: "hidden", position: "relative" },
-      sidebar:      { width: 244, background: "#0d0d0d", color: "#c2c6cc", display: "flex", flexDirection: "column", padding: "22px 14px", flexShrink: 0, borderRight: "1px solid rgba(255,255,255,.06)" },
+      app:          { display: "flex", height: "100vh", fontFamily: "'Manrope', system-ui, sans-serif", background: "#03050A", color: "#e0e0e0", overflow: "hidden", position: "relative" },
+      sidebar:      { width: 244, background: "rgba(6,8,14,.72)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", color: "#c2c6cc", display: "flex", flexDirection: "column", padding: "22px 14px", flexShrink: 0, borderRight: "1px solid rgba(255,255,255,.08)" },
       brand:        { display: "flex", alignItems: "center", gap: 12, marginBottom: 30, padding: "0 6px" },
       logo:         { width: 38, height: 38, borderRadius: 11, background: "linear-gradient(135deg, #4D7CFF, #7C3AFF)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 19, color: "#fff", boxShadow: "0 0 24px rgba(77,124,255,.5)", flexShrink: 0 },
       brandName:    { fontWeight: 700, fontSize: 16, letterSpacing: "-0.01em", color: "#ffffff" },
@@ -44,8 +44,8 @@ const THEMES = {
       sidebarFoot:  { fontSize: 10.5, color: "#4a4a4a", paddingLeft: 8, lineHeight: 1.8 },
       sidebarFootLine: {},
       resetBtn:     { marginTop: 10, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)", color: "#7a7a7a", borderRadius: 8, padding: "7px 10px", fontSize: 11, cursor: "pointer", fontFamily: "inherit", width: "100%" },
-      main:         { flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative", backgroundColor: "#080808", backgroundImage: "radial-gradient(500px at var(--mx,50%) var(--my,50%), rgba(77,124,255,.04), transparent 70%), radial-gradient(rgba(255,255,255,.04) 1px, transparent 1px)", backgroundSize: "auto, 28px 28px" },
-      header:       { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "22px 30px", borderBottom: "1px solid rgba(255,255,255,.06)", background: "#0a0a0a", flexShrink: 0, position: "relative", zIndex: 2 },
+      main:         { flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative", background: "transparent" },
+      header:       { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "22px 30px", borderBottom: "1px solid rgba(255,255,255,.06)", background: "rgba(6,8,14,.88)", flexShrink: 0, position: "relative", zIndex: 2, backdropFilter: "blur(12px)" },
       h1:           { fontSize: 28, fontWeight: 800, letterSpacing: "-0.02em", margin: 0, color: "#ffffff" },
       sub:          { fontSize: 13, color: "#5a5a5a", margin: "5px 0 0" },
       headerRight:  { display: "flex", alignItems: "center", gap: 14 },
@@ -53,16 +53,16 @@ const THEMES = {
       searchInput:  { border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#e0e0e0", fontFamily: "inherit", width: "100%" },
       avatar:       { width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg, #4D7CFF, #7C3AFF)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, flexShrink: 0, boxShadow: "0 0 16px rgba(77,124,255,.45)" },
       board:        { display: "grid", gridTemplateColumns: "repeat(3, minmax(310px, 1fr))", gap: 18, padding: 26, overflowX: "auto", overflowY: "auto", flex: 1, alignItems: "stretch", position: "relative", zIndex: 1 },
-      column:       { background: "#0d0d0d", borderRadius: 16, padding: 14, minHeight: 200, transition: "background .15s, box-shadow .15s", border: "1px solid rgba(255,255,255,.06)", display: "flex", flexDirection: "column" },
+      column:       { background: "rgba(255,255,255,.015)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", borderRadius: 16, padding: 14, minHeight: 200, transition: "background .15s, box-shadow .15s", border: "1px solid rgba(255,255,255,.05)", display: "flex", flexDirection: "column" },
       columnOver:   { background: "#101010", border: "1px solid rgba(77,124,255,.5)", boxShadow: "inset 0 0 0 1px rgba(77,124,255,.2), 0 0 28px rgba(77,124,255,.14)" },
       colHead:      { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, padding: "2px 4px" },
       colTitleWrap: { display: "flex", alignItems: "center", gap: 9 },
       colDot:       { width: 8, height: 8, borderRadius: "50%", flexShrink: 0 },
-      colTitle:     { fontWeight: 600, fontSize: 11, color: "#3a3a3a", letterSpacing: "0.12em", textTransform: "uppercase" },
+      colTitle:     { fontWeight: 600, fontSize: 11, color: "#6a7585", letterSpacing: "0.12em", textTransform: "uppercase" },
       colCount:     { fontSize: 11.5, fontWeight: 600, color: "#7a7a7a", background: "rgba(255,255,255,.05)", borderRadius: 999, padding: "1px 8px" },
       colAdd:       { width: 25, height: 25, borderRadius: 8, border: "1px solid rgba(255,255,255,.08)", background: "transparent", color: "#4D7CFF", fontSize: 17, fontWeight: 600, cursor: "pointer", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" },
       cardList:     { display: "flex", flexDirection: "column", gap: 10, flex: 1 },
-      card:         { background: "#141414", borderRadius: 14, padding: "14px 15px 13px", cursor: "pointer", border: "1px solid rgba(255,255,255,.08)", position: "relative", transformStyle: "preserve-3d", willChange: "transform" },
+      card:         { background: "rgba(255,255,255,.03)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderRadius: 14, padding: "14px 15px 13px", cursor: "pointer", border: "1px solid rgba(255,255,255,.07)", position: "relative", transformStyle: "preserve-3d", willChange: "transform" },
       cardTop:      { display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "absolute", top: 0, left: 0, right: 0, zIndex: 2 },
       cardStripe:   { width: 26, height: 3, borderRadius: 3, margin: "13px 0 0 15px" },
       cardDel:      { border: "none", background: "transparent", color: "#3a3a3a", fontSize: 18, cursor: "pointer", padding: "6px 10px", lineHeight: 1 },
@@ -88,18 +88,18 @@ const THEMES = {
       modalClose:   { border: "none", background: "transparent", color: "#5a5a5a", fontSize: 22, cursor: "pointer", lineHeight: 1, padding: "0 2px" },
       modalBody:    { overflowY: "auto", padding: "16px 22px 24px", display: "flex", flexDirection: "column", gap: 4 },
       modalSection: { paddingBottom: 16, borderBottom: "1px solid rgba(255,255,255,.06)", marginBottom: 4 },
-      modalLabel:   { fontSize: 11, fontWeight: 700, color: "#5a5a5a", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 9 },
+      modalLabel:   { fontSize: 11, fontWeight: 700, color: "#8090a8", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 9 },
       textarea:     { border: "1px solid rgba(255,255,255,.1)", borderRadius: 10, padding: "10px 12px", fontSize: 13, fontFamily: "inherit", outline: "none", color: "#e0e0e0", width: "100%", boxSizing: "border-box", resize: "vertical", minHeight: 64, lineHeight: 1.5, background: "#0d0d0d" },
       checkItem:    { display: "flex", alignItems: "center", gap: 10, padding: "5px 0" },
       checkText:    { flex: 1, fontSize: 13, lineHeight: 1.4 },
       checkDel:     { border: "none", background: "transparent", color: "#3a3a3a", fontSize: 16, cursor: "pointer", padding: "2px 4px", lineHeight: 1 },
       checkAdd:     { display: "flex", gap: 8, alignItems: "center" },
-      texture:      { position: "fixed", inset: 0, pointerEvents: "none", zIndex: 998, opacity: 0.035, backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E")` },
-      cursorDot:    { position: "fixed", top: 0, left: 0, width: 12, height: 12, borderRadius: "50%", background: "#ffffff", boxShadow: "0 0 6px rgba(255,255,255,.9)", pointerEvents: "none", zIndex: 1000, transform: "translate(-50%, -50%)" },
-      cursorHalo:   { position: "fixed", top: 0, left: 0, width: 40, height: 40, borderRadius: "50%", border: "1.5px solid rgba(77,124,255,.8)", background: "rgba(77,124,255,.12)", pointerEvents: "none", zIndex: 1000, transform: "translate(-50%, -50%)", transition: "width .25s ease, height .25s ease, background .25s ease, border-color .25s ease" },
-      blob1:        { position: "absolute", width: 500, height: 500, top: "-8%", left: "-6%", borderRadius: "50%", background: "rgba(77,124,255,.07)", filter: "blur(100px)", pointerEvents: "none", zIndex: 0 },
-      blob2:        { position: "absolute", width: 420, height: 420, top: "26%", right: "-5%", borderRadius: "50%", background: "rgba(124,58,255,.05)", filter: "blur(100px)", pointerEvents: "none", zIndex: 0 },
-      blob3:        { position: "absolute", width: 360, height: 360, bottom: "4%", left: "42%", borderRadius: "50%", background: "rgba(77,124,255,.04)", filter: "blur(100px)", pointerEvents: "none", zIndex: 0 },
+      texture:      { display: "none" },
+      cursorDot:    { position: "fixed", top: 0, left: 0, fontSize: 13, lineHeight: 1, color: "#ffffff", textShadow: "0 0 6px rgba(220,235,255,1), 0 0 14px rgba(100,150,255,.9)", pointerEvents: "none", zIndex: 1001, transform: "translate(-50%, -50%)", userSelect: "none" },
+      cursorHalo:   { display: "none" },
+      blob1:        { position: "fixed", width: 700, height: 700, top: "-15%", left: "-10%", borderRadius: "50%", background: "radial-gradient(circle, rgba(40,80,200,.18) 0%, transparent 70%)", filter: "blur(60px)", pointerEvents: "none", zIndex: 0 },
+      blob2:        { position: "fixed", width: 600, height: 600, top: "30%", right: "-12%", borderRadius: "50%", background: "radial-gradient(circle, rgba(100,40,220,.14) 0%, transparent 70%)", filter: "blur(60px)", pointerEvents: "none", zIndex: 0 },
+      blob3:        { position: "fixed", width: 500, height: 500, bottom: "-5%", left: "35%", borderRadius: "50%", background: "radial-gradient(circle, rgba(0,160,200,.10) 0%, transparent 70%)", filter: "blur(60px)", pointerEvents: "none", zIndex: 0 },
       aiBtn:        { width: "100%", background: "linear-gradient(135deg, #4D7CFF, #7C3AFF)", color: "#fff", border: "none", borderRadius: 12, padding: "13px", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 20px rgba(77,124,255,.35)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 },
       aiPanel:      { marginTop: 12, background: "#0d0d0d", border: "1px solid rgba(77,124,255,.25)", borderRadius: 12, padding: "14px 16px", fontSize: 13, lineHeight: 1.6, color: "#c0c0c0", whiteSpace: "pre-wrap" },
       docChip:      { display: "inline-flex", alignItems: "center", gap: 6, background: "#141414", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: "6px 10px", fontSize: 12, color: "#c0c0c0" },
@@ -139,7 +139,8 @@ const THEMES = {
       input::placeholder, textarea::placeholder { color: #4a4a4a; }
       input[type="date"] { color-scheme: dark; }
       @media (pointer: coarse) { .ys-cursor-dot, .ys-cursor-halo { display: none !important; } }
-      .ys-halo-lg { width: 56px !important; height: 56px !important; background: rgba(77,124,255,.22) !important; border-color: rgba(77,124,255,1) !important; }
+      .ys-halo-lg { width: 32px !important; height: 32px !important; border-color: rgba(120,160,255,.9) !important; }
+      .ys-stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
       @media (max-width: 768px) {
         .ys-app    { flex-direction: column !important; height: auto !important; min-height: 100dvh; overflow: auto !important; }
         .ys-sidebar { width: 100% !important; flex-direction: row !important; flex-wrap: wrap; padding: 12px 16px !important; gap: 0; flex-shrink: 0 !important; border-right: none !important; border-bottom: 1px solid rgba(255,255,255,.06) !important; }
@@ -458,6 +459,14 @@ export default function Yasnost() {
   const mainRef       = useRef(null);
   const cursorDot     = useRef(null);
   const cursorHalo    = useRef(null);
+  const starsCanvas      = useRef(null);
+  const trailCanvas      = useRef(null);
+  const hoveredCardRect  = useRef(null);
+  const constellationRef = useRef(null);
+  const draggingRef      = useRef(false);
+  const portalBurstRef   = useRef(null);
+
+  useEffect(() => { draggingRef.current = dragId !== null; }, [dragId]);
 
   const switchTheme = (key) => {
     setThemeName(key);
@@ -577,6 +586,346 @@ export default function Yasnost() {
     return () => { window.removeEventListener("mousemove", onMove); document.removeEventListener("mouseover", onOver); document.removeEventListener("mouseout", onOut); cancelAnimationFrame(raf); };
   }, [themeName]);
 
+  // Звёздное поле с параллаксом — только Cosmos
+  useEffect(() => {
+    if (themeName !== "cosmos") return;
+    const canvas = starsCanvas.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+
+    // 3 слоя глубины: дальние (0.15), средние (0.45), ближние (1.0)
+    const stars = Array.from({ length: 240 }, () => {
+      const depth = [0.12, 0.45, 1.0][Math.floor(Math.random() * 3)];
+      return {
+        x: Math.random(),
+        y: Math.random(),
+        r: depth < 0.2 ? Math.random() * 0.6 + 0.1 : depth < 0.5 ? Math.random() * 0.9 + 0.2 : Math.random() * 1.3 + 0.4,
+        base: Math.random() * 0.5 + 0.1,
+        speed: Math.random() * 0.006 + 0.002,
+        phase: Math.random() * Math.PI * 2,
+        big: depth === 1.0 && Math.random() < 0.10,
+        depth,
+      };
+    });
+
+    const nebulae = [
+      { x: 0.72, y: 0.18, rx: 0.28, ry: 0.22, r: 70,  g: 30, b: 180, a: 0.06 },
+      { x: 0.18, y: 0.62, rx: 0.22, ry: 0.30, r: 30,  g: 60, b: 200, a: 0.05 },
+      { x: 0.55, y: 0.75, rx: 0.20, ry: 0.18, r: 100, g: 20, b: 160, a: 0.04 },
+    ];
+
+    // плавное отслеживание мыши (lerp)
+    let mx = 0.5, my = 0.5, tx = 0.5, ty = 0.5;
+    const onMove = (e) => { tx = e.clientX / window.innerWidth; ty = e.clientY / window.innerHeight; };
+    window.addEventListener("mousemove", onMove);
+
+    const meteors = [];
+    let nextMeteor = 120 + Math.random() * 180;
+    let raf, t = 0;
+    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+
+    const draw = () => {
+      t += 0.012;
+      // плавный lerp к позиции мыши
+      mx += (tx - mx) * 0.04;
+      my += (ty - my) * 0.04;
+      const offX = (mx - 0.5) * 60; // макс смещение ближних ±30px
+      const offY = (my - 0.5) * 40;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // туманности (без параллакса — они далеко)
+      nebulae.forEach(n => {
+        const grd = ctx.createRadialGradient(
+          n.x * canvas.width, n.y * canvas.height, 0,
+          n.x * canvas.width, n.y * canvas.height,
+          Math.max(canvas.width * n.rx, canvas.height * n.ry)
+        );
+        grd.addColorStop(0, `rgba(${n.r},${n.g},${n.b},${n.a})`);
+        grd.addColorStop(1, "transparent");
+        ctx.fillStyle = grd;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      });
+
+      // метеоры
+      nextMeteor--;
+      if (nextMeteor <= 0) {
+        const angle = Math.PI / 4 + (Math.random() - 0.5) * 0.35;
+        const speed = 9 + Math.random() * 8;
+        meteors.push({
+          x:       canvas.width * (0.3 + Math.random() * 0.8),
+          y:       -10,
+          vx:     -Math.cos(angle) * speed,
+          vy:      Math.sin(angle) * speed,
+          trail:   90 + Math.random() * 90,
+          opacity: 0,
+          maxOp:   0.6 + Math.random() * 0.35,
+          speed,
+        });
+        nextMeteor = 200 + Math.random() * 260;
+      }
+      for (let i = meteors.length - 1; i >= 0; i--) {
+        const m = meteors[i];
+        m.x += m.vx; m.y += m.vy;
+        m.opacity = Math.min(m.maxOp, m.opacity + 0.07);
+        if (m.x < -150 || m.y > canvas.height + 50) { meteors.splice(i, 1); continue; }
+
+        const tailX = m.x - m.vx / m.speed * m.trail;
+        const tailY = m.y - m.vy / m.speed * m.trail;
+        const grd = ctx.createLinearGradient(tailX, tailY, m.x, m.y);
+        grd.addColorStop(0,   "rgba(255,255,255,0)");
+        grd.addColorStop(0.6, `rgba(210,230,255,${m.opacity * 0.4})`);
+        grd.addColorStop(1,   `rgba(255,255,255,${m.opacity})`);
+        ctx.save();
+        ctx.strokeStyle = grd;
+        ctx.lineWidth   = 1.4;
+        ctx.shadowColor = "rgba(180,215,255,0.7)";
+        ctx.shadowBlur  = 6;
+        ctx.beginPath(); ctx.moveTo(tailX, tailY); ctx.lineTo(m.x, m.y); ctx.stroke();
+        // голова-точка
+        const hGrd = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, 3.5);
+        hGrd.addColorStop(0, `rgba(255,255,255,${m.opacity})`);
+        hGrd.addColorStop(1, "rgba(200,225,255,0)");
+        ctx.fillStyle = hGrd;
+        ctx.beginPath(); ctx.arc(m.x, m.y, 3.5, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      }
+
+      // созвездие при клике — плавно угасает
+      const cp = constellationRef.current;
+      if (cp) {
+        cp.opacity -= 0.003; // ~5 секунд затухания
+        if (cp.opacity <= 0) constellationRef.current = null;
+      }
+
+      // звёзды с параллаксом по слоям
+      stars.forEach(s => {
+        const twinkle = s.base + 0.3 * Math.sin(t * s.speed * 60 + s.phase);
+        const radius  = s.big ? s.r * 2.2 : s.r;
+        const sx = s.x * canvas.width  + offX * s.depth;
+        const sy = s.y * canvas.height + offY * s.depth;
+
+        // линии созвездия к точке клика
+        if (cp && cp.opacity > 0) {
+          const dist = Math.hypot(sx - cp.x, sy - cp.y);
+          if (dist < 280) {
+            const a = (1 - dist / 280) * 0.7 * cp.opacity;
+            const grd = ctx.createLinearGradient(sx, sy, cp.x, cp.y);
+            grd.addColorStop(0,   `rgba(160,215,255,${a})`);
+            grd.addColorStop(0.6, `rgba(160,215,255,${a * 0.4})`);
+            grd.addColorStop(1,   `rgba(160,215,255,0)`);
+            ctx.save();
+            ctx.strokeStyle = grd;
+            ctx.lineWidth   = 0.8;
+            ctx.setLineDash([3, 6]);
+            ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(cp.x, cp.y); ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.restore();
+          }
+        }
+
+        if (s.big) {
+          const spikeLen  = radius * 18;
+          const spikeLen2 = radius * 9;   // диагональные короче
+          const spikes = [
+            { a: 0,            l: spikeLen  },
+            { a: Math.PI,      l: spikeLen  },
+            { a: Math.PI/2,    l: spikeLen  },
+            { a: -Math.PI/2,   l: spikeLen  },
+            { a: Math.PI/4,    l: spikeLen2 },
+            { a: -Math.PI/4,   l: spikeLen2 },
+            { a: Math.PI*3/4,  l: spikeLen2 },
+            { a: -Math.PI*3/4, l: spikeLen2 },
+          ];
+          spikes.forEach(({ a, l }) => {
+            const ex = sx + Math.cos(a) * l;
+            const ey = sy + Math.sin(a) * l;
+            const grd = ctx.createLinearGradient(sx, sy, ex, ey);
+            grd.addColorStop(0,   `rgba(255,255,255,${twinkle * 0.9})`);
+            grd.addColorStop(0.3, `rgba(200,220,255,${twinkle * 0.4})`);
+            grd.addColorStop(1,   `rgba(180,210,255,0)`);
+            ctx.save();
+            ctx.strokeStyle = grd;
+            ctx.lineWidth   = 0.7;
+            ctx.beginPath();
+            ctx.moveTo(sx, sy);
+            ctx.lineTo(ex, ey);
+            ctx.stroke();
+            ctx.restore();
+          });
+          // центральное свечение
+          const glow = ctx.createRadialGradient(sx, sy, 0, sx, sy, radius * 4);
+          glow.addColorStop(0,   `rgba(255,255,255,${twinkle})`);
+          glow.addColorStop(0.4, `rgba(200,225,255,${twinkle * 0.5})`);
+          glow.addColorStop(1,   `rgba(150,190,255,0)`);
+          ctx.beginPath();
+          ctx.arc(sx, sy, radius * 4, 0, Math.PI * 2);
+          ctx.fillStyle = glow;
+          ctx.fill();
+        }
+
+        ctx.beginPath();
+        ctx.arc(sx, sy, radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(220,230,255,${twinkle})`;
+        ctx.fill();
+      });
+
+      raf = requestAnimationFrame(draw);
+    };
+
+    resize();
+    window.addEventListener("resize", resize);
+    draw();
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", resize);
+      window.removeEventListener("mousemove", onMove);
+    };
+  }, [themeName]);
+
+  // Хвост частиц + рябь при клике — только Cosmos
+  useEffect(() => {
+    if (themeName !== "cosmos") return;
+    const canvas = trailCanvas.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const particles = [];
+    const ripples   = [];
+    let raf;
+
+    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+
+    const onMove = (e) => {
+      // обычный хвост
+      particles.push({
+        x: e.clientX, y: e.clientY,
+        opacity: 0.75,
+        size: 7 + Math.random() * 7,
+        decay: 0.035 + Math.random() * 0.025,
+        angle: Math.random() * Math.PI * 2,
+      });
+      // при drag — дополнительная пыль
+      if (draggingRef.current) {
+        for (let i = 0; i < 4; i++) {
+          particles.push({
+            x: e.clientX + (Math.random() - 0.5) * 30,
+            y: e.clientY + (Math.random() - 0.5) * 30,
+            opacity: 0.55,
+            size: 3 + Math.random() * 5,
+            decay: 0.055 + Math.random() * 0.03,
+            angle: Math.random() * Math.PI * 2,
+          });
+        }
+      }
+    };
+
+    const onClick = (e) => {
+      // созвездие — точка клика
+      constellationRef.current = { x: e.clientX, y: e.clientY, opacity: 1.0 };
+      // маленькая рябь
+      ripples.push({ x: e.clientX, y: e.clientY, radius: 0, maxRadius: 70, opacity: 0.55, speed: 2.8, decay: 0.02 });
+      ripples.push({ x: e.clientX, y: e.clientY, radius: 0, maxRadius: 110, opacity: 0.28, speed: 2.0, decay: 0.012, delay: 8 });
+      // пара звёздочек
+      for (let i = 0; i < 5; i++) {
+        const angle = (Math.PI * 2 / 5) * i;
+        const spd = 1.4 + Math.random() * 1.8;
+        particles.push({ x: e.clientX, y: e.clientY, vx: Math.cos(angle) * spd, vy: Math.sin(angle) * spd, opacity: 0.75, size: 5 + Math.random() * 4, decay: 0.032 + Math.random() * 0.02, angle, burst: true });
+      }
+    };
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // портал при открытии карточки
+      if (portalBurstRef.current) {
+        const { x, y } = portalBurstRef.current;
+        portalBurstRef.current = null;
+        // 24 частицы во все стороны
+        for (let i = 0; i < 24; i++) {
+          const angle = (Math.PI * 2 / 24) * i + Math.random() * 0.3;
+          const spd   = 2.5 + Math.random() * 4.5;
+          particles.push({ x, y, vx: Math.cos(angle) * spd, vy: Math.sin(angle) * spd, opacity: 0.95, size: 4 + Math.random() * 9, decay: 0.012 + Math.random() * 0.018, angle, burst: true });
+        }
+        // 3 кольца разной скорости
+        ripples.push({ x, y, radius: 0, maxRadius: 110, opacity: 0.9,  speed: 4.5, decay: 0.022 });
+        ripples.push({ x, y, radius: 0, maxRadius: 190, opacity: 0.55, speed: 3.2, decay: 0.013, delay: 10 });
+        ripples.push({ x, y, radius: 0, maxRadius: 280, opacity: 0.28, speed: 2.4, decay: 0.008, delay: 22 });
+      }
+
+      // рябь
+      for (let i = ripples.length - 1; i >= 0; i--) {
+        const r = ripples[i];
+        if (r.delay) { r.delay--; continue; }
+        r.radius  += r.speed;
+        r.opacity -= r.decay;
+        if (r.opacity <= 0 || r.radius > r.maxRadius) { ripples.splice(i, 1); continue; }
+        const progress = r.radius / r.maxRadius;
+        ctx.save();
+        ctx.globalAlpha = r.opacity * (1 - progress * 0.5);
+        ctx.strokeStyle = `rgba(160,210,255,1)`;
+        ctx.lineWidth   = 1.2 * (1 - progress * 0.7);
+        ctx.shadowColor = "rgba(100,180,255,0.6)";
+        ctx.shadowBlur  = 8;
+        ctx.beginPath();
+        ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // хвост и взрывные частицы
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.opacity -= p.decay;
+        p.size    *= 0.97;
+        if (p.burst) { p.x += p.vx; p.y += p.vy; p.vx *= 0.94; p.vy *= 0.94; }
+        if (p.opacity <= 0) { particles.splice(i, 1); continue; }
+        ctx.save();
+        ctx.globalAlpha = p.opacity;
+        ctx.font = `${p.size}px serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.shadowColor = "rgba(140,190,255,0.9)";
+        ctx.shadowBlur  = 10;
+        ctx.fillStyle   = "#ffffff";
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.angle);
+        ctx.fillText("✦", 0, 0);
+        ctx.restore();
+      }
+
+      raf = requestAnimationFrame(draw);
+    };
+
+    let lastDrag = 0;
+    const onDragOver = (e) => {
+      if (!draggingRef.current) return;
+      const now = Date.now();
+      if (now - lastDrag < 40) return; // ~25 раз/сек
+      lastDrag = now;
+      particles.push({
+        x: e.clientX + (Math.random() - 0.5) * 22,
+        y: e.clientY + (Math.random() - 0.5) * 22,
+        opacity: 0.65, size: 4 + Math.random() * 5,
+        decay: 0.045 + Math.random() * 0.025,
+        angle: Math.random() * Math.PI * 2,
+      });
+    };
+
+    resize();
+    window.addEventListener("resize",    resize);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("click",     onClick);
+    window.addEventListener("dragover",  onDragOver);
+    draw();
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize",    resize);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("click",     onClick);
+      window.removeEventListener("dragover",  onDragOver);
+    };
+  }, [themeName]);
+
   // 3D-наклон — только Cosmos
   const onCardTilt = themeName === "cosmos" ? (e) => {
     const el = e.currentTarget;
@@ -658,7 +1007,7 @@ export default function Yasnost() {
         draggable
         onDragStart={(e) => { e.currentTarget.style.transform = "none"; setDragId(c.id); wasDragging.current = true; }}
         onDragEnd={() => { setDragId(null); setOverCol(null); setTimeout(() => { wasDragging.current = false; }, 0); }}
-        onClick={() => { if (!wasDragging.current) setSelectedCardId(c.id); }}
+        onClick={(e) => { if (!wasDragging.current) { portalBurstRef.current = { x: e.clientX, y: e.clientY }; setSelectedCardId(c.id); } }}
         onMouseMove={onCardTilt}
         onMouseLeave={onCardLeave}
         onTouchStart={(e) => onCardTouchStart(e, c.id)}
@@ -686,19 +1035,21 @@ export default function Yasnost() {
     );
   };
 
-  if (loading) return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100vh", fontFamily: st.app.fontFamily, background: st.app.background, gap: 14, color: "#6a6a6a" }}>
-      <div style={{ ...st.logo }}>Я</div>
-      <div style={{ fontSize: 14 }}>Загрузка…</div>
-    </div>
-  );
+  // canvases рендерим всегда чтобы refs были готовы до загрузки данных
 
   return (
     <div style={st.app} className="ys-app">
       <style>{css}</style>
-      <div ref={cursorDot}  style={st.cursorDot}  className="ys-cursor-dot"  aria-hidden="true" />
+      <canvas ref={starsCanvas} className="ys-stars" style={{ display: themeName === "cosmos" ? "block" : "none" }} aria-hidden="true" />
+      <canvas ref={trailCanvas} style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 999, display: themeName === "cosmos" ? "block" : "none" }} aria-hidden="true" />
+      <div ref={cursorDot}  style={st.cursorDot}  className="ys-cursor-dot"  aria-hidden="true">{themeName === "cosmos" ? "✦" : ""}</div>
       <div ref={cursorHalo} style={st.cursorHalo} className="ys-cursor-halo" aria-hidden="true" />
-      {themeName === "cosmos" && <div style={st.texture} aria-hidden="true" />}
+      {loading && (
+        <div style={{ position: "fixed", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 2000, fontFamily: st.app.fontFamily, background: st.app.background, gap: 14, color: "#6a6a6a" }}>
+          <div style={{ ...st.logo }}>Я</div>
+          <div style={{ fontSize: 14 }}>Загрузка…</div>
+        </div>
+      )}
 
       {/* ── Sidebar ── */}
       <aside style={st.sidebar} className="ys-sidebar">
@@ -810,7 +1161,7 @@ export default function Yasnost() {
                       <div style={st.priorityPicker}>
                         {Object.entries(priorities).map(([key, pr]) => (
                           <button key={key} onClick={() => setDraft({ ...draft, priority: key })}
-                            style={{ ...st.prBtn, background: draft.priority === key ? pr.bg : "transparent", borderColor: draft.priority === key ? pr.color : undefined, color: draft.priority === key ? pr.color : undefined }}>
+                            style={{ ...st.prBtn, background: draft.priority === key ? pr.bg : "transparent", border: draft.priority === key ? `1px solid ${pr.color}` : st.prBtn.border || "1px solid rgba(255,255,255,.15)", color: draft.priority === key ? pr.color : "#7a8898" }}>
                             {pr.emoji} {pr.label}
                           </button>
                         ))}
@@ -861,7 +1212,7 @@ export default function Yasnost() {
                 <div style={st.priorityPicker}>
                   {Object.entries(priorities).map(([key, pr]) => (
                     <button key={key} onClick={() => updateCard(selectedCard.id, { priority: key })}
-                      style={{ ...st.prBtn, background: selectedCard.priority === key ? pr.bg : "transparent", borderColor: selectedCard.priority === key ? pr.color : undefined, color: selectedCard.priority === key ? pr.color : undefined }}>
+                      style={{ ...st.prBtn, background: selectedCard.priority === key ? pr.bg : "transparent", border: selectedCard.priority === key ? `1px solid ${pr.color}` : st.prBtn.border || "1px solid rgba(255,255,255,.15)", color: selectedCard.priority === key ? pr.color : "#7a8898" }}>
                       {pr.emoji} {pr.label}
                     </button>
                   ))}
@@ -873,7 +1224,7 @@ export default function Yasnost() {
                 <div style={st.priorityPicker}>
                   {COLUMNS.map((col) => (
                     <button key={col.id} onClick={() => updateCard(selectedCard.id, { status: col.id })}
-                      style={{ ...st.prBtn, background: selectedCard.status === col.id ? col.accent + "18" : "transparent", borderColor: selectedCard.status === col.id ? col.accent : undefined, color: selectedCard.status === col.id ? col.accent : undefined }}>
+                      style={{ ...st.prBtn, background: selectedCard.status === col.id ? col.accent + "18" : "transparent", border: selectedCard.status === col.id ? `1px solid ${col.accent}` : st.prBtn.border || "1px solid rgba(255,255,255,.15)", color: selectedCard.status === col.id ? col.accent : "#7a8898" }}>
                       {col.title}
                     </button>
                   ))}
