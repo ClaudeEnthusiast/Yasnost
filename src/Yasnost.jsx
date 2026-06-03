@@ -138,7 +138,6 @@ const THEMES = {
       ::-webkit-scrollbar-track { background: transparent; }
       input::placeholder, textarea::placeholder { color: #4a4a4a; }
       input[type="date"] { color-scheme: dark; }
-      @media (hover: hover) and (pointer: fine) { .ys-app, .ys-app * { cursor: none !important; } }
       @media (pointer: coarse) { .ys-cursor-dot, .ys-cursor-halo { display: none !important; } }
       .ys-halo-lg { width: 56px !important; height: 56px !important; background: rgba(77,124,255,.22) !important; border-color: rgba(77,124,255,1) !important; }
       @media (max-width: 768px) {
