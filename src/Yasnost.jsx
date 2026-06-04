@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 
 const TODAY = new Date().toISOString().slice(0, 10);
+const iso = (dt) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
 
 const COLUMNS = [
   { id: "todo",        title: "Нужно сделать", accent: "#6B7280" },
@@ -511,6 +512,12 @@ export default function Yasnost() {
   const [calDragId,      setCalDragId]      = useState(null);     // task id being dragged over calendar
   const [calOverDay,     setCalOverDay]     = useState(null);     // ISO of day cell hovered during DnD
   const [finSearch,      setFinSearch]      = useState("");       // expense search query
+  const [calMode,        setCalMode]        = useState(() => localStorage.getItem("ys-cal-mode") || "month"); // 'month' | 'week'
+  const [calWeekStart,   setCalWeekStart]   = useState(() => { const n = new Date(); const off = (n.getDay() + 6) % 7; return iso(new Date(n.getFullYear(), n.getMonth(), n.getDate() - off)); });
+  const [calBacklogOver, setCalBacklogOver] = useState(false);    // backlog drop-target highlight
+  const [boardSort,      setBoardSort]      = useState(() => localStorage.getItem("ys-board-sort") || "manual"); // manual | priority | due
+  const [doneCollapsed,  setDoneCollapsed]  = useState(() => localStorage.getItem("ys-done-collapsed") === "1");
+  const [density,        setDensity]        = useState(() => localStorage.getItem("ys-density") || "comfortable"); // comfortable | compact
   const [toasts,         setToasts]         = useState([]);       // {id,msg,type,action?}
   const toastTimers   = useRef({});
   const searchRef     = useRef(null);
@@ -534,6 +541,30 @@ export default function Yasnost() {
     setThemeName(key);
     localStorage.setItem("ys-theme", key);
   };
+
+  // ── Persisted UI prefs ──
+  useEffect(() => { localStorage.setItem("ys-cal-mode", calMode); }, [calMode]);
+  useEffect(() => { localStorage.setItem("ys-board-sort", boardSort); }, [boardSort]);
+  useEffect(() => { localStorage.setItem("ys-done-collapsed", doneCollapsed ? "1" : "0"); }, [doneCollapsed]);
+  useEffect(() => { localStorage.setItem("ys-density", density); }, [density]);
+
+  const PRIORITY_RANK = { urgent: 0, important: 1, normal: 2 };
+  const sortCards = (list) => {
+    if (boardSort === "manual") return list;
+    const arr = list.slice();
+    if (boardSort === "priority") {
+      arr.sort((a, b) => (PRIORITY_RANK[a.priority] ?? 2) - (PRIORITY_RANK[b.priority] ?? 2));
+    } else if (boardSort === "due") {
+      arr.sort((a, b) => {
+        if (!a.due && !b.due) return 0;
+        if (!a.due) return 1;
+        if (!b.due) return -1;
+        return a.due.localeCompare(b.due);
+      });
+    }
+    return arr;
+  };
+  const compact = density === "compact";
 
   // ── Тосты ──
   const dismissToast = (id) => {
@@ -1200,7 +1231,7 @@ export default function Yasnost() {
         onMouseMove={onCardTilt}
         onMouseLeave={onCardLeave}
         onTouchStart={(e) => onCardTouchStart(e, c.id)}
-        style={{ ...st.card, opacity: dragId === c.id ? 0.4 : 1 }}
+        style={{ ...st.card, ...(compact ? { padding: "9px 12px 8px" } : {}), opacity: dragId === c.id ? 0.4 : 1 }}
         className="ys-card"
       >
         <div style={st.cardTop}>
@@ -1278,6 +1309,18 @@ export default function Yasnost() {
             {saveStatus === "saving" ? "⏳ Сохраняется…" : saveStatus === "error" ? "✗ Ошибка сохранения" : "✓ Данные на сервере"}
           </div>
           <button style={st.resetBtn} onClick={resetCards}>↺ Сбросить данные</button>
+          {/* Density switcher */}
+          <div style={{ display: "flex", gap: 3, marginTop: 8, background: "rgba(128,128,128,.1)", borderRadius: 8, padding: 3 }}>
+            {[["comfortable", "Просторно"], ["compact", "Компактно"]].map(([key, label]) => {
+              const active = density === key;
+              return (
+                <button key={key} onClick={() => setDensity(key)}
+                  style={{ flex: 1, border: "none", borderRadius: 6, padding: "5px 6px", fontSize: 10.5, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+                    color: active ? (st.btnPrimary.color || "#fff") : st.cardDesc.color,
+                    background: active ? st.checkboxAccent : "transparent", transition: "all .14s" }}>{label}</button>
+              );
+            })}
+          </div>
           {/* Theme switcher */}
           <div style={{ display: "flex", gap: 8, paddingLeft: 0, marginTop: 12, alignItems: "center" }}>
             {THEME_DOTS.map(({ key, color, label }) => (
@@ -1335,9 +1378,42 @@ export default function Yasnost() {
                     borderColor: active ? col : (st.prBtn.border ? undefined : "rgba(128,128,128,.25)") }}>{label}</button>
               );
             })}
+            <div style={{ display: "flex", gap: 3, marginLeft: "auto", alignItems: "center", background: "rgba(128,128,128,.08)", borderRadius: 999, padding: 3 }}>
+              <span style={{ fontSize: 11, color: st.cardDesc.color, fontWeight: 600, padding: "0 6px 0 8px" }}>Сортировка</span>
+              {[["manual", "Вручную"], ["priority", "Приоритет"], ["due", "Дедлайн"]].map(([key, label]) => {
+                const active = boardSort === key;
+                return (
+                  <button key={key} onClick={() => setBoardSort(key)}
+                    style={{ border: "none", borderRadius: 999, padding: "4px 11px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+                      color: active ? (st.btnPrimary.color || "#fff") : st.cardDesc.color,
+                      background: active ? st.checkboxAccent : "transparent", transition: "all .14s" }}>{label}</button>
+                );
+              })}
+            </div>
           </div>
-          <div style={st.board} className="ys-board">
-            {COLUMNS.map((col) => (
+          <div style={{ ...st.board, gridTemplateColumns: doneCollapsed ? "minmax(310px, 1fr) minmax(310px, 1fr) 56px" : st.board.gridTemplateColumns }} className="ys-board">
+            {COLUMNS.map((col) => {
+              const collapsed = col.id === "done" && doneCollapsed;
+              if (collapsed) {
+                return (
+                  <section key={col.id}
+                    onDragOver={(e) => { e.preventDefault(); setOverCol(col.id); }}
+                    onDragLeave={() => setOverCol((c) => (c === col.id ? null : c))}
+                    onDrop={() => onDrop(col.id)}
+                    className="ys-column"
+                    data-colid={col.id}
+                    onClick={() => setDoneCollapsed(false)}
+                    title="Развернуть «Готово»"
+                    style={{ ...st.column, ...(overCol === col.id ? st.columnOver : {}), cursor: "pointer", alignItems: "center", padding: "14px 6px", gap: 12 }}>
+                    <button onClick={(e) => { e.stopPropagation(); setDoneCollapsed(false); }}
+                      style={{ ...st.colAdd, width: 24, height: 24, fontSize: 13 }} title="Развернуть">›</button>
+                    <span style={{ ...st.colDot, background: col.accent }} />
+                    <span style={st.colCount}>{countBy(col.id)}</span>
+                    <span style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", ...st.colTitle, letterSpacing: "0.12em" }}>{col.title}</span>
+                  </section>
+                );
+              }
+              return (
               <section
                 key={col.id}
                 onDragOver={(e) => { e.preventDefault(); setOverCol(col.id); }}
@@ -1353,12 +1429,18 @@ export default function Yasnost() {
                     <span style={st.colTitle}>{col.title}</span>
                     <span style={st.colCount}>{countBy(col.id)}</span>
                   </div>
-                  <button style={st.colAdd} className="ys-add"
-                    onClick={() => { setAdding(col.id); setDraft({ title: "", desc: "", due: "", priority: "normal" }); }}>+</button>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    {col.id === "done" && (
+                      <button style={st.colAdd} className="ys-add" title="Свернуть колонку"
+                        onClick={() => setDoneCollapsed(true)}>‹</button>
+                    )}
+                    <button style={st.colAdd} className="ys-add"
+                      onClick={() => { setAdding(col.id); setDraft({ title: "", desc: "", due: "", priority: "normal" }); }}>+</button>
+                  </div>
                 </div>
 
                 <div style={st.cardList} className="ys-cardlist">
-                  {visibleCards.filter((c) => c.status === col.id).map((c) => renderCard(c, col.accent))}
+                  {sortCards(visibleCards.filter((c) => c.status === col.id)).map((c) => renderCard(c, col.accent))}
 
                   {adding === col.id && (
                     <div style={st.composer}>
@@ -1387,7 +1469,8 @@ export default function Yasnost() {
                   {countBy(col.id) === 0 && adding !== col.id && <div style={st.empty}>Перетащите задачу сюда</div>}
                 </div>
               </section>
-            ))}
+            );
+            })}
           </div>
           </>
         )}
@@ -1399,35 +1482,143 @@ export default function Yasnost() {
           const muted = st.cardDesc.color;
           const cellBorder = (st.metaChip.borderColor) || "rgba(128,128,128,.2)";
           const panel = { ...st.card, cursor: "default" };
+          const RED = "#E5575C";
+          const isWeek = calMode === "week";
+          const maxVisible = isWeek ? 8 : 3;
+          const cellMinH = isWeek ? 180 : 92;
           // tasks by date (only those with due), filtered by search
           const calCards = (q ? cards.filter((c) => c.title.toLowerCase().includes(q)) : cards).filter((c) => c.due);
           const byDate = {};
           calCards.forEach((c) => { (byDate[c.due] = byDate[c.due] || []).push(c); });
-          // build month grid (Mon-first)
+          // backlog: tasks without a due date (filtered by search)
+          const backlogCards = (q ? cards.filter((c) => c.title.toLowerCase().includes(q)) : cards).filter((c) => !c.due);
+
+          // build rows of dates depending on mode
           const { y, m } = calMonth;
-          const first = new Date(y, m, 1);
-          let startOffset = (first.getDay() + 6) % 7; // Mon=0
-          const gridStart = new Date(y, m, 1 - startOffset);
-          const weeks = [];
-          for (let w = 0; w < 6; w++) {
-            const row = [];
-            for (let d = 0; d < 7; d++) {
-              const dt = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + w * 7 + d);
-              row.push(dt);
+          let weeks = [];
+          if (isWeek) {
+            const ws = new Date(calWeekStart + "T00:00:00");
+            weeks = [Array.from({ length: 7 }, (_, d) => new Date(ws.getFullYear(), ws.getMonth(), ws.getDate() + d))];
+          } else {
+            const first = new Date(y, m, 1);
+            const startOffset = (first.getDay() + 6) % 7; // Mon=0
+            const gridStart = new Date(y, m, 1 - startOffset);
+            for (let w = 0; w < 6; w++) {
+              const row = [];
+              for (let d = 0; d < 7; d++) row.push(new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + w * 7 + d));
+              weeks.push(row);
             }
-            weeks.push(row);
+            while (weeks.length > 4 && weeks[weeks.length - 1].every((dt) => dt.getMonth() !== m)) weeks.pop();
           }
-          // trim trailing all-out-of-month week
-          while (weeks.length > 4 && weeks[weeks.length - 1].every((dt) => dt.getMonth() !== m)) weeks.pop();
-          const iso = (dt) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
           const navBtn = { ...st.btnGhost, padding: "7px 12px", lineHeight: 1, fontSize: 15 };
+
+          const shiftPeriod = (dir) => {
+            if (isWeek) {
+              const ws = new Date(calWeekStart + "T00:00:00");
+              setCalWeekStart(iso(new Date(ws.getFullYear(), ws.getMonth(), ws.getDate() + dir * 7)));
+            } else {
+              setCalMonth(({ y, m }) => {
+                const nm = m + dir;
+                if (nm < 0) return { y: y - 1, m: 11 };
+                if (nm > 11) return { y: y + 1, m: 0 };
+                return { y, m: nm };
+              });
+            }
+          };
+          const goToday = () => {
+            const n = new Date();
+            setCalMonth({ y: n.getFullYear(), m: n.getMonth() });
+            const off = (n.getDay() + 6) % 7;
+            setCalWeekStart(iso(new Date(n.getFullYear(), n.getMonth(), n.getDate() - off)));
+          };
+          const setMode = (mode) => {
+            if (mode === "week") {
+              // align week to a sensible default if needed
+              const n = new Date();
+              if (!calWeekStart) { const off = (n.getDay() + 6) % 7; setCalWeekStart(iso(new Date(n.getFullYear(), n.getMonth(), n.getDate() - off))); }
+            }
+            setCalMode(mode);
+          };
+
+          // period label
+          let periodLabel;
+          if (isWeek) {
+            const ws = new Date(calWeekStart + "T00:00:00");
+            const we = new Date(ws.getFullYear(), ws.getMonth(), ws.getDate() + 6);
+            periodLabel = `${ws.getDate()} ${MONTHS_RU[ws.getMonth()].slice(0, 3).toLowerCase()} — ${we.getDate()} ${MONTHS_RU[we.getMonth()].slice(0, 3).toLowerCase()} ${we.getFullYear()}`;
+          } else {
+            periodLabel = `${MONTHS_RU[m]} ${y}`;
+          }
+
+          const seg = (key, label) => {
+            const active = calMode === key;
+            return (
+              <button key={key} onClick={() => setMode(key)}
+                style={{ border: "none", borderRadius: 7, padding: "6px 14px", fontSize: 12.5, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+                  color: active ? (st.btnPrimary.color || "#fff") : muted,
+                  background: active ? accent : "transparent", transition: "all .14s" }}>{label}</button>
+            );
+          };
+
+          const renderCell = (dt) => {
+            const dIso = iso(dt);
+            const inMonth = isWeek ? true : dt.getMonth() === m;
+            const isToday = dIso === TODAY;
+            const dayTasks = byDate[dIso] || [];
+            const hasOverdue = dayTasks.some((c) => c.due < TODAY && c.status !== "done");
+            const isDropTarget = calOverDay === dIso;
+            return (
+              <div key={dIso} className="ys-calcell"
+                onDragOver={(e) => { if (calDragId != null) { e.preventDefault(); setCalOverDay(dIso); } }}
+                onDragLeave={() => setCalOverDay((d2) => (d2 === dIso ? null : d2))}
+                onDrop={(e) => { e.preventDefault(); if (calDragId != null) { updateCard(calDragId, { due: dIso }); toast("Дедлайн перенесён", "success"); } setCalDragId(null); setCalOverDay(null); }}
+                style={{
+                  minHeight: cellMinH, borderRadius: 10, padding: "5px 6px",
+                  border: (isDropTarget || isToday) ? `1.5px solid ${accent}` : `1px solid ${cellBorder}`,
+                  background: isDropTarget ? (accent + "28") : isToday ? (accent + "14") : (inMonth ? "rgba(128,128,128,.04)" : "transparent"),
+                  opacity: inMonth ? 1 : 0.4,
+                  display: "flex", flexDirection: "column", gap: 3, overflow: "hidden",
+                  transition: "background .15s, border-color .15s", position: "relative",
+                }}>
+                {hasOverdue && <span title="Есть просроченная задача" style={{ position: "absolute", top: 6, left: 6, width: 7, height: 7, borderRadius: 999, background: RED, boxShadow: `0 0 6px ${RED}99`, zIndex: 2 }} />}
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <button title="Новая задача" className="ys-cal-add" onClick={(e) => { e.stopPropagation(); const id = addQuickCard(dIso); setSelectedCardId(id); }}
+                    style={{ border: "none", background: "transparent", color: accent, fontSize: 15, lineHeight: 1, cursor: "pointer", padding: 0, opacity: 0, transition: "opacity .15s", marginRight: "auto" }}>＋</button>
+                  {isWeek && <span style={{ fontSize: 10.5, fontWeight: 700, color: muted, textTransform: "uppercase", marginRight: "auto" }}>{WEEKDAYS_RU[(dt.getDay() + 6) % 7]}</span>}
+                  <div style={{ fontSize: 12, fontWeight: isToday ? 800 : 600, color: isToday ? accent : (inMonth ? txt : muted), textAlign: "right" }}>{dt.getDate()}</div>
+                </div>
+                {dayTasks.slice(0, maxVisible).map((c) => {
+                  const pr = priorities[c.priority] || priorities.normal;
+                  const over = c.due < TODAY && c.status !== "done";
+                  return (
+                    <div key={c.id} draggable
+                      onDragStart={(e) => { setCalDragId(c.id); e.dataTransfer.effectAllowed = "move"; wasDragging.current = true; }}
+                      onDragEnd={() => { setCalDragId(null); setCalOverDay(null); setCalBacklogOver(false); setTimeout(() => { wasDragging.current = false; }, 0); }}
+                      onClick={(e) => { e.stopPropagation(); if (!wasDragging.current) setSelectedCardId(c.id); }} className="ys-calchip"
+                      style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: over ? RED : txt, background: over ? "rgba(229,87,92,.14)" : "rgba(128,128,128,.1)", borderRadius: 6, padding: "2px 5px", cursor: "grab", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", opacity: calDragId === c.id ? 0.4 : 1 }}>
+                      <span style={{ width: 6, height: 6, borderRadius: 999, background: over ? RED : pr.color, flexShrink: 0 }} />
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{c.title}</span>
+                    </div>
+                  );
+                })}
+                {dayTasks.length > maxVisible && (
+                  <div style={{ fontSize: 10.5, color: muted, fontWeight: 600, paddingLeft: 2 }}>+{dayTasks.length - maxVisible}</div>
+                )}
+              </div>
+            );
+          };
+
           return (
             <div style={st.todayView} className="ys-fade-in">
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
-                <div style={{ fontSize: 20, fontWeight: 800, color: txt, letterSpacing: "-0.02em", minWidth: 170 }}>{MONTHS_RU[m]} {y}</div>
-                <button style={navBtn} onClick={() => setCalMonth(({ y, m }) => m === 0 ? { y: y - 1, m: 11 } : { y, m: m - 1 })}>‹</button>
-                <button style={navBtn} onClick={() => setCalMonth(({ y, m }) => m === 11 ? { y: y + 1, m: 0 } : { y, m: m + 1 })}>›</button>
-                <button style={{ ...st.btnGhost, padding: "7px 14px" }} onClick={() => { const n = new Date(); setCalMonth({ y: n.getFullYear(), m: n.getMonth() }); }}>Сегодня</button>
+                <div style={{ fontSize: 20, fontWeight: 800, color: txt, letterSpacing: "-0.02em", minWidth: 170 }}>{periodLabel}</div>
+                <button style={navBtn} onClick={() => shiftPeriod(-1)}>‹</button>
+                <button style={navBtn} onClick={() => shiftPeriod(1)}>›</button>
+                <button style={{ ...st.btnGhost, padding: "7px 14px" }} onClick={goToday}>Сегодня</button>
+                <div style={{ display: "flex", gap: 3, marginLeft: "auto", background: "rgba(128,128,128,.1)", borderRadius: 9, padding: 3 }}>
+                  {seg("week", "Неделя")}
+                  {seg("month", "Месяц")}
+                </div>
               </div>
               <div style={{ ...panel, padding: 12 }}>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, marginBottom: 6 }}>
@@ -1438,53 +1629,41 @@ export default function Yasnost() {
                 <div style={{ display: "grid", gridTemplateRows: `repeat(${weeks.length}, 1fr)`, gap: 6 }}>
                   {weeks.map((row, wi) => (
                     <div key={wi} style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6 }}>
-                      {row.map((dt) => {
-                        const dIso = iso(dt);
-                        const inMonth = dt.getMonth() === m;
-                        const isToday = dIso === TODAY;
-                        const dayTasks = byDate[dIso] || [];
-                        const isDropTarget = calOverDay === dIso;
-                        return (
-                          <div key={dIso} className="ys-calcell"
-                            onDragOver={(e) => { if (calDragId != null) { e.preventDefault(); setCalOverDay(dIso); } }}
-                            onDragLeave={() => setCalOverDay((d2) => (d2 === dIso ? null : d2))}
-                            onDrop={(e) => { e.preventDefault(); if (calDragId != null) { updateCard(calDragId, { due: dIso }); toast("Дедлайн перенесён", "success"); } setCalDragId(null); setCalOverDay(null); }}
-                            style={{
-                            minHeight: 92, borderRadius: 10, padding: "5px 6px",
-                            border: (isDropTarget || isToday) ? `1.5px solid ${accent}` : `1px solid ${cellBorder}`,
-                            background: isDropTarget ? (accent + "28") : isToday ? (accent + "14") : (inMonth ? "rgba(128,128,128,.04)" : "transparent"),
-                            opacity: inMonth ? 1 : 0.4,
-                            display: "flex", flexDirection: "column", gap: 3, overflow: "hidden",
-                            transition: "background .15s, border-color .15s", position: "relative",
-                          }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                              <button title="Новая задача" className="ys-cal-add" onClick={(e) => { e.stopPropagation(); const id = addQuickCard(dIso); setSelectedCardId(id); }}
-                                style={{ border: "none", background: "transparent", color: accent, fontSize: 15, lineHeight: 1, cursor: "pointer", padding: 0, opacity: 0, transition: "opacity .15s", marginRight: "auto" }}>＋</button>
-                              <div style={{ fontSize: 12, fontWeight: isToday ? 800 : 600, color: isToday ? accent : (inMonth ? txt : muted), textAlign: "right" }}>{dt.getDate()}</div>
-                            </div>
-                            {dayTasks.slice(0, 3).map((c) => {
-                              const pr = priorities[c.priority] || priorities.normal;
-                              const over = c.due < TODAY && c.status !== "done";
-                              return (
-                                <div key={c.id} draggable
-                                  onDragStart={(e) => { setCalDragId(c.id); e.dataTransfer.effectAllowed = "move"; wasDragging.current = true; }}
-                                  onDragEnd={() => { setCalDragId(null); setCalOverDay(null); setTimeout(() => { wasDragging.current = false; }, 0); }}
-                                  onClick={(e) => { e.stopPropagation(); if (!wasDragging.current) setSelectedCardId(c.id); }} className="ys-calchip"
-                                  style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: over ? "#E5575C" : txt, background: over ? "rgba(229,87,92,.14)" : "rgba(128,128,128,.1)", borderRadius: 6, padding: "2px 5px", cursor: "grab", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", opacity: calDragId === c.id ? 0.4 : 1 }}>
-                                  <span style={{ width: 6, height: 6, borderRadius: 999, background: over ? "#E5575C" : pr.color, flexShrink: 0 }} />
-                                  <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{c.title}</span>
-                                </div>
-                              );
-                            })}
-                            {dayTasks.length > 3 && (
-                              <div style={{ fontSize: 10.5, color: muted, fontWeight: 600, paddingLeft: 2 }}>+{dayTasks.length - 3}</div>
-                            )}
-                          </div>
-                        );
-                      })}
+                      {row.map(renderCell)}
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* Бэклог «Без даты» */}
+              <div
+                onDragOver={(e) => { if (calDragId != null) { const c = cards.find((x) => x.id === calDragId); if (c && c.due) { e.preventDefault(); setCalBacklogOver(true); } } }}
+                onDragLeave={() => setCalBacklogOver(false)}
+                onDrop={(e) => { e.preventDefault(); if (calDragId != null) { const c = cards.find((x) => x.id === calDragId); if (c && c.due) { updateCard(calDragId, { due: "" }); toast("Снято с даты", "info"); } } setCalBacklogOver(false); setCalDragId(null); setCalOverDay(null); }}
+                style={{ ...panel, marginTop: 14, padding: "12px 14px", border: calBacklogOver ? `1.5px dashed ${accent}` : `1px solid ${cellBorder}`, background: calBacklogOver ? (accent + "14") : panel.background, transition: "background .15s, border-color .15s" }}>
+                <div style={{ fontSize: 10.5, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                  Без даты {backlogCards.length > 0 && <span style={{ ...st.colCount }}>{backlogCards.length}</span>}
+                </div>
+                {backlogCards.length === 0 ? (
+                  <div style={{ fontSize: 12.5, color: muted }}>Нет задач без даты</div>
+                ) : (
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {backlogCards.map((c) => {
+                      const pr = priorities[c.priority] || priorities.normal;
+                      return (
+                        <div key={c.id} draggable
+                          onDragStart={(e) => { setCalDragId(c.id); e.dataTransfer.effectAllowed = "move"; wasDragging.current = true; }}
+                          onDragEnd={() => { setCalDragId(null); setCalOverDay(null); setCalBacklogOver(false); setTimeout(() => { wasDragging.current = false; }, 0); }}
+                          onClick={(e) => { e.stopPropagation(); if (!wasDragging.current) setSelectedCardId(c.id); }} className="ys-calchip"
+                          title="Перетащите на день, чтобы задать дедлайн"
+                          style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: txt, background: "rgba(128,128,128,.1)", border: `1px solid ${cellBorder}`, borderRadius: 8, padding: "5px 10px", cursor: "grab", maxWidth: 220, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", opacity: calDragId === c.id ? 0.4 : 1 }}>
+                          <span style={{ width: 6, height: 6, borderRadius: 999, background: pr.color, flexShrink: 0 }} />
+                          <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{c.title}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -1532,6 +1711,19 @@ export default function Yasnost() {
                 return { projected, over, budgetRef };
               })();
 
+              // ── Средний / день (личные НЕ-обязательные / прошедшие дни) ──
+              const avgPerDay = (() => {
+                const nonMandatory = (b.personal_expenses || []).filter((e) => !e.mandatory).reduce((s, e) => s + (e.amount || 0), 0);
+                const daysPassed = Math.max(1, (b.days_total || 0) - (b.days_left || 0));
+                return Math.round(nonMandatory / daysPassed);
+              })();
+
+              // клик по категории → фильтр списка (повторный клик сбрасывает)
+              const toggleCatFilter = (cat) => {
+                const cur = finForm._filter || "__all__";
+                setFinForm({ ...finForm, _filter: (cur === cat ? "__all__" : cat) });
+              };
+
               // ── Экспорт CSV ──
               const exportCsv = () => {
                 const esc = (v) => { const s = String(v == null ? "" : v); return /[",;\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
@@ -1548,10 +1740,10 @@ export default function Yasnost() {
               };
               // donut palette (theme-aware-ish, 10 colors anchored on accent family)
               const PALETTE = [accent, "#4D7CFF", "#7C3AFF", "#E8A13A", "#3FB27F", "#E5575C", "#40C4D0", "#D4FF5E", "#C77DFF", "#FF8FA3"];
-              const stat = (label, value, color) => (
+              const stat = (label, numValue, color) => (
                 <div style={panel}>
                   <div style={{ fontSize: 10, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>{label}</div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color, letterSpacing: "-0.02em" }}>{value}</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color, letterSpacing: "-0.02em" }}><CountUp value={numValue || 0} format={fmt} /></div>
                 </div>
               );
               const tbtn = (label, on, primary) => (
@@ -1593,14 +1785,18 @@ export default function Yasnost() {
                     <svg width="140" height="140" viewBox="0 0 140 140" style={{ flexShrink: 0 }}>
                       {arcs.map((a, i) => <path key={i} d={a.d} fill={a.color} stroke="rgba(0,0,0,.25)" strokeWidth="1" />)}
                     </svg>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0, flex: 1 }}>
-                      {arcs.map((a, i) => (
-                        <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
-                          <span style={{ width: 10, height: 10, borderRadius: 3, background: a.color, flexShrink: 0 }} />
-                          <span style={{ color: muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{a.cat}</span>
-                          <span style={{ color: txt, fontWeight: 600, flexShrink: 0 }}>{fmt(a.sum)}</span>
-                        </div>
-                      ))}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0, flex: 1 }}>
+                      {arcs.map((a, i) => {
+                        const active = (finForm._filter || "__all__") === a.cat;
+                        return (
+                          <div key={i} className="ys-fin-row" onClick={() => toggleCatFilter(a.cat)} title="Фильтровать по категории"
+                            style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, cursor: "pointer", padding: "3px 6px", borderRadius: 7, background: active ? accent + "1f" : "transparent", boxShadow: active ? `inset 0 0 0 1px ${accent}55` : "none" }}>
+                            <span style={{ width: 10, height: 10, borderRadius: 3, background: a.color, flexShrink: 0 }} />
+                            <span style={{ color: active ? txt : muted, fontWeight: active ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{a.cat}</span>
+                            <span style={{ color: txt, fontWeight: 600, flexShrink: 0 }}>{fmt(a.sum)}</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 );
@@ -1645,6 +1841,54 @@ export default function Yasnost() {
                 );
               })();
 
+              // ── Траты по дням (мини-бары) ──
+              const dailyBars = (() => {
+                const exps = (b.personal_expenses || []).filter((e) => e.date);
+                if (!exps.length) return null;
+                // диапазон дней: start_date..end_date, иначе по фактическим датам
+                let startStr = b.start_date, endStr = b.end_date;
+                if (!startStr || !endStr) {
+                  const ds = exps.map((e) => e.date).sort();
+                  startStr = ds[0]; endStr = ds[ds.length - 1];
+                }
+                const start = new Date(startStr + "T00:00:00");
+                const end = new Date(endStr + "T00:00:00");
+                let days = Math.round((end - start) / 86400000) + 1;
+                if (!(days > 0)) return null;
+                if (days > 92) { start.setTime(end.getTime() - 91 * 86400000); days = 92; } // safety cap
+                const sums = new Array(days).fill(0);
+                exps.forEach((e) => {
+                  const di = Math.round((new Date(e.date + "T00:00:00") - start) / 86400000);
+                  if (di >= 0 && di < days) sums[di] += e.amount || 0;
+                });
+                const maxV = Math.max(1, ...sums);
+                const todayIdx = Math.round((new Date(TODAY + "T00:00:00") - start) / 86400000);
+                return (
+                  <div>
+                    <div style={{ display: "flex", alignItems: "flex-end", gap: days > 45 ? 1 : 2, height: 110, padding: "0 2px" }}>
+                      {sums.map((v, i) => {
+                        const isToday = i === todayIdx;
+                        const h = v > 0 ? Math.max(3, Math.round(v / maxV * 100)) : 1;
+                        const dt = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+                        return (
+                          <div key={i} title={`${fmtRu(iso(dt))}: ${fmt(v)}`}
+                            style={{ flex: 1, minWidth: 0, height: "100%", display: "flex", alignItems: "flex-end" }}>
+                            <div style={{ width: "100%", height: h + "%", borderRadius: "3px 3px 0 0",
+                              background: isToday ? accent : (v > 0 ? accent + "66" : "rgba(128,128,128,.18)"),
+                              boxShadow: isToday ? `0 0 8px ${accent}88` : "none", transition: "height .3s" }} />
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 9.5, color: muted }}>
+                      <span>{fmtRu(iso(start))}</span>
+                      <span>макс. {fmt(maxV)}</span>
+                      <span>{fmtRu(iso(end))}</span>
+                    </div>
+                  </div>
+                );
+              })();
+
               return (
                 <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
                   <div style={{ display: "flex", gap: 8 }}>
@@ -1672,13 +1916,14 @@ export default function Yasnost() {
                   )}
 
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
-                    {stat("Лимит сегодня", fmt(b.today_limit), accent)}
-                    {stat("Потрачено", fmt(b.today_spent), b.remaining < 0 ? RED : txt)}
-                    {stat("Остаток", fmt(b.remaining), b.remaining < 0 ? RED : GREEN)}
-                    {stat("Копилка", fmt(b.piggybank), AMBER)}
+                    {stat("Лимит сегодня", b.today_limit, accent)}
+                    {stat("Потрачено", b.today_spent, b.remaining < 0 ? RED : txt)}
+                    {stat("Остаток", b.remaining, b.remaining < 0 ? RED : GREEN)}
+                    {stat("Копилка", b.piggybank, AMBER)}
+                    {stat("Средний / день", avgPerDay, accent)}
                     <div style={panel}>
                       <div style={{ fontSize: 10, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Прогноз до конца периода</div>
-                      <div style={{ fontSize: 22, fontWeight: 800, color: forecast.over ? RED : GREEN, letterSpacing: "-0.02em" }}>{fmt(Math.round(forecast.projected))}</div>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: forecast.over ? RED : GREEN, letterSpacing: "-0.02em" }}><CountUp value={Math.round(forecast.projected)} format={fmt} /></div>
                       <div style={{ fontSize: 11, color: forecast.over ? RED : GREEN, marginTop: 4, fontWeight: 600 }}>{forecast.budgetRef > 0 ? (forecast.over ? "превышение бюджета" : "в рамках бюджета") : "—"}</div>
                     </div>
                   </div>
@@ -1703,6 +1948,10 @@ export default function Yasnost() {
                       {donut && <div style={panel}><div style={lbl}>Расходы по категориям</div>{donut}</div>}
                       {burndown && <div style={panel}><div style={lbl}>Сгорание бюджета</div>{burndown}</div>}
                     </div>
+                  )}
+
+                  {dailyBars && (
+                    <div style={panel}><div style={lbl}>Траты по дням</div>{dailyBars}</div>
                   )}
 
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14 }}>
@@ -1743,17 +1992,21 @@ export default function Yasnost() {
                     <div style={panel}>
                       <div style={lbl}>По категориям</div>
                       {cats.length === 0 && <div style={{ color: muted, fontSize: 13 }}>Пока пусто</div>}
-                      {cats.slice(0, 10).map(([cat, sum]) => (
-                        <div key={cat} style={{ marginBottom: 10 }}>
+                      {cats.slice(0, 10).map(([cat, sum]) => {
+                        const active = (finForm._filter || "__all__") === cat;
+                        return (
+                        <div key={cat} className="ys-fin-row" onClick={() => toggleCatFilter(cat)} title="Фильтровать по категории"
+                          style={{ marginBottom: 6, cursor: "pointer", padding: "5px 6px", borderRadius: 8, background: active ? accent + "1f" : "transparent", boxShadow: active ? `inset 0 0 0 1px ${accent}55` : "none" }}>
                           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, fontSize: 12 }}>
-                            <span style={{ color: muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginRight: 8 }}>{cat}</span>
+                            <span style={{ color: active ? txt : muted, fontWeight: active ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginRight: 8 }}>{cat}</span>
                             <span style={{ color: txt, fontWeight: 600, flexShrink: 0 }}>{sum.toLocaleString("ru-RU")} ₽</span>
                           </div>
                           <div style={{ height: 4, background: "rgba(128,128,128,.18)", borderRadius: 999, overflow: "hidden" }}>
                             <div style={{ height: "100%", width: Math.round(sum / totalCats * 100) + "%", background: accent, borderRadius: 999 }} />
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -2082,6 +2335,30 @@ export default function Yasnost() {
       </div>
     </div>
   );
+}
+
+function CountUp({ value, format }) {
+  const [display, setDisplay] = useState(value);
+  const fromRef = useRef(value);
+  const rafRef = useRef(null);
+  useEffect(() => {
+    const reduce = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const target = Number(value) || 0;
+    const start = Number(fromRef.current) || 0;
+    if (reduce || start === target) { fromRef.current = target; setDisplay(target); return; }
+    const dur = 650, t0 = performance.now();
+    const tick = (now) => {
+      const p = Math.min(1, (now - t0) / dur);
+      const eased = 1 - Math.pow(1 - p, 3);
+      const v = start + (target - start) * eased;
+      setDisplay(v);
+      if (p < 1) rafRef.current = requestAnimationFrame(tick);
+      else fromRef.current = target;
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => rafRef.current && cancelAnimationFrame(rafRef.current);
+  }, [value]);
+  return <>{format ? format(display) : Math.round(display)}</>;
 }
 
 function Icon({ name, color = "currentColor" }) {
