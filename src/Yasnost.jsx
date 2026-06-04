@@ -1213,8 +1213,8 @@ export default function Yasnost() {
         {view === "finance" && (
           <div style={{ flex: 1, overflowY: "auto", padding: 26, position: "relative", zIndex: 1 }}>
             {budgetLoading && <div style={{ color: "#5a5a5a", fontSize: 14 }}>Загрузка…</div>}
-            {!budgetLoading && !budgetData && <div style={{ color: "#5a5a5a", fontSize: 14 }}>Нет данных</div>}
-            {!budgetLoading && budgetData && (() => {
+            {!budgetLoading && (!budgetData || budgetData.error) && <div style={{ color: "#5a5a5a", fontSize: 14 }}>Нет данных</div>}
+            {!budgetLoading && budgetData && !budgetData.error && (() => {
               const b = budgetData;
               const remaining = b.daily_limit - b.today_spent;
               const totalMandatory = (b.mandatory_expenses || []).reduce((s, e) => s + e.amount, 0);
