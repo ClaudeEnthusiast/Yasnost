@@ -8,6 +8,9 @@ const COLUMNS = [
   { id: "done",        title: "Готово",          accent: "#2E7D5B" },
 ];
 
+const MONTHS_RU = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
+const WEEKDAYS_RU = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+
 const SEED = [
   { id: 1, title: "Согласовать архитектуру «Ясности»", desc: "Стек: React + Node + PostgreSQL на VPS", status: "in_progress", due: "2026-06-05", docs: 2, priority: "urgent",    notes: "", checklist: [] },
   { id: 2, title: "Поднять PostgreSQL на сервере",       desc: "Та же машина, где ProxyShield",         status: "todo",        due: "2026-06-06", docs: 0, priority: "important", notes: "", checklist: [] },
@@ -52,8 +55,8 @@ const THEMES = {
       searchWrap:   { display: "flex", alignItems: "center", gap: 8, background: "#141414", border: "1px solid rgba(255,255,255,.08)", borderRadius: 10, padding: "9px 14px", width: 230, cursor: "text", color: "#5a5a5a" },
       searchInput:  { border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#e0e0e0", fontFamily: "inherit", width: "100%" },
       avatar:       { width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg, #4D7CFF, #7C3AFF)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, flexShrink: 0, boxShadow: "0 0 16px rgba(77,124,255,.45)" },
-      board:        { display: "grid", gridTemplateColumns: "repeat(3, minmax(310px, 1fr))", gap: 18, padding: 26, overflowX: "auto", overflowY: "auto", flex: 1, alignItems: "stretch", position: "relative", zIndex: 1 },
-      column:       { background: "rgba(255,255,255,.015)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", borderRadius: 16, padding: 14, minHeight: 200, transition: "background .15s, box-shadow .15s", border: "1px solid rgba(255,255,255,.05)", display: "flex", flexDirection: "column" },
+      board:        { display: "grid", gridTemplateColumns: "repeat(3, minmax(310px, 1fr))", gap: 18, padding: 26, overflowX: "auto", overflowY: "hidden", flex: 1, minHeight: 0, alignItems: "stretch", position: "relative", zIndex: 1 },
+      column:       { background: "rgba(255,255,255,.015)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", borderRadius: 16, padding: 14, minHeight: 0, maxHeight: "100%", transition: "background .15s, box-shadow .15s", border: "1px solid rgba(255,255,255,.05)", display: "flex", flexDirection: "column" },
       columnOver:   { background: "#101010", border: "1px solid rgba(77,124,255,.5)", boxShadow: "inset 0 0 0 1px rgba(77,124,255,.2), 0 0 28px rgba(77,124,255,.14)" },
       colHead:      { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, padding: "2px 4px" },
       colTitleWrap: { display: "flex", alignItems: "center", gap: 9 },
@@ -61,7 +64,7 @@ const THEMES = {
       colTitle:     { fontWeight: 600, fontSize: 11, color: "#6a7585", letterSpacing: "0.12em", textTransform: "uppercase" },
       colCount:     { fontSize: 11.5, fontWeight: 600, color: "#7a7a7a", background: "rgba(255,255,255,.05)", borderRadius: 999, padding: "1px 8px" },
       colAdd:       { width: 25, height: 25, borderRadius: 8, border: "1px solid rgba(255,255,255,.08)", background: "transparent", color: "#4D7CFF", fontSize: 17, fontWeight: 600, cursor: "pointer", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" },
-      cardList:     { display: "flex", flexDirection: "column", gap: 10, flex: 1 },
+      cardList:     { display: "flex", flexDirection: "column", gap: 10, flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", paddingRight: 2 },
       card:         { background: "rgba(255,255,255,.03)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderRadius: 14, padding: "14px 15px 13px", cursor: "pointer", border: "1px solid rgba(255,255,255,.07)", position: "relative", transformStyle: "preserve-3d", willChange: "transform" },
       cardTop:      { display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "absolute", top: 0, left: 0, right: 0, zIndex: 2 },
       cardStripe:   { width: 26, height: 3, borderRadius: 3, margin: "13px 0 0 15px" },
@@ -136,8 +139,17 @@ const THEMES = {
       ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 999px; }
       ::-webkit-scrollbar-thumb:hover { background: rgba(77,124,255,.5); }
       ::-webkit-scrollbar-track { background: transparent; }
+      .ys-calchip { transition: transform .12s, filter .12s; }
+      .ys-calchip:hover { filter: brightness(1.15); transform: translateX(1px); }
+      .ys-calcell:hover { background: rgba(128,128,128,.09) !important; }
+      .ys-fin-tab { transition: all .15s; }
+      .ys-fin-row { transition: background .12s; border-radius: 8px; }
+      .ys-fin-row:hover { background: rgba(128,128,128,.08); }
+      .ys-fade-in { animation: ys-fade-in .28s ease both; }
+      @keyframes ys-fade-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
       input::placeholder, textarea::placeholder { color: #4a4a4a; }
       input[type="date"] { color-scheme: dark; }
+      select { color-scheme: dark; }
       @media (pointer: coarse) { .ys-cursor-dot, .ys-cursor-halo { display: none !important; } }
       .ys-halo-lg { width: 32px !important; height: 32px !important; border-color: rgba(120,160,255,.9) !important; }
       .ys-stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
@@ -153,7 +165,8 @@ const THEMES = {
         .ys-h1     { font-size: 21px !important; }
         .ys-search { width: 100% !important; }
         .ys-board  { grid-template-columns: 1fr !important; padding: 12px !important; gap: 12px !important; overflow: visible !important; flex: none !important; }
-        .ys-column { min-height: 80px !important; }
+        .ys-column { min-height: 80px !important; max-height: none !important; }
+        .ys-cardlist { overflow: visible !important; }
         .ys-card   { transform: none !important; }
         .ys-modal  { border-radius: 20px 20px 0 0 !important; width: 100vw !important; max-height: 92dvh !important; position: fixed !important; bottom: 0 !important; left: 0 !important; }
         .ys-overlay { align-items: flex-end !important; }
@@ -191,8 +204,8 @@ const THEMES = {
       searchWrap:   { display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 999, padding: "9px 16px", width: 230, cursor: "text", color: "#7C8290", transition: "border-color .15s, box-shadow .15s" },
       searchInput:  { border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#EDEEF0", fontFamily: "inherit", width: "100%" },
       avatar:       { width: 36, height: 36, borderRadius: "50%", background: "#141518", color: "#D9FF73", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, flexShrink: 0, border: "1.5px solid rgba(198,242,77,.45)" },
-      board:        { display: "grid", gridTemplateColumns: "repeat(3, minmax(310px, 1fr))", gap: 18, padding: 26, overflowX: "auto", overflowY: "auto", flex: 1, alignItems: "stretch", position: "relative", zIndex: 1 },
-      column:       { background: "rgba(255,255,255,.025)", borderRadius: 18, padding: 14, minHeight: 200, transition: "background .15s, box-shadow .15s", border: "1px solid rgba(255,255,255,.07)", display: "flex", flexDirection: "column" },
+      board:        { display: "grid", gridTemplateColumns: "repeat(3, minmax(310px, 1fr))", gap: 18, padding: 26, overflowX: "auto", overflowY: "hidden", flex: 1, minHeight: 0, alignItems: "stretch", position: "relative", zIndex: 1 },
+      column:       { background: "rgba(255,255,255,.025)", borderRadius: 18, padding: 14, minHeight: 0, maxHeight: "100%", transition: "background .15s, box-shadow .15s", border: "1px solid rgba(255,255,255,.07)", display: "flex", flexDirection: "column" },
       columnOver:   { background: "rgba(198,242,77,.05)", border: "1px dashed rgba(198,242,77,.5)", boxShadow: "inset 0 0 0 1px rgba(198,242,77,.12)" },
       colHead:      { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, padding: "2px 4px" },
       colTitleWrap: { display: "flex", alignItems: "center", gap: 9 },
@@ -200,7 +213,7 @@ const THEMES = {
       colTitle:     { fontWeight: 600, fontSize: 11.5, color: "#A6ACB6", letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "'Geist Mono', monospace" },
       colCount:     { fontSize: 11.5, fontWeight: 600, color: "#8A9099", background: "rgba(255,255,255,.06)", borderRadius: 999, padding: "1px 8px", fontFamily: "'Geist Mono', monospace" },
       colAdd:       { width: 26, height: 26, borderRadius: 9, border: "1px solid rgba(255,255,255,.1)", background: "transparent", color: "#D9FF73", fontSize: 17, fontWeight: 600, cursor: "pointer", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", transition: "all .14s" },
-      cardList:     { display: "flex", flexDirection: "column", gap: 10, flex: 1 },
+      cardList:     { display: "flex", flexDirection: "column", gap: 10, flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", paddingRight: 2 },
       card:         { background: "rgba(20,21,25,.82)", borderRadius: 16, padding: "14px 15px 13px", boxShadow: "0 1px 2px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06)", cursor: "pointer", border: "1px solid rgba(255,255,255,.08)", transition: "box-shadow .18s cubic-bezier(.2,.7,.3,1), transform .18s cubic-bezier(.2,.7,.3,1), border-color .18s", position: "relative" },
       cardTop:      { display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "absolute", top: 0, left: 0, right: 0 },
       cardStripe:   { width: 26, height: 3, borderRadius: 3, margin: "13px 0 0 15px" },
@@ -258,8 +271,17 @@ const THEMES = {
       ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 999px; }
       ::-webkit-scrollbar-thumb:hover { background: rgba(198,242,77,.45); }
       ::-webkit-scrollbar-track { background: transparent; }
+      .ys-calchip { transition: transform .12s, filter .12s; }
+      .ys-calchip:hover { filter: brightness(1.15); transform: translateX(1px); }
+      .ys-calcell:hover { background: rgba(128,128,128,.09) !important; }
+      .ys-fin-tab { transition: all .15s; }
+      .ys-fin-row { transition: background .12s; border-radius: 8px; }
+      .ys-fin-row:hover { background: rgba(128,128,128,.08); }
+      .ys-fade-in { animation: ys-fade-in .28s ease both; }
+      @keyframes ys-fade-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
       input::placeholder, textarea::placeholder { color: #5B616D; }
       input[type="date"] { color-scheme: dark; }
+      select { color-scheme: dark; }
       .ys-board { isolation: isolate; }
       @media (prefers-reduced-motion: no-preference) {
         .ys-main::before {
@@ -302,7 +324,8 @@ const THEMES = {
         .ys-h1     { font-size: 19px !important; }
         .ys-search { width: 100% !important; }
         .ys-board  { grid-template-columns: 1fr !important; padding: 12px !important; gap: 12px !important; overflow: visible !important; flex: none !important; }
-        .ys-column { min-height: 80px !important; }
+        .ys-column { min-height: 80px !important; max-height: none !important; }
+        .ys-cardlist { overflow: visible !important; }
         .ys-modal  { border-radius: 22px 22px 0 0 !important; width: 100vw !important; max-height: 92dvh !important; position: fixed !important; bottom: 0 !important; left: 0 !important; }
         .ys-overlay { align-items: flex-end !important; }
       }
@@ -339,8 +362,8 @@ const THEMES = {
       searchWrap:   { display: "flex", alignItems: "center", gap: 8, background: "#F4F3F0", border: "1px solid #E5E2DB", borderRadius: 8, padding: "8px 13px", width: 220, cursor: "text", color: "#9B948A" },
       searchInput:  { border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#37352F", fontFamily: "inherit", width: "100%" },
       avatar:       { width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg, #1B4F8A, #0D2240)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, flexShrink: 0 },
-      board:        { display: "grid", gridTemplateColumns: "repeat(3, minmax(300px, 1fr))", gap: 18, padding: 26, overflowX: "auto", overflowY: "auto", flex: 1, alignItems: "stretch" },
-      column:       { background: "#F4F3F1", borderRadius: 12, padding: 13, minHeight: 200, transition: "background .15s, box-shadow .15s", border: "1px solid transparent", display: "flex", flexDirection: "column" },
+      board:        { display: "grid", gridTemplateColumns: "repeat(3, minmax(300px, 1fr))", gap: 18, padding: 26, overflowX: "auto", overflowY: "hidden", flex: 1, minHeight: 0, alignItems: "stretch" },
+      column:       { background: "#F4F3F1", borderRadius: 12, padding: 13, minHeight: 0, maxHeight: "100%", transition: "background .15s, box-shadow .15s", border: "1px solid transparent", display: "flex", flexDirection: "column" },
       columnOver:   { background: "#EAF1FA", border: "1px dashed #1B4F8A", boxShadow: "inset 0 0 0 1px rgba(27,79,138,.08)" },
       colHead:      { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, padding: "2px 4px" },
       colTitleWrap: { display: "flex", alignItems: "center", gap: 9 },
@@ -348,7 +371,7 @@ const THEMES = {
       colTitle:     { fontWeight: 600, fontSize: 13.5, color: "#57534C", letterSpacing: "-0.01em" },
       colCount:     { fontSize: 12, fontWeight: 600, color: "#9B948A", background: "rgba(0,0,0,.05)", borderRadius: 20, padding: "1px 8px" },
       colAdd:       { width: 26, height: 26, borderRadius: 7, border: "1px solid #E5E2DB", background: "#fff", color: "#1B4F8A", fontSize: 18, fontWeight: 600, cursor: "pointer", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" },
-      cardList:     { display: "flex", flexDirection: "column", gap: 9, flex: 1 },
+      cardList:     { display: "flex", flexDirection: "column", gap: 9, flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", paddingRight: 2 },
       card:         { background: "#fff", borderRadius: 9, padding: "13px 14px 12px", boxShadow: "0 1px 2px rgba(15,15,15,.04)", cursor: "pointer", border: "1px solid #ECEAE4", transition: "box-shadow .15s, transform .15s, border-color .15s", position: "relative" },
       cardTop:      { display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "absolute", top: 0, left: 0, right: 0 },
       cardStripe:   { width: 28, height: 3, borderRadius: 3, margin: "12px 0 0 14px" },
@@ -405,6 +428,14 @@ const THEMES = {
       ::-webkit-scrollbar-thumb { background: #DAD7CF; border-radius: 5px; }
       ::-webkit-scrollbar-thumb:hover { background: #C4C0B6; }
       ::-webkit-scrollbar-track { background: transparent; }
+      .ys-calchip { transition: transform .12s, filter .12s; }
+      .ys-calchip:hover { filter: brightness(1.15); transform: translateX(1px); }
+      .ys-calcell:hover { background: rgba(128,128,128,.09) !important; }
+      .ys-fin-tab { transition: all .15s; }
+      .ys-fin-row { transition: background .12s; border-radius: 8px; }
+      .ys-fin-row:hover { background: rgba(128,128,128,.08); }
+      .ys-fade-in { animation: ys-fade-in .28s ease both; }
+      @keyframes ys-fade-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
       input::placeholder, textarea::placeholder { color: #B0A99D; }
       @media (max-width: 768px) {
         .ys-app    { flex-direction: column !important; height: auto !important; min-height: 100dvh; overflow: auto !important; }
@@ -418,7 +449,8 @@ const THEMES = {
         .ys-h1     { font-size: 18px !important; }
         .ys-search { width: 100% !important; }
         .ys-board  { grid-template-columns: 1fr !important; padding: 12px !important; gap: 12px !important; overflow: visible !important; flex: none !important; }
-        .ys-column { min-height: 80px !important; }
+        .ys-column { min-height: 80px !important; max-height: none !important; }
+        .ys-cardlist { overflow: visible !important; }
         .ys-modal  { border-radius: 14px 14px 0 0 !important; width: 100vw !important; max-height: 92dvh !important; position: fixed !important; bottom: 0 !important; left: 0 !important; }
         .ys-overlay { align-items: flex-end !important; }
       }
@@ -458,6 +490,11 @@ export default function Yasnost() {
   const [finForm,        setFinForm]        = useState({});
   const [finBusy,        setFinBusy]        = useState(false);
   const [finError,       setFinError]       = useState("");
+  const [finTab,         setFinTab]         = useState("personal");   // 'personal' | 'corporate'
+  const [aiAnalysis,     setAiAnalysis]     = useState(null);
+  const [aiBudgetLoading,setAiBudgetLoading]= useState(false);
+  const [aiBudgetError,  setAiBudgetError]  = useState("");
+  const [calMonth,       setCalMonth]       = useState(() => { const n = new Date(); return { y: n.getFullYear(), m: n.getMonth() }; });
   const wasDragging   = useRef(false);
   const saveTimer     = useRef(null);
   const isInitialLoad = useRef(true);
@@ -527,11 +564,50 @@ export default function Yasnost() {
   };
   const closeFin = () => { setFinModal(null); setFinForm({}); setFinError(""); };
   const parseMoney = (v) => parseFloat(String(v == null ? "" : v).replace(/\s/g, "").replace(",", "."));
+  const fmtRu = (iso) => { if (!iso) return ""; const parts = String(iso).split("-"); if (parts.length < 3) return iso; const [y, m, d] = parts; return `${d}.${m}.${y.slice(2)}`; };
+  // итоговая категория из формы (учитывает «Своя…»)
+  const resolveCategory = () => {
+    if (finForm.category === "__custom__") return (finForm.customCategory || "").trim();
+    return (finForm.category || "").trim();
+  };
   const submitExpense = async () => {
     const amount = parseMoney(finForm.amount);
     if (!amount || amount <= 0) { setFinError("Введите сумму"); return; }
+    const category = resolveCategory();
+    if (!category) { setFinError("Укажите категорию"); return; }
     const path = finForm.kind === "corp" ? "/corporate" : "/expense";
-    if (await budgetAction(path, { amount, category: (finForm.category || "").trim() })) closeFin();
+    if (await budgetAction(path, { amount, category, note: (finForm.note || "").trim() })) closeFin();
+  };
+  const submitEditExpense = async () => {
+    const amount = parseMoney(finForm.amount);
+    if (!amount || amount <= 0) { setFinError("Введите сумму"); return; }
+    const category = resolveCategory();
+    if (!category) { setFinError("Укажите категорию"); return; }
+    const base = finForm.kind === "corp" ? "/corporate/" : "/expense/";
+    if (await budgetAction(base + finForm.idx, { date: finForm.date || undefined, amount, category, note: (finForm.note || "").trim() }, "PATCH")) closeFin();
+  };
+  const deleteExpense = async () => {
+    const base = finForm.kind === "corp" ? "/corporate/" : "/expense/";
+    if (await budgetAction(base + finForm.idx, null, "DELETE")) closeFin();
+  };
+  const submitCompensate = async () => {
+    const raw = finForm.amount;
+    const amount = raw === "" || raw == null ? undefined : parseMoney(raw);
+    if (raw !== "" && raw != null && (!amount || amount <= 0)) { setFinError("Введите сумму"); return; }
+    if (await budgetAction("/corporate/compensate", { index: finForm.idx, amount }, "POST")) closeFin();
+  };
+  const unpayMandatory = (index) => budgetAction("/mandatory/unpay", { index });
+  const runBudgetAnalysis = async () => {
+    setAiBudgetLoading(true); setAiBudgetError(""); setAiAnalysis(null);
+    try {
+      const r = await fetch("/api/budget/analyze", { method: "POST", headers: { "Content-Type": "application/json" } });
+      if (r.status === 503) { setAiBudgetError("AI-анализ появится после добавления ключа ANTHROPIC_API_KEY на сервере"); setAiBudgetLoading(false); return; }
+      if (!r.ok) { setAiBudgetError("Не удалось получить анализ"); setAiBudgetLoading(false); return; }
+      const d = await r.json();
+      setAiAnalysis(d.analysis || ""); setAiBudgetLoading(false);
+    } catch {
+      setAiBudgetError("Не удалось получить анализ"); setAiBudgetLoading(false);
+    }
   };
   const submitPiggy = async () => {
     const amount = parseMoney(finForm.amount);
@@ -1115,8 +1191,8 @@ export default function Yasnost() {
           <div className="ys-nav-item" style={{ ...st.navItem, ...(view === "board" ? st.navActive : {}) }} onClick={() => setView("board")}>
             <Icon name="board" /> Доска задач
           </div>
-          <div className="ys-nav-item" style={{ ...st.navItem, ...(view === "today" ? st.navActive : {}) }} onClick={() => setView("today")}>
-            <Icon name="today" /> Сегодня
+          <div className="ys-nav-item" style={{ ...st.navItem, ...(view === "calendar" ? st.navActive : {}) }} onClick={() => setView("calendar")}>
+            <Icon name="today" /> Календарь
             {todayCards.length > 0 && <span style={st.navBadge}>{todayCards.length}</span>}
           </div>
           <div className="ys-nav-item" style={{ ...st.navItem, ...(view === "finance" ? st.navActive : {}) }} onClick={() => setView("finance")}>
@@ -1162,9 +1238,9 @@ export default function Yasnost() {
 
         <header style={st.header} className="ys-header">
           <div>
-            <h1 style={st.h1} className="ys-h1">{view === "board" ? "Доска задач" : view === "today" ? "Сегодня" : "Финансы"}</h1>
+            <h1 style={st.h1} className="ys-h1">{view === "board" ? "Доска задач" : view === "calendar" ? "Календарь" : "Финансы"}</h1>
             <p style={st.sub}>
-              {view === "board" ? `${cards.length} задач · ${countBy("in_progress")} в работе` : view === "today" ? `${todayCards.length} задач требуют внимания` : budgetData ? `Период ${budgetData.start_date} — ${budgetData.end_date}` : "Загрузка…"}
+              {view === "board" ? `${cards.length} задач · ${countBy("in_progress")} в работе` : view === "calendar" ? `${MONTHS_RU[calMonth.m]} ${calMonth.y}` : budgetData ? `Период ${fmtRu(budgetData.start_date)} — ${fmtRu(budgetData.end_date)}` : "Загрузка…"}
             </p>
           </div>
           <div style={st.headerRight}>
@@ -1199,7 +1275,7 @@ export default function Yasnost() {
                     onClick={() => { setAdding(col.id); setDraft({ title: "", desc: "", due: "", priority: "normal" }); }}>+</button>
                 </div>
 
-                <div style={st.cardList}>
+                <div style={st.cardList} className="ys-cardlist">
                   {visibleCards.filter((c) => c.status === col.id).map((c) => renderCard(c, col.accent))}
 
                   {adding === col.id && (
@@ -1233,20 +1309,90 @@ export default function Yasnost() {
           </div>
         )}
 
-        {/* Today */}
-        {view === "today" && (
-          <div style={st.todayView}>
-            {visibleToday.length === 0 ? (
-              <div style={st.todayEmpty}>
-                <div style={{ fontSize: 40 }}>✅</div>
-                <div style={{ fontWeight: 700, fontSize: 17, marginTop: 14 }}>{q ? "Ничего не найдено" : "Всё под контролем"}</div>
-                <div style={{ fontSize: 13, marginTop: 5 }}>{q ? "Попробуй другой запрос" : "Нет задач с дедлайном сегодня или раньше"}</div>
+        {/* Calendar */}
+        {view === "calendar" && (() => {
+          const accent = st.checkboxAccent;
+          const txt = st.cardTitle.color;
+          const muted = st.cardDesc.color;
+          const cellBorder = (st.metaChip.borderColor) || "rgba(128,128,128,.2)";
+          const panel = { ...st.card, cursor: "default" };
+          // tasks by date (only those with due), filtered by search
+          const calCards = (q ? cards.filter((c) => c.title.toLowerCase().includes(q)) : cards).filter((c) => c.due);
+          const byDate = {};
+          calCards.forEach((c) => { (byDate[c.due] = byDate[c.due] || []).push(c); });
+          // build month grid (Mon-first)
+          const { y, m } = calMonth;
+          const first = new Date(y, m, 1);
+          let startOffset = (first.getDay() + 6) % 7; // Mon=0
+          const gridStart = new Date(y, m, 1 - startOffset);
+          const weeks = [];
+          for (let w = 0; w < 6; w++) {
+            const row = [];
+            for (let d = 0; d < 7; d++) {
+              const dt = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + w * 7 + d);
+              row.push(dt);
+            }
+            weeks.push(row);
+          }
+          // trim trailing all-out-of-month week
+          while (weeks.length > 4 && weeks[weeks.length - 1].every((dt) => dt.getMonth() !== m)) weeks.pop();
+          const iso = (dt) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+          const navBtn = { ...st.btnGhost, padding: "7px 12px", lineHeight: 1, fontSize: 15 };
+          return (
+            <div style={st.todayView}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: txt, letterSpacing: "-0.02em", minWidth: 170 }}>{MONTHS_RU[m]} {y}</div>
+                <button style={navBtn} onClick={() => setCalMonth(({ y, m }) => m === 0 ? { y: y - 1, m: 11 } : { y, m: m - 1 })}>‹</button>
+                <button style={navBtn} onClick={() => setCalMonth(({ y, m }) => m === 11 ? { y: y + 1, m: 0 } : { y, m: m + 1 })}>›</button>
+                <button style={{ ...st.btnGhost, padding: "7px 14px" }} onClick={() => { const n = new Date(); setCalMonth({ y: n.getFullYear(), m: n.getMonth() }); }}>Сегодня</button>
               </div>
-            ) : (
-              <div style={st.todayList}>{visibleToday.map((c) => renderCard(c))}</div>
-            )}
-          </div>
-        )}
+              <div style={{ ...panel, padding: 12 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, marginBottom: 6 }}>
+                  {WEEKDAYS_RU.map((wd) => (
+                    <div key={wd} style={{ textAlign: "center", fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: muted }}>{wd}</div>
+                  ))}
+                </div>
+                <div style={{ display: "grid", gridTemplateRows: `repeat(${weeks.length}, 1fr)`, gap: 6 }}>
+                  {weeks.map((row, wi) => (
+                    <div key={wi} style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6 }}>
+                      {row.map((dt) => {
+                        const dIso = iso(dt);
+                        const inMonth = dt.getMonth() === m;
+                        const isToday = dIso === TODAY;
+                        const dayTasks = byDate[dIso] || [];
+                        return (
+                          <div key={dIso} className="ys-calcell" style={{
+                            minHeight: 92, borderRadius: 10, padding: "5px 6px",
+                            border: isToday ? `1.5px solid ${accent}` : `1px solid ${cellBorder}`,
+                            background: isToday ? (accent + "14") : (inMonth ? "rgba(128,128,128,.04)" : "transparent"),
+                            opacity: inMonth ? 1 : 0.4,
+                            display: "flex", flexDirection: "column", gap: 3, overflow: "hidden",
+                            transition: "background .15s, border-color .15s",
+                          }}>
+                            <div style={{ fontSize: 12, fontWeight: isToday ? 800 : 600, color: isToday ? accent : (inMonth ? txt : muted), textAlign: "right" }}>{dt.getDate()}</div>
+                            {dayTasks.slice(0, 3).map((c) => {
+                              const pr = priorities[c.priority] || priorities.normal;
+                              return (
+                                <div key={c.id} onClick={(e) => { e.stopPropagation(); setSelectedCardId(c.id); }} className="ys-calchip"
+                                  style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: txt, background: "rgba(128,128,128,.1)", borderRadius: 6, padding: "2px 5px", cursor: "pointer", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
+                                  <span style={{ width: 6, height: 6, borderRadius: 999, background: pr.color, flexShrink: 0 }} />
+                                  <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{c.title}</span>
+                                </div>
+                              );
+                            })}
+                            {dayTasks.length > 3 && (
+                              <div style={{ fontSize: 10.5, color: muted, fontWeight: 600, paddingLeft: 2 }}>+{dayTasks.length - 3}</div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Finance */}
         {view === "finance" && (
@@ -1267,9 +1413,15 @@ export default function Yasnost() {
               const pct = b.days_total ? Math.min(100, Math.max(0, Math.round((b.days_total - b.days_left) / b.days_total * 100))) : 0;
               const cats = (() => { const m = {}; (b.personal_expenses || []).forEach(e => { m[e.category] = (m[e.category] || 0) + e.amount; }); return Object.entries(m).sort((a, c) => c[1] - a[1]); })();
               const totalCats = cats.reduce((s, [, v]) => s + v, 0) || 1;
-              const recent = (b.personal_expenses || []).map((e, idx) => ({ ...e, idx })).slice(-12).reverse();
+              const personalAll = (b.personal_expenses || []).map((e, idx) => ({ ...e, idx }));
+              const corpAll = (b.corporate_expenses || []).map((e, idx) => ({ ...e, idx }));
               const lastIdx = (b.personal_expenses || []).length - 1;
+              const categories = b.categories || [];
+              const filterCat = finForm._filter || "__all__";
+              const shownPersonal = personalAll.filter((e) => filterCat === "__all__" || e.category === filterCat).slice().reverse();
               const lbl = { fontSize: 10, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 };
+              // donut palette (theme-aware-ish, 10 colors anchored on accent family)
+              const PALETTE = [accent, "#4D7CFF", "#7C3AFF", "#E8A13A", "#3FB27F", "#E5575C", "#40C4D0", "#D4FF5E", "#C77DFF", "#FF8FA3"];
               const stat = (label, value, color) => (
                 <div style={panel}>
                   <div style={{ fontSize: 10, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>{label}</div>
@@ -1282,14 +1434,115 @@ export default function Yasnost() {
                     ? { ...st.btnPrimary, flex: "none", padding: "9px 16px", opacity: finBusy ? .6 : 1 }
                     : { ...st.btnGhost, padding: "9px 14px", opacity: finBusy ? .6 : 1 }}>{label}</button>
               );
+              const tab = (key, label) => (
+                <button className="ys-fin-tab" onClick={() => setFinTab(key)}
+                  style={{ ...st.prBtn, padding: "8px 18px", fontWeight: 700,
+                    color: finTab === key ? accent : muted,
+                    background: finTab === key ? (accent + "16") : "transparent",
+                    borderColor: finTab === key ? accent : (st.prBtn.border ? undefined : "rgba(128,128,128,.25)") }}>{label}</button>
+              );
+              const catChip = { display: "inline-block", fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 999, background: accent + "18", color: accent, border: `1px solid ${accent}33` };
+
+              // ── Donut ──
+              const donut = (() => {
+                const data = cats.slice(0, 10);
+                const total = data.reduce((s, [, v]) => s + v, 0);
+                if (!total) return null;
+                const R = 60, r = 38, cx = 70, cy = 70;
+                let a0 = -Math.PI / 2;
+                const arcs = data.map(([cat, sum], i) => {
+                  const frac = sum / total;
+                  const a1 = a0 + frac * Math.PI * 2;
+                  const large = frac > 0.5 ? 1 : 0;
+                  const x0 = cx + R * Math.cos(a0), y0 = cy + R * Math.sin(a0);
+                  const x1 = cx + R * Math.cos(a1), y1 = cy + R * Math.sin(a1);
+                  const xi0 = cx + r * Math.cos(a1), yi0 = cy + r * Math.sin(a1);
+                  const xi1 = cx + r * Math.cos(a0), yi1 = cy + r * Math.sin(a0);
+                  const d = `M ${x0} ${y0} A ${R} ${R} 0 ${large} 1 ${x1} ${y1} L ${xi0} ${yi0} A ${r} ${r} 0 ${large} 0 ${xi1} ${yi1} Z`;
+                  a0 = a1;
+                  return { d, color: PALETTE[i % PALETTE.length], cat, sum };
+                });
+                return (
+                  <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
+                    <svg width="140" height="140" viewBox="0 0 140 140" style={{ flexShrink: 0 }}>
+                      {arcs.map((a, i) => <path key={i} d={a.d} fill={a.color} stroke="rgba(0,0,0,.25)" strokeWidth="1" />)}
+                    </svg>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0, flex: 1 }}>
+                      {arcs.map((a, i) => (
+                        <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+                          <span style={{ width: 10, height: 10, borderRadius: 3, background: a.color, flexShrink: 0 }} />
+                          <span style={{ color: muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{a.cat}</span>
+                          <span style={{ color: txt, fontWeight: 600, flexShrink: 0 }}>{fmt(a.sum)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })();
+
+              // ── Burndown ──
+              const burndown = (() => {
+                if (!b.start_date || !b.end_date) return null;
+                const start = new Date(b.start_date + "T00:00:00");
+                const end = new Date(b.end_date + "T00:00:00");
+                const days = Math.max(1, Math.round((end - start) / 86400000) + 1);
+                const budget = b.monthly_budget || b.free || 0;
+                if (!budget) return null;
+                // cumulative spent per day index
+                const spentByDay = new Array(days).fill(0);
+                (b.personal_expenses || []).forEach((e) => {
+                  if (!e.date) return;
+                  const di = Math.round((new Date(e.date + "T00:00:00") - start) / 86400000);
+                  if (di >= 0 && di < days) spentByDay[di] += e.amount || 0;
+                });
+                let cum = 0;
+                const actual = spentByDay.map((s) => (cum += s));
+                const W = 460, H = 150, padL = 8, padR = 8, padT = 10, padB = 18;
+                const innerW = W - padL - padR, innerH = H - padT - padB;
+                const maxY = Math.max(budget, actual[actual.length - 1] || 0) || 1;
+                const xAt = (i) => padL + (days <= 1 ? 0 : (i / (days - 1)) * innerW);
+                const yAt = (v) => padT + (1 - v / maxY) * innerH;
+                // ideal line: remaining budget from budget→0 ; but we plot cumulative ideal spend 0→budget
+                const idealPts = `${xAt(0)},${yAt(0)} ${xAt(days - 1)},${yAt(budget)}`;
+                const actualPts = actual.map((v, i) => `${xAt(i)},${yAt(v)}`).join(" ");
+                const todayIdx = Math.min(days - 1, Math.max(0, Math.round((new Date(TODAY + "T00:00:00") - start) / 86400000)));
+                return (
+                  <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: "block", maxWidth: "100%" }}>
+                    <line x1={padL} y1={yAt(0)} x2={W - padR} y2={yAt(0)} stroke="rgba(128,128,128,.25)" strokeWidth="1" />
+                    <polyline points={idealPts} fill="none" stroke={muted} strokeWidth="1.5" strokeDasharray="5 5" opacity="0.7" />
+                    <polyline points={actualPts} fill="none" stroke={accent} strokeWidth="2.2" />
+                    <line x1={xAt(todayIdx)} y1={padT} x2={xAt(todayIdx)} y2={H - padB} stroke={AMBER} strokeWidth="1" strokeDasharray="3 4" opacity="0.7" />
+                    <text x={padL} y={H - 4} fontSize="9" fill={muted}>{fmtRu(b.start_date)}</text>
+                    <text x={W - padR} y={H - 4} fontSize="9" fill={muted} textAnchor="end">{fmtRu(b.end_date)}</text>
+                    <text x={padL} y={yAt(maxY) + 8} fontSize="9" fill={muted}>{Math.round(maxY).toLocaleString("ru-RU")} ₽</text>
+                  </svg>
+                );
+              })();
+
               return (
                 <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    {tab("personal", "Личные")}
+                    {tab("corporate", "Корпоративные")}
+                  </div>
+
+                  {finTab === "personal" && (
+                  <div className="ys-fade-in" style={{ display: "flex", flexDirection: "column", gap: 18 }}>
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    {tbtn("＋ Расход", () => { setFinForm({ kind: "personal", amount: "", category: "" }); setFinError(""); setFinModal("expense"); }, true)}
-                    {tbtn("＋ Корпоративная", () => { setFinForm({ kind: "corp", amount: "", category: "" }); setFinError(""); setFinModal("expense"); })}
+                    {tbtn("＋ Расход", () => { setFinForm({ kind: "personal", amount: "", category: "", note: "" }); setFinError(""); setFinModal("add"); }, true)}
                     {tbtn("🐷 Копилка", () => { setFinForm({ action: "add", amount: "" }); setFinError(""); setFinModal("piggybank"); })}
                     {lastIdx >= 0 && tbtn("↩️ Отменить последнюю", undoLastExpense)}
+                    <button onClick={runBudgetAnalysis} disabled={aiBudgetLoading}
+                      style={{ ...st.btnPrimary, flex: "none", padding: "9px 16px", opacity: aiBudgetLoading ? .6 : 1 }}>
+                      {aiBudgetLoading ? "Анализирую…" : "✨ AI-анализ"}
+                    </button>
                   </div>
+
+                  {(aiAnalysis || aiBudgetError) && (
+                    <div style={aiBudgetError ? { ...st.aiPanel, borderColor: AMBER + "55", color: muted } : st.aiPanel}>
+                      {aiBudgetError || aiAnalysis}
+                    </div>
+                  )}
 
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
                     {stat("Лимит сегодня", fmt(b.today_limit), accent)}
@@ -1300,7 +1553,7 @@ export default function Yasnost() {
 
                   <div style={panel}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, fontSize: 12 }}>
-                      <span style={{ color: txt, fontWeight: 600 }}>Период {b.start_date} → {b.end_date}</span>
+                      <span style={{ color: txt, fontWeight: 600 }}>Период {fmtRu(b.start_date)} → {fmtRu(b.end_date)}</span>
                       <span style={{ color: muted }}>{b.days_left} дн. осталось</span>
                     </div>
                     <div style={{ height: 6, background: "rgba(128,128,128,.18)", borderRadius: 999, overflow: "hidden" }}>
@@ -1313,28 +1566,39 @@ export default function Yasnost() {
                     </div>
                   </div>
 
+                  {(donut || burndown) && (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14 }}>
+                      {donut && <div style={panel}><div style={lbl}>Расходы по категориям</div>{donut}</div>}
+                      {burndown && <div style={panel}><div style={lbl}>Сгорание бюджета</div>{burndown}</div>}
+                    </div>
+                  )}
+
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14 }}>
                     <div style={panel}>
-                      <div style={lbl}>Последние расходы</div>
-                      {recent.length === 0 && <div style={{ color: muted, fontSize: 13 }}>Пока пусто</div>}
-                      {recent.map((e) => {
-                        const isObyaz = typeof e.category === "string" && e.category.startsWith("Обяз:");
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+                        <div style={{ ...lbl, marginBottom: 0 }}>Последние расходы</div>
+                        <select value={filterCat} onChange={(e) => setFinForm({ ...finForm, _filter: e.target.value })}
+                          style={{ ...st.input, width: "auto", padding: "5px 8px", fontSize: 12 }}>
+                          <option value="__all__">Все</option>
+                          {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                      </div>
+                      {shownPersonal.length === 0 && <div style={{ color: muted, fontSize: 13 }}>Пока пусто</div>}
+                      {shownPersonal.map((e) => {
+                        const isMand = !!e.mandatory;
                         return (
-                          <div key={e.idx} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid rgba(128,128,128,.12)", alignItems: "center", gap: 8 }}>
-                            <div style={{ minWidth: 0 }}>
-                              <div style={{ fontSize: 13, color: txt, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: 999, background: isObyaz ? AMBER : RED, marginRight: 7 }} />
-                                {e.category}
+                          <div key={e.idx} className={isMand ? "" : "ys-fin-row"}
+                            onClick={() => { if (isMand) return; setFinForm({ kind: "personal", idx: e.idx, date: e.date, amount: String(e.amount), category: categories.includes(e.category) ? e.category : "__custom__", customCategory: categories.includes(e.category) ? "" : e.category, note: e.note || "" }); setFinError(""); setFinModal("edit"); }}
+                            style={{ display: "flex", justifyContent: "space-between", padding: "8px 6px", borderBottom: "1px solid rgba(128,128,128,.12)", alignItems: "center", gap: 8, cursor: isMand ? "default" : "pointer" }}>
+                            <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                                <span style={catChip}>{e.category}</span>
+                                {isMand && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700, border: `1px solid ${AMBER}55`, borderRadius: 999, padding: "1px 6px" }}>обяз.</span>}
                               </div>
-                              <div style={{ fontSize: 11, color: muted, marginLeft: 14 }}>{e.date}</div>
+                              {e.note && <div style={{ fontSize: 12, color: muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.note}</div>}
+                              <div style={{ fontSize: 11, color: muted }}>{fmtRu(e.date)}</div>
                             </div>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                              <span style={{ fontSize: 13, fontWeight: 700, color: RED }}>−{(e.amount || 0).toLocaleString("ru-RU")} ₽</span>
-                              {e.idx === lastIdx && (
-                                <button title="Отменить" onClick={undoLastExpense} disabled={finBusy}
-                                  style={{ border: "none", background: "transparent", color: muted, cursor: "pointer", fontSize: 15, lineHeight: 1, padding: "0 2px" }}>×</button>
-                              )}
-                            </div>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: RED, flexShrink: 0 }}>−{(e.amount || 0).toLocaleString("ru-RU")} ₽</span>
                           </div>
                         );
                       })}
@@ -1368,13 +1632,66 @@ export default function Yasnost() {
                             план {(e.amount || 0).toLocaleString("ru-RU")} ₽{e.paid ? ` · факт ${(e.paid_amount || 0).toLocaleString("ru-RU")} ₽` : ""}
                           </div>
                         </div>
-                        {!e.paid && (
-                          <button onClick={() => { setFinForm({ actual: "" }); setFinError(""); setFinModal({ type: "pay", index: i, name: e.name, budgeted: e.amount }); }} disabled={finBusy}
-                            style={{ ...st.btnGhost, padding: "6px 12px", fontSize: 12, flexShrink: 0 }}>Оплатить</button>
-                        )}
+                        {e.paid
+                          ? <button onClick={() => unpayMandatory(i)} disabled={finBusy}
+                              style={{ ...st.btnGhost, padding: "6px 12px", fontSize: 12, flexShrink: 0 }}>Откатить</button>
+                          : <button onClick={() => { setFinForm({ actual: "" }); setFinError(""); setFinModal({ type: "pay", index: i, name: e.name, budgeted: e.amount }); }} disabled={finBusy}
+                              style={{ ...st.btnGhost, padding: "6px 12px", fontSize: 12, flexShrink: 0 }}>Оплатить</button>
+                        }
                       </div>
                     ))}
+                    <div style={{ fontSize: 11, color: muted, marginTop: 10 }}>Экономия на обязательных возвращается в бюджет.</div>
                   </div>
+                  </div>
+                  )}
+
+                  {finTab === "corporate" && (
+                  <div className="ys-fade-in" style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                      {tbtn("＋ Корпоративная", () => { setFinForm({ kind: "corp", amount: "", category: "", note: "" }); setFinError(""); setFinModal("add"); }, true)}
+                    </div>
+
+                    <div style={{ ...panel, padding: "20px 22px" }}>
+                      <div style={{ fontSize: 11, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Компания должна вам</div>
+                      <div style={{ fontSize: 30, fontWeight: 800, color: (b.corporate_debt > 0 ? accent : GREEN), letterSpacing: "-0.02em" }}>{fmt(b.corporate_debt)}</div>
+                      <div style={{ display: "flex", gap: 18, marginTop: 12, flexWrap: "wrap", fontSize: 12, color: muted }}>
+                        <span>Всего потрачено: <b style={{ color: txt }}>{fmt(b.corporate_total)}</b></span>
+                        <span>Компенсировано: <b style={{ color: GREEN }}>{fmt(b.corporate_compensated)}</b></span>
+                      </div>
+                    </div>
+
+                    <div style={panel}>
+                      <div style={lbl}>Корпоративные расходы</div>
+                      {corpAll.length === 0 && <div style={{ color: muted, fontSize: 13 }}>Пока пусто</div>}
+                      {corpAll.slice().reverse().map((e) => {
+                        const comp = e.compensated || 0;
+                        const left = (e.amount || 0) - comp;
+                        return (
+                          <div key={e.idx} style={{ display: "flex", justifyContent: "space-between", padding: "9px 6px", borderBottom: "1px solid rgba(128,128,128,.12)", alignItems: "center", gap: 8 }}>
+                            <div className="ys-fin-row" onClick={() => { setFinForm({ kind: "corp", idx: e.idx, date: e.date, amount: String(e.amount), category: categories.includes(e.category) ? e.category : "__custom__", customCategory: categories.includes(e.category) ? "" : e.category, note: e.note || "" }); setFinError(""); setFinModal("edit"); }}
+                              style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 3, cursor: "pointer", flex: 1, padding: "2px 4px" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <span style={catChip}>{e.category}</span>
+                                {left <= 0
+                                  ? <span style={{ fontSize: 10, color: GREEN, fontWeight: 700 }}>компенсировано</span>
+                                  : <span style={{ fontSize: 10, color: AMBER, fontWeight: 700 }}>осталось {left.toLocaleString("ru-RU")} ₽</span>}
+                              </div>
+                              {e.note && <div style={{ fontSize: 12, color: muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.note}</div>}
+                              <div style={{ fontSize: 11, color: muted }}>{fmtRu(e.date)}</div>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: txt }}>{(e.amount || 0).toLocaleString("ru-RU")} ₽</span>
+                              {left > 0 && (
+                                <button onClick={() => { setFinForm({ idx: e.idx, amount: "" }); setFinError(""); setFinModal("compensate"); }} disabled={finBusy}
+                                  style={{ ...st.btnGhost, padding: "5px 10px", fontSize: 11.5 }}>Компенсировать</button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  )}
                 </div>
               );
             })()}
@@ -1499,32 +1816,68 @@ export default function Yasnost() {
       )}
 
       {/* ── Finance modals ── */}
-      {finModal && (
+      {finModal && (() => {
+        const cats = (budgetData && budgetData.categories) || [];
+        const isAdd = finModal === "add";
+        const isEdit = finModal === "edit";
+        const isExpenseForm = isAdd || isEdit;
+        const isCorp = finForm.kind === "corp";
+        const title = isAdd ? (isCorp ? "Корпоративная трата" : "Личная трата")
+          : isEdit ? (isCorp ? "Редактировать корпоративную" : "Редактировать расход")
+          : finModal === "compensate" ? "Компенсация"
+          : finModal === "piggybank" ? "Копилка"
+          : "Оплата обязательного";
+        const onExpenseSubmit = isAdd ? submitExpense : submitEditExpense;
+        return (
         <div style={st.overlay} className="ys-overlay" onClick={closeFin}>
           <div style={{ ...st.modal, width: "min(440px, 94vw)" }} className="ys-modal" onClick={(e) => e.stopPropagation()}>
             <div style={st.modalHeader}>
-              <span style={st.modalTitle}>
-                {finModal === "expense" ? (finForm.kind === "corp" ? "Корпоративная трата" : "Личная трата")
-                  : finModal === "piggybank" ? "Копилка"
-                  : "Оплата обязательного"}
-              </span>
+              <span style={st.modalTitle}>{title}</span>
               <button style={st.modalClose} onClick={closeFin}>×</button>
             </div>
             <div style={{ ...st.modalBody, gap: 14 }}>
-              {finModal === "expense" && (
+              {isExpenseForm && (
                 <>
-                  <div style={st.priorityPicker}>
-                    {[["personal", "💳 Личная"], ["corp", "🏢 Корпоративная"]].map(([k, l]) => (
-                      <button key={k} onClick={() => setFinForm({ ...finForm, kind: k })}
-                        style={{ ...st.prBtn, color: finForm.kind === k ? st.checkboxAccent : st.cardDesc.color, borderColor: finForm.kind === k ? st.checkboxAccent : undefined }}>{l}</button>
-                    ))}
+                  {isEdit && (
+                    <div>
+                      <div style={st.modalLabel}>Дата</div>
+                      <input style={st.input} type="date" value={finForm.date || ""}
+                        onChange={(e) => setFinForm({ ...finForm, date: e.target.value })} />
+                    </div>
+                  )}
+                  <div>
+                    <div style={st.modalLabel}>Сумма</div>
+                    <input style={st.input} type="text" inputMode="decimal" placeholder="Сумма, ₽" autoFocus={isAdd}
+                      value={finForm.amount || ""} onChange={(e) => setFinForm({ ...finForm, amount: e.target.value })}
+                      onKeyDown={(e) => e.key === "Enter" && onExpenseSubmit()} />
                   </div>
-                  <input style={st.input} type="text" inputMode="decimal" placeholder="Сумма, ₽" autoFocus
+                  <div>
+                    <div style={st.modalLabel}>Категория</div>
+                    <select style={st.input} value={finForm.category || ""}
+                      onChange={(e) => setFinForm({ ...finForm, category: e.target.value })}>
+                      <option value="">— выберите —</option>
+                      {cats.map((c) => <option key={c} value={c}>{c}</option>)}
+                      <option value="__custom__">Своя…</option>
+                    </select>
+                    {finForm.category === "__custom__" && (
+                      <input style={{ ...st.input, marginTop: 8 }} type="text" placeholder="Название категории"
+                        value={finForm.customCategory || ""} onChange={(e) => setFinForm({ ...finForm, customCategory: e.target.value })} />
+                    )}
+                  </div>
+                  <div>
+                    <div style={st.modalLabel}>Заметка</div>
+                    <input style={st.input} type="text" placeholder="Необязательно"
+                      value={finForm.note || ""} onChange={(e) => setFinForm({ ...finForm, note: e.target.value })}
+                      onKeyDown={(e) => e.key === "Enter" && onExpenseSubmit()} />
+                  </div>
+                </>
+              )}
+              {finModal === "compensate" && (
+                <>
+                  <div style={{ fontSize: 13, color: st.cardDesc.color }}>Сумма для компенсации. Оставьте пустым, чтобы компенсировать весь остаток.</div>
+                  <input style={st.input} type="text" inputMode="decimal" placeholder="Сумма, ₽ (пусто = весь остаток)" autoFocus
                     value={finForm.amount || ""} onChange={(e) => setFinForm({ ...finForm, amount: e.target.value })}
-                    onKeyDown={(e) => e.key === "Enter" && submitExpense()} />
-                  <input style={st.input} type="text" placeholder="Категория (например, Кафе)"
-                    value={finForm.category || ""} onChange={(e) => setFinForm({ ...finForm, category: e.target.value })}
-                    onKeyDown={(e) => e.key === "Enter" && submitExpense()} />
+                    onKeyDown={(e) => e.key === "Enter" && submitCompensate()} />
                 </>
               )}
               {finModal === "piggybank" && (
@@ -1549,21 +1902,25 @@ export default function Yasnost() {
                   <input style={st.input} type="text" inputMode="decimal" placeholder={`Факт (пусто = ${(finModal.budgeted || 0).toLocaleString("ru-RU")} ₽)`} autoFocus
                     value={finForm.actual || ""} onChange={(e) => setFinForm({ ...finForm, actual: e.target.value })}
                     onKeyDown={(e) => e.key === "Enter" && submitPay()} />
-                  <div style={{ fontSize: 11, color: st.cardDesc.color }}>Экономия уйдёт в копилку.</div>
+                  <div style={{ fontSize: 11, color: st.cardDesc.color }}>Экономия вернётся в бюджет.</div>
                 </>
               )}
               {finError && <div style={{ color: "#E5575C", fontSize: 12 }}>{finError === "insufficient" ? "В копилке недостаточно средств" : finError === "bad_amount" ? "Неверная сумма" : finError === "not_configured" ? "Бюджет не настроен" : finError}</div>}
               <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
                 <button style={{ ...st.btnPrimary, opacity: finBusy ? .6 : 1 }} disabled={finBusy}
-                  onClick={finModal === "expense" ? submitExpense : finModal === "piggybank" ? submitPiggy : submitPay}>
-                  {finBusy ? "…" : finModal === "expense" ? "Добавить" : finModal === "piggybank" ? "Применить" : "Оплатить"}
+                  onClick={isExpenseForm ? onExpenseSubmit : finModal === "compensate" ? submitCompensate : finModal === "piggybank" ? submitPiggy : submitPay}>
+                  {finBusy ? "…" : isAdd ? "Добавить" : isEdit ? "Сохранить" : finModal === "compensate" ? "Компенсировать" : finModal === "piggybank" ? "Применить" : "Оплатить"}
                 </button>
+                {isEdit && (
+                  <button style={{ ...st.btnGhost, color: "#E5575C", borderColor: "#E5575C55" }} disabled={finBusy} onClick={deleteExpense}>Удалить</button>
+                )}
                 <button style={st.btnGhost} onClick={closeFin}>Отмена</button>
               </div>
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
