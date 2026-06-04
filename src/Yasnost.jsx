@@ -452,6 +452,8 @@ export default function Yasnost() {
   const [selectedCardId, setSelectedCardId] = useState(null);
   const [newCheckItem,   setNewCheckItem]   = useState("");
   const [aiLoading,      setAiLoading]      = useState(null);
+  const [budgetData,     setBudgetData]     = useState(null);
+  const [budgetLoading,  setBudgetLoading]  = useState(false);
   const wasDragging   = useRef(false);
   const saveTimer     = useRef(null);
   const isInitialLoad = useRef(true);
@@ -494,6 +496,15 @@ export default function Yasnost() {
         .catch(() => setSaveStatus("error"));
     }, 150);
   }, [cards, loading]);
+
+  useEffect(() => {
+    if (view !== "finance") return;
+    setBudgetLoading(true);
+    fetch("/api/budget")
+      .then((r) => r.json())
+      .then((d) => { setBudgetData(d); setBudgetLoading(false); })
+      .catch(() => setBudgetLoading(false));
+  }, [view]);
 
   useEffect(() => {
     const onUnload = () => {
@@ -1069,6 +1080,9 @@ export default function Yasnost() {
             <Icon name="today" /> Сегодня
             {todayCards.length > 0 && <span style={st.navBadge}>{todayCards.length}</span>}
           </div>
+          <div className="ys-nav-item" style={{ ...st.navItem, ...(view === "finance" ? st.navActive : {}) }} onClick={() => setView("finance")}>
+            <Icon name="wallet" /> Финансы
+          </div>
           <div style={st.navItem}><Icon name="doc" /> Документы</div>
           <div style={st.navItem}><Icon name="bell" /> Напоминания</div>
           <div style={st.navDivider} />
@@ -1109,9 +1123,9 @@ export default function Yasnost() {
 
         <header style={st.header} className="ys-header">
           <div>
-            <h1 style={st.h1} className="ys-h1">{view === "board" ? "Доска задач" : "Сегодня"}</h1>
+            <h1 style={st.h1} className="ys-h1">{view === "board" ? "Доска задач" : view === "today" ? "Сегодня" : "Финансы"}</h1>
             <p style={st.sub}>
-              {view === "board" ? `${cards.length} задач · ${countBy("in_progress")} в работе` : `${todayCards.length} задач требуют внимания`}
+              {view === "board" ? `${cards.length} задач · ${countBy("in_progress")} в работе` : view === "today" ? `${todayCards.length} задач требуют внимания` : budgetData ? `Период ${budgetData.start_date} — ${budgetData.end_date}` : "Загрузка…"}
             </p>
           </div>
           <div style={st.headerRight}>
@@ -1192,6 +1206,90 @@ export default function Yasnost() {
             ) : (
               <div style={st.todayList}>{visibleToday.map((c) => renderCard(c))}</div>
             )}
+          </div>
+        )}
+
+        {/* Finance */}
+        {view === "finance" && (
+          <div style={{ flex: 1, overflowY: "auto", padding: 26, position: "relative", zIndex: 1 }}>
+            {budgetLoading && <div style={{ color: "#5a5a5a", fontSize: 14 }}>Загрузка…</div>}
+            {!budgetLoading && !budgetData && <div style={{ color: "#5a5a5a", fontSize: 14 }}>Нет данных</div>}
+            {!budgetLoading && budgetData && (() => {
+              const b = budgetData;
+              const remaining = b.daily_limit - b.today_spent;
+              const totalMandatory = (b.mandatory_expenses || []).reduce((s, e) => s + e.amount, 0);
+              const totalFree = b.monthly_budget - totalMandatory;
+              const daysTotal = Math.max(1, Math.round((new Date(b.end_date) - new Date(b.start_date)) / 86400000) + 1);
+              const daysLeft = Math.max(0, Math.round((new Date(b.end_date) - new Date()) / 86400000));
+              const pct = Math.round((1 - daysLeft / daysTotal) * 100);
+              const catMap = {};
+              (b.personal_expenses || []).forEach(e => { catMap[e.category] = (catMap[e.category] || 0) + e.amount; });
+              const cats = Object.entries(catMap).sort((a, c) => c[1] - a[1]);
+              const totalCats = cats.reduce((s, [, v]) => s + v, 0) || 1;
+              const card = (label, value, color) => (
+                <div style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 14, padding: "16px 18px" }}>
+                  <div style={{ fontSize: 10, color: "#5a5a5a", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>{label}</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color, letterSpacing: "-0.02em" }}>{value}</div>
+                </div>
+              );
+              return (
+                <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
+                    {card("Лимит сегодня", b.daily_limit.toLocaleString("ru-RU") + " ₽", "#4D7CFF")}
+                    {card("Потрачено", b.today_spent.toLocaleString("ru-RU") + " ₽", remaining < 0 ? "#E57373" : "#9a9a9a")}
+                    {card("Остаток", remaining.toLocaleString("ru-RU") + " ₽", remaining < 0 ? "#E57373" : "#4CAF82")}
+                    {card("Копилка", b.piggybank.toLocaleString("ru-RU") + " ₽", "#FFB800")}
+                  </div>
+                  <div style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 14, padding: "16px 18px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, fontSize: 12 }}>
+                      <span style={{ color: "#9a9a9a", fontWeight: 600 }}>Период {b.start_date} → {b.end_date}</span>
+                      <span style={{ color: "#5a5a5a" }}>{daysLeft} дн. осталось</span>
+                    </div>
+                    <div style={{ height: 5, background: "rgba(255,255,255,.06)", borderRadius: 999 }}>
+                      <div style={{ height: "100%", width: pct + "%", background: "linear-gradient(90deg,#4D7CFF,#7C3AFF)", borderRadius: 999 }} />
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 11, color: "#5a5a5a" }}>
+                      <span>Бюджет: {b.monthly_budget.toLocaleString("ru-RU")} ₽</span>
+                      <span>Свободно: {totalFree.toLocaleString("ru-RU")} ₽</span>
+                    </div>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                    <div style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 14, padding: "16px 18px" }}>
+                      <div style={{ fontSize: 10, color: "#5a5a5a", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>Последние расходы</div>
+                      {(b.personal_expenses || []).slice(-10).reverse().map((e, i) => (
+                        <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid rgba(255,255,255,.04)", alignItems: "center" }}>
+                          <div>
+                            <div style={{ fontSize: 13, color: "#e0e0e0" }}>{e.category}</div>
+                            <div style={{ fontSize: 11, color: "#5a5a5a" }}>{e.date}</div>
+                          </div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: "#E57373" }}>−{e.amount.toLocaleString("ru-RU")} ₽</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 14, padding: "16px 18px" }}>
+                      <div style={{ fontSize: 10, color: "#5a5a5a", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>По категориям</div>
+                      {cats.map(([cat, sum]) => (
+                        <div key={cat} style={{ marginBottom: 10 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, fontSize: 12 }}>
+                            <span style={{ color: "#9a9a9a" }}>{cat}</span>
+                            <span style={{ color: "#e0e0e0", fontWeight: 600 }}>{sum.toLocaleString("ru-RU")} ₽</span>
+                          </div>
+                          <div style={{ height: 4, background: "rgba(255,255,255,.06)", borderRadius: 999 }}>
+                            <div style={{ height: "100%", width: Math.round(sum / totalCats * 100) + "%", background: "#4D7CFF", borderRadius: 999 }} />
+                          </div>
+                        </div>
+                      ))}
+                      <div style={{ fontSize: 10, color: "#5a5a5a", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", margin: "14px 0 8px" }}>Обязательные</div>
+                      {(b.mandatory_expenses || []).map((e, i) => (
+                        <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "3px 0", color: "#6a6a6a" }}>
+                          <span>{e.name}</span><span>{e.amount.toLocaleString("ru-RU")} ₽</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
       </main>
@@ -1319,6 +1417,7 @@ function Icon({ name, color = "currentColor" }) {
   const p = { width: 14, height: 14, fill: "none", stroke: color, strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" };
   const paths = {
     board:  <><rect x="3" y="3" width="6" height="18" rx="1" /><rect x="11" y="3" width="6" height="11" rx="1" /></>,
+    wallet: <><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 3H6a2 2 0 0 0-2 2" /><circle cx="17" cy="14" r="1" fill={color} stroke="none" /></>,
     doc:    <><path d="M6 2h7l5 5v15H6z" /><path d="M13 2v5h5" /></>,
     bell:   <><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10 21a2 2 0 0 0 4 0" /></>,
     plus:   <><path d="M12 5v14M5 12h14" /></>,
