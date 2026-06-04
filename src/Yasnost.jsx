@@ -454,6 +454,10 @@ export default function Yasnost() {
   const [aiLoading,      setAiLoading]      = useState(null);
   const [budgetData,     setBudgetData]     = useState(null);
   const [budgetLoading,  setBudgetLoading]  = useState(false);
+  const [finModal,       setFinModal]       = useState(null);   // 'expense' | 'piggybank' | {type:'pay',index,name,budgeted}
+  const [finForm,        setFinForm]        = useState({});
+  const [finBusy,        setFinBusy]        = useState(false);
+  const [finError,       setFinError]       = useState("");
   const wasDragging   = useRef(false);
   const saveTimer     = useRef(null);
   const isInitialLoad = useRef(true);
@@ -497,14 +501,49 @@ export default function Yasnost() {
     }, 150);
   }, [cards, loading]);
 
-  useEffect(() => {
-    if (view !== "finance") return;
+  const loadBudget = () => {
     setBudgetLoading(true);
     fetch("/api/budget")
       .then((r) => r.json())
       .then((d) => { setBudgetData(d); setBudgetLoading(false); })
       .catch(() => setBudgetLoading(false));
-  }, [view]);
+  };
+  useEffect(() => { if (view === "finance") loadBudget(); }, [view]);
+
+  const budgetAction = async (path, body, method = "POST") => {
+    setFinBusy(true); setFinError("");
+    try {
+      const r = await fetch("/api/budget" + path, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const d = await r.json();
+      if (!r.ok) { setFinError(d.error || "Ошибка"); setFinBusy(false); return false; }
+      setBudgetData(d); setFinBusy(false); return true;
+    } catch {
+      setFinError("Сеть недоступна"); setFinBusy(false); return false;
+    }
+  };
+  const closeFin = () => { setFinModal(null); setFinForm({}); setFinError(""); };
+  const parseMoney = (v) => parseFloat(String(v == null ? "" : v).replace(/\s/g, "").replace(",", "."));
+  const submitExpense = async () => {
+    const amount = parseMoney(finForm.amount);
+    if (!amount || amount <= 0) { setFinError("Введите сумму"); return; }
+    const path = finForm.kind === "corp" ? "/corporate" : "/expense";
+    if (await budgetAction(path, { amount, category: (finForm.category || "").trim() })) closeFin();
+  };
+  const submitPiggy = async () => {
+    const amount = parseMoney(finForm.amount);
+    if (!(amount >= 0)) { setFinError("Введите сумму"); return; }
+    if (await budgetAction("/piggybank", { action: finForm.action || "add", amount })) closeFin();
+  };
+  const submitPay = async () => {
+    const raw = finForm.actual;
+    const actual = raw === "" || raw == null ? null : parseMoney(raw);
+    if (await budgetAction("/mandatory/pay", { index: finModal.index, actual })) closeFin();
+  };
+  const undoLastExpense = () => budgetAction("/expense/last", null, "DELETE");
 
   useEffect(() => {
     const onUnload = () => {
@@ -1211,81 +1250,130 @@ export default function Yasnost() {
 
         {/* Finance */}
         {view === "finance" && (
-          <div style={{ flex: 1, overflowY: "auto", padding: 26, position: "relative", zIndex: 1 }}>
-            {budgetLoading && <div style={{ color: "#5a5a5a", fontSize: 14 }}>Загрузка…</div>}
-            {!budgetLoading && (!budgetData || budgetData.error) && <div style={{ color: "#5a5a5a", fontSize: 14 }}>Нет данных</div>}
-            {!budgetLoading && budgetData && !budgetData.error && (() => {
+          <div style={st.todayView}>
+            {budgetLoading && <div style={{ color: st.sub.color, fontSize: 14 }}>Загрузка…</div>}
+            {!budgetLoading && budgetData && !budgetData.configured && (
+              <div style={st.empty}>Бюджет ещё не настроен. Открой бота и напиши <b>/бюджет</b>.</div>
+            )}
+            {!budgetLoading && budgetData && budgetData.configured && (() => {
               const b = budgetData;
-              const remaining = b.daily_limit - b.today_spent;
-              const totalMandatory = (b.mandatory_expenses || []).reduce((s, e) => s + e.amount, 0);
-              const totalFree = b.monthly_budget - totalMandatory;
-              const daysTotal = Math.max(1, Math.round((new Date(b.end_date) - new Date(b.start_date)) / 86400000) + 1);
-              const daysLeft = Math.max(0, Math.round((new Date(b.end_date) - new Date()) / 86400000));
-              const pct = Math.round((1 - daysLeft / daysTotal) * 100);
-              const catMap = {};
-              (b.personal_expenses || []).forEach(e => { catMap[e.category] = (catMap[e.category] || 0) + e.amount; });
-              const cats = Object.entries(catMap).sort((a, c) => c[1] - a[1]);
+              const accent = st.checkboxAccent;
+              const barFill = (st.btnPrimary && st.btnPrimary.background) || accent;
+              const txt = st.cardTitle.color;
+              const muted = st.cardDesc.color;
+              const RED = "#E5575C", GREEN = "#3FB27F", AMBER = "#E8A13A";
+              const panel = { ...st.card, cursor: "default", padding: "16px 18px" };
+              const fmt = (n) => (n || 0).toLocaleString("ru-RU") + " ₽";
+              const pct = b.days_total ? Math.min(100, Math.max(0, Math.round((b.days_total - b.days_left) / b.days_total * 100))) : 0;
+              const cats = (() => { const m = {}; (b.personal_expenses || []).forEach(e => { m[e.category] = (m[e.category] || 0) + e.amount; }); return Object.entries(m).sort((a, c) => c[1] - a[1]); })();
               const totalCats = cats.reduce((s, [, v]) => s + v, 0) || 1;
-              const card = (label, value, color) => (
-                <div style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 14, padding: "16px 18px" }}>
-                  <div style={{ fontSize: 10, color: "#5a5a5a", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>{label}</div>
+              const recent = (b.personal_expenses || []).map((e, idx) => ({ ...e, idx })).slice(-12).reverse();
+              const lastIdx = (b.personal_expenses || []).length - 1;
+              const lbl = { fontSize: 10, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 };
+              const stat = (label, value, color) => (
+                <div style={panel}>
+                  <div style={{ fontSize: 10, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>{label}</div>
                   <div style={{ fontSize: 22, fontWeight: 800, color, letterSpacing: "-0.02em" }}>{value}</div>
                 </div>
               );
+              const tbtn = (label, on, primary) => (
+                <button onClick={on} disabled={finBusy}
+                  style={primary
+                    ? { ...st.btnPrimary, flex: "none", padding: "9px 16px", opacity: finBusy ? .6 : 1 }
+                    : { ...st.btnGhost, padding: "9px 14px", opacity: finBusy ? .6 : 1 }}>{label}</button>
+              );
               return (
                 <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    {tbtn("＋ Расход", () => { setFinForm({ kind: "personal", amount: "", category: "" }); setFinError(""); setFinModal("expense"); }, true)}
+                    {tbtn("＋ Корпоративная", () => { setFinForm({ kind: "corp", amount: "", category: "" }); setFinError(""); setFinModal("expense"); })}
+                    {tbtn("🐷 Копилка", () => { setFinForm({ action: "add", amount: "" }); setFinError(""); setFinModal("piggybank"); })}
+                    {lastIdx >= 0 && tbtn("↩️ Отменить последнюю", undoLastExpense)}
+                  </div>
+
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
-                    {card("Лимит сегодня", b.daily_limit.toLocaleString("ru-RU") + " ₽", "#4D7CFF")}
-                    {card("Потрачено", b.today_spent.toLocaleString("ru-RU") + " ₽", remaining < 0 ? "#E57373" : "#9a9a9a")}
-                    {card("Остаток", remaining.toLocaleString("ru-RU") + " ₽", remaining < 0 ? "#E57373" : "#4CAF82")}
-                    {card("Копилка", b.piggybank.toLocaleString("ru-RU") + " ₽", "#FFB800")}
+                    {stat("Лимит сегодня", fmt(b.today_limit), accent)}
+                    {stat("Потрачено", fmt(b.today_spent), b.remaining < 0 ? RED : txt)}
+                    {stat("Остаток", fmt(b.remaining), b.remaining < 0 ? RED : GREEN)}
+                    {stat("Копилка", fmt(b.piggybank), AMBER)}
                   </div>
-                  <div style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 14, padding: "16px 18px" }}>
+
+                  <div style={panel}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, fontSize: 12 }}>
-                      <span style={{ color: "#9a9a9a", fontWeight: 600 }}>Период {b.start_date} → {b.end_date}</span>
-                      <span style={{ color: "#5a5a5a" }}>{daysLeft} дн. осталось</span>
+                      <span style={{ color: txt, fontWeight: 600 }}>Период {b.start_date} → {b.end_date}</span>
+                      <span style={{ color: muted }}>{b.days_left} дн. осталось</span>
                     </div>
-                    <div style={{ height: 5, background: "rgba(255,255,255,.06)", borderRadius: 999 }}>
-                      <div style={{ height: "100%", width: pct + "%", background: "linear-gradient(90deg,#4D7CFF,#7C3AFF)", borderRadius: 999 }} />
+                    <div style={{ height: 6, background: "rgba(128,128,128,.18)", borderRadius: 999, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: pct + "%", background: barFill, borderRadius: 999, transition: "width .4s" }} />
                     </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 11, color: "#5a5a5a" }}>
-                      <span>Бюджет: {b.monthly_budget.toLocaleString("ru-RU")} ₽</span>
-                      <span>Свободно: {totalFree.toLocaleString("ru-RU")} ₽</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 11, color: muted, flexWrap: "wrap", gap: 8 }}>
+                      <span>Бюджет: {fmt(b.monthly_budget)}</span>
+                      <span>Обязательные: {fmt(b.mandatory_total)}</span>
+                      <span>Свободно: {fmt(b.free)}</span>
                     </div>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                    <div style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 14, padding: "16px 18px" }}>
-                      <div style={{ fontSize: 10, color: "#5a5a5a", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>Последние расходы</div>
-                      {(b.personal_expenses || []).slice(-10).reverse().map((e, i) => (
-                        <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid rgba(255,255,255,.04)", alignItems: "center" }}>
-                          <div>
-                            <div style={{ fontSize: 13, color: "#e0e0e0" }}>{e.category}</div>
-                            <div style={{ fontSize: 11, color: "#5a5a5a" }}>{e.date}</div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14 }}>
+                    <div style={panel}>
+                      <div style={lbl}>Последние расходы</div>
+                      {recent.length === 0 && <div style={{ color: muted, fontSize: 13 }}>Пока пусто</div>}
+                      {recent.map((e) => {
+                        const isObyaz = typeof e.category === "string" && e.category.startsWith("Обяз:");
+                        return (
+                          <div key={e.idx} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid rgba(128,128,128,.12)", alignItems: "center", gap: 8 }}>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontSize: 13, color: txt, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: 999, background: isObyaz ? AMBER : RED, marginRight: 7 }} />
+                                {e.category}
+                              </div>
+                              <div style={{ fontSize: 11, color: muted, marginLeft: 14 }}>{e.date}</div>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: RED }}>−{(e.amount || 0).toLocaleString("ru-RU")} ₽</span>
+                              {e.idx === lastIdx && (
+                                <button title="Отменить" onClick={undoLastExpense} disabled={finBusy}
+                                  style={{ border: "none", background: "transparent", color: muted, cursor: "pointer", fontSize: 15, lineHeight: 1, padding: "0 2px" }}>×</button>
+                              )}
+                            </div>
                           </div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: "#E57373" }}>−{e.amount.toLocaleString("ru-RU")} ₽</div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
-                    <div style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 14, padding: "16px 18px" }}>
-                      <div style={{ fontSize: 10, color: "#5a5a5a", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>По категориям</div>
-                      {cats.map(([cat, sum]) => (
+
+                    <div style={panel}>
+                      <div style={lbl}>По категориям</div>
+                      {cats.length === 0 && <div style={{ color: muted, fontSize: 13 }}>Пока пусто</div>}
+                      {cats.slice(0, 10).map(([cat, sum]) => (
                         <div key={cat} style={{ marginBottom: 10 }}>
                           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, fontSize: 12 }}>
-                            <span style={{ color: "#9a9a9a" }}>{cat}</span>
-                            <span style={{ color: "#e0e0e0", fontWeight: 600 }}>{sum.toLocaleString("ru-RU")} ₽</span>
+                            <span style={{ color: muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginRight: 8 }}>{cat}</span>
+                            <span style={{ color: txt, fontWeight: 600, flexShrink: 0 }}>{sum.toLocaleString("ru-RU")} ₽</span>
                           </div>
-                          <div style={{ height: 4, background: "rgba(255,255,255,.06)", borderRadius: 999 }}>
-                            <div style={{ height: "100%", width: Math.round(sum / totalCats * 100) + "%", background: "#4D7CFF", borderRadius: 999 }} />
+                          <div style={{ height: 4, background: "rgba(128,128,128,.18)", borderRadius: 999, overflow: "hidden" }}>
+                            <div style={{ height: "100%", width: Math.round(sum / totalCats * 100) + "%", background: accent, borderRadius: 999 }} />
                           </div>
-                        </div>
-                      ))}
-                      <div style={{ fontSize: 10, color: "#5a5a5a", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", margin: "14px 0 8px" }}>Обязательные</div>
-                      {(b.mandatory_expenses || []).map((e, i) => (
-                        <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "3px 0", color: "#6a6a6a" }}>
-                          <span>{e.name}</span><span>{e.amount.toLocaleString("ru-RU")} ₽</span>
                         </div>
                       ))}
                     </div>
+                  </div>
+
+                  <div style={panel}>
+                    <div style={lbl}>Обязательные расходы</div>
+                    {(b.mandatory_expenses || []).length === 0 && <div style={{ color: muted, fontSize: 13 }}>Список пуст</div>}
+                    {(b.mandatory_expenses || []).map((e, i) => (
+                      <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(128,128,128,.12)", gap: 8 }}>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 13, color: txt }}>{e.paid ? "✅" : "⬜"} {e.name}</div>
+                          <div style={{ fontSize: 11, color: muted }}>
+                            план {(e.amount || 0).toLocaleString("ru-RU")} ₽{e.paid ? ` · факт ${(e.paid_amount || 0).toLocaleString("ru-RU")} ₽` : ""}
+                          </div>
+                        </div>
+                        {!e.paid && (
+                          <button onClick={() => { setFinForm({ actual: "" }); setFinError(""); setFinModal({ type: "pay", index: i, name: e.name, budgeted: e.amount }); }} disabled={finBusy}
+                            style={{ ...st.btnGhost, padding: "6px 12px", fontSize: 12, flexShrink: 0 }}>Оплатить</button>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
               );
@@ -1404,6 +1492,73 @@ export default function Yasnost() {
                 {selectedCard.ai && aiLoading !== selectedCard.id && (
                   <div style={st.aiPanel}>{selectedCard.ai}</div>
                 )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Finance modals ── */}
+      {finModal && (
+        <div style={st.overlay} className="ys-overlay" onClick={closeFin}>
+          <div style={{ ...st.modal, width: "min(440px, 94vw)" }} className="ys-modal" onClick={(e) => e.stopPropagation()}>
+            <div style={st.modalHeader}>
+              <span style={st.modalTitle}>
+                {finModal === "expense" ? (finForm.kind === "corp" ? "Корпоративная трата" : "Личная трата")
+                  : finModal === "piggybank" ? "Копилка"
+                  : "Оплата обязательного"}
+              </span>
+              <button style={st.modalClose} onClick={closeFin}>×</button>
+            </div>
+            <div style={{ ...st.modalBody, gap: 14 }}>
+              {finModal === "expense" && (
+                <>
+                  <div style={st.priorityPicker}>
+                    {[["personal", "💳 Личная"], ["corp", "🏢 Корпоративная"]].map(([k, l]) => (
+                      <button key={k} onClick={() => setFinForm({ ...finForm, kind: k })}
+                        style={{ ...st.prBtn, color: finForm.kind === k ? st.checkboxAccent : st.cardDesc.color, borderColor: finForm.kind === k ? st.checkboxAccent : undefined }}>{l}</button>
+                    ))}
+                  </div>
+                  <input style={st.input} type="text" inputMode="decimal" placeholder="Сумма, ₽" autoFocus
+                    value={finForm.amount || ""} onChange={(e) => setFinForm({ ...finForm, amount: e.target.value })}
+                    onKeyDown={(e) => e.key === "Enter" && submitExpense()} />
+                  <input style={st.input} type="text" placeholder="Категория (например, Кафе)"
+                    value={finForm.category || ""} onChange={(e) => setFinForm({ ...finForm, category: e.target.value })}
+                    onKeyDown={(e) => e.key === "Enter" && submitExpense()} />
+                </>
+              )}
+              {finModal === "piggybank" && (
+                <>
+                  <div style={{ fontSize: 13, color: st.cardDesc.color }}>Сейчас в копилке: <b style={{ color: st.cardTitle.color }}>{(budgetData?.piggybank || 0).toLocaleString("ru-RU")} ₽</b></div>
+                  <div style={st.priorityPicker}>
+                    {[["add", "💰 Пополнить"], ["withdraw", "📤 Снять"]].map(([k, l]) => (
+                      <button key={k} onClick={() => setFinForm({ ...finForm, action: k })}
+                        style={{ ...st.prBtn, color: (finForm.action || "add") === k ? st.checkboxAccent : st.cardDesc.color, borderColor: (finForm.action || "add") === k ? st.checkboxAccent : undefined }}>{l}</button>
+                    ))}
+                  </div>
+                  <input style={st.input} type="text" inputMode="decimal" placeholder="Сумма, ₽" autoFocus
+                    value={finForm.amount || ""} onChange={(e) => setFinForm({ ...finForm, amount: e.target.value })}
+                    onKeyDown={(e) => e.key === "Enter" && submitPiggy()} />
+                  {finForm.action === "withdraw" && <div style={{ fontSize: 11, color: st.cardDesc.color }}>Снятие увеличит лимит сегодняшнего дня.</div>}
+                </>
+              )}
+              {finModal && finModal.type === "pay" && (
+                <>
+                  <div style={{ fontSize: 14, color: st.cardTitle.color }}>{finModal.name}</div>
+                  <div style={{ fontSize: 13, color: st.cardDesc.color }}>Заложено: <b>{(finModal.budgeted || 0).toLocaleString("ru-RU")} ₽</b></div>
+                  <input style={st.input} type="text" inputMode="decimal" placeholder={`Факт (пусто = ${(finModal.budgeted || 0).toLocaleString("ru-RU")} ₽)`} autoFocus
+                    value={finForm.actual || ""} onChange={(e) => setFinForm({ ...finForm, actual: e.target.value })}
+                    onKeyDown={(e) => e.key === "Enter" && submitPay()} />
+                  <div style={{ fontSize: 11, color: st.cardDesc.color }}>Экономия уйдёт в копилку.</div>
+                </>
+              )}
+              {finError && <div style={{ color: "#E5575C", fontSize: 12 }}>{finError === "insufficient" ? "В копилке недостаточно средств" : finError === "bad_amount" ? "Неверная сумма" : finError === "not_configured" ? "Бюджет не настроен" : finError}</div>}
+              <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                <button style={{ ...st.btnPrimary, opacity: finBusy ? .6 : 1 }} disabled={finBusy}
+                  onClick={finModal === "expense" ? submitExpense : finModal === "piggybank" ? submitPiggy : submitPay}>
+                  {finBusy ? "…" : finModal === "expense" ? "Добавить" : finModal === "piggybank" ? "Применить" : "Оплатить"}
+                </button>
+                <button style={st.btnGhost} onClick={closeFin}>Отмена</button>
               </div>
             </div>
           </div>
