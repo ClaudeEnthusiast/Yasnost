@@ -142,11 +142,15 @@ const THEMES = {
       .ys-calchip { transition: transform .12s, filter .12s; }
       .ys-calchip:hover { filter: brightness(1.15); transform: translateX(1px); }
       .ys-calcell:hover { background: rgba(128,128,128,.09) !important; }
+      .ys-calcell:hover .ys-cal-add { opacity: 1 !important; }
+      .ys-cal-add:hover { transform: scale(1.25); }
       .ys-fin-tab { transition: all .15s; }
       .ys-fin-row { transition: background .12s; border-radius: 8px; }
       .ys-fin-row:hover { background: rgba(128,128,128,.08); }
       .ys-fade-in { animation: ys-fade-in .28s ease both; }
       @keyframes ys-fade-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+      .ys-toast { animation: ys-toast-in .22s cubic-bezier(.2,.7,.3,1) both; }
+      @keyframes ys-toast-in { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
       input::placeholder, textarea::placeholder { color: #4a4a4a; }
       input[type="date"] { color-scheme: dark; }
       select { color-scheme: dark; }
@@ -274,11 +278,15 @@ const THEMES = {
       .ys-calchip { transition: transform .12s, filter .12s; }
       .ys-calchip:hover { filter: brightness(1.15); transform: translateX(1px); }
       .ys-calcell:hover { background: rgba(128,128,128,.09) !important; }
+      .ys-calcell:hover .ys-cal-add { opacity: 1 !important; }
+      .ys-cal-add:hover { transform: scale(1.25); }
       .ys-fin-tab { transition: all .15s; }
       .ys-fin-row { transition: background .12s; border-radius: 8px; }
       .ys-fin-row:hover { background: rgba(128,128,128,.08); }
       .ys-fade-in { animation: ys-fade-in .28s ease both; }
       @keyframes ys-fade-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+      .ys-toast { animation: ys-toast-in .22s cubic-bezier(.2,.7,.3,1) both; }
+      @keyframes ys-toast-in { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
       input::placeholder, textarea::placeholder { color: #5B616D; }
       input[type="date"] { color-scheme: dark; }
       select { color-scheme: dark; }
@@ -431,11 +439,15 @@ const THEMES = {
       .ys-calchip { transition: transform .12s, filter .12s; }
       .ys-calchip:hover { filter: brightness(1.15); transform: translateX(1px); }
       .ys-calcell:hover { background: rgba(128,128,128,.09) !important; }
+      .ys-calcell:hover .ys-cal-add { opacity: 1 !important; }
+      .ys-cal-add:hover { transform: scale(1.25); }
       .ys-fin-tab { transition: all .15s; }
       .ys-fin-row { transition: background .12s; border-radius: 8px; }
       .ys-fin-row:hover { background: rgba(128,128,128,.08); }
       .ys-fade-in { animation: ys-fade-in .28s ease both; }
       @keyframes ys-fade-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+      .ys-toast { animation: ys-toast-in .22s cubic-bezier(.2,.7,.3,1) both; }
+      @keyframes ys-toast-in { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
       input::placeholder, textarea::placeholder { color: #B0A99D; }
       @media (max-width: 768px) {
         .ys-app    { flex-direction: column !important; height: auto !important; min-height: 100dvh; overflow: auto !important; }
@@ -495,6 +507,13 @@ export default function Yasnost() {
   const [aiBudgetLoading,setAiBudgetLoading]= useState(false);
   const [aiBudgetError,  setAiBudgetError]  = useState("");
   const [calMonth,       setCalMonth]       = useState(() => { const n = new Date(); return { y: n.getFullYear(), m: n.getMonth() }; });
+  const [priorityFilter, setPriorityFilter] = useState("all");   // all | urgent | important | normal
+  const [calDragId,      setCalDragId]      = useState(null);     // task id being dragged over calendar
+  const [calOverDay,     setCalOverDay]     = useState(null);     // ISO of day cell hovered during DnD
+  const [finSearch,      setFinSearch]      = useState("");       // expense search query
+  const [toasts,         setToasts]         = useState([]);       // {id,msg,type,action?}
+  const toastTimers   = useRef({});
+  const searchRef     = useRef(null);
   const wasDragging   = useRef(false);
   const saveTimer     = useRef(null);
   const isInitialLoad = useRef(true);
@@ -516,6 +535,20 @@ export default function Yasnost() {
     localStorage.setItem("ys-theme", key);
   };
 
+  // ── Тосты ──
+  const dismissToast = (id) => {
+    clearTimeout(toastTimers.current[id]); delete toastTimers.current[id];
+    setToasts((ts) => ts.filter((t) => t.id !== id));
+  };
+  const toast = (msg, type = "info", opts = {}) => {
+    const id = Date.now() + Math.random();
+    setToasts((ts) => [...ts, { id, msg, type, action: opts.action, actionLabel: opts.actionLabel }]);
+    const ttl = opts.ttl != null ? opts.ttl : 2500;
+    toastTimers.current[id] = setTimeout(() => dismissToast(id), ttl);
+    return id;
+  };
+  useEffect(() => () => { Object.values(toastTimers.current).forEach(clearTimeout); }, []);
+
   // Загрузка
   useEffect(() => {
     fetch("/api/cards")
@@ -533,8 +566,8 @@ export default function Yasnost() {
     const snapshot = cards;
     saveTimer.current = setTimeout(() => {
       fetch("/api/cards", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(snapshot) })
-        .then((r) => setSaveStatus(r.ok ? "saved" : "error"))
-        .catch(() => setSaveStatus("error"));
+        .then((r) => { setSaveStatus(r.ok ? "saved" : "error"); if (!r.ok) toast("Не удалось сохранить задачи", "error"); })
+        .catch(() => { setSaveStatus("error"); toast("Не удалось сохранить задачи", "error"); });
     }, 150);
   }, [cards, loading]);
 
@@ -556,10 +589,10 @@ export default function Yasnost() {
         body: body ? JSON.stringify(body) : undefined,
       });
       const d = await r.json();
-      if (!r.ok) { setFinError(d.error || "Ошибка"); setFinBusy(false); return false; }
+      if (!r.ok) { const msg = d.error || "Ошибка"; setFinError(msg); setFinBusy(false); toast("Ошибка: " + (msg === "insufficient" ? "недостаточно средств" : msg === "bad_amount" ? "неверная сумма" : msg), "error"); return false; }
       setBudgetData(d); setFinBusy(false); return true;
     } catch {
-      setFinError("Сеть недоступна"); setFinBusy(false); return false;
+      setFinError("Сеть недоступна"); setFinBusy(false); toast("Сеть недоступна", "error"); return false;
     }
   };
   const closeFin = () => { setFinModal(null); setFinForm({}); setFinError(""); };
@@ -576,7 +609,7 @@ export default function Yasnost() {
     const category = resolveCategory();
     if (!category) { setFinError("Укажите категорию"); return; }
     const path = finForm.kind === "corp" ? "/corporate" : "/expense";
-    if (await budgetAction(path, { amount, category, note: (finForm.note || "").trim() })) closeFin();
+    if (await budgetAction(path, { amount, category, note: (finForm.note || "").trim() })) { toast("Расход добавлен", "success"); closeFin(); }
   };
   const submitEditExpense = async () => {
     const amount = parseMoney(finForm.amount);
@@ -584,17 +617,18 @@ export default function Yasnost() {
     const category = resolveCategory();
     if (!category) { setFinError("Укажите категорию"); return; }
     const base = finForm.kind === "corp" ? "/corporate/" : "/expense/";
-    if (await budgetAction(base + finForm.idx, { date: finForm.date || undefined, amount, category, note: (finForm.note || "").trim() }, "PATCH")) closeFin();
+    if (await budgetAction(base + finForm.idx, { date: finForm.date || undefined, amount, category, note: (finForm.note || "").trim() }, "PATCH")) { toast("Расход изменён", "success"); closeFin(); }
   };
   const deleteExpense = async () => {
+    if (!window.confirm("Удалить этот расход?")) return;
     const base = finForm.kind === "corp" ? "/corporate/" : "/expense/";
-    if (await budgetAction(base + finForm.idx, null, "DELETE")) closeFin();
+    if (await budgetAction(base + finForm.idx, null, "DELETE")) { toast("Расход удалён", "success"); closeFin(); }
   };
   const submitCompensate = async () => {
     const raw = finForm.amount;
     const amount = raw === "" || raw == null ? undefined : parseMoney(raw);
     if (raw !== "" && raw != null && (!amount || amount <= 0)) { setFinError("Введите сумму"); return; }
-    if (await budgetAction("/corporate/compensate", { index: finForm.idx, amount }, "POST")) closeFin();
+    if (await budgetAction("/corporate/compensate", { index: finForm.idx, amount }, "POST")) { toast("Компенсация учтена", "success"); closeFin(); }
   };
   const unpayMandatory = (index) => budgetAction("/mandatory/unpay", { index });
   const runBudgetAnalysis = async () => {
@@ -612,12 +646,12 @@ export default function Yasnost() {
   const submitPiggy = async () => {
     const amount = parseMoney(finForm.amount);
     if (!(amount >= 0)) { setFinError("Введите сумму"); return; }
-    if (await budgetAction("/piggybank", { action: finForm.action || "add", amount })) closeFin();
+    if (await budgetAction("/piggybank", { action: finForm.action || "add", amount })) { toast(finForm.action === "withdraw" ? "Снято из копилки" : "Копилка пополнена", "success"); closeFin(); }
   };
   const submitPay = async () => {
     const raw = finForm.actual;
     const actual = raw === "" || raw == null ? null : parseMoney(raw);
-    if (await budgetAction("/mandatory/pay", { index: finModal.index, actual })) closeFin();
+    if (await budgetAction("/mandatory/pay", { index: finModal.index, actual })) { toast("Обязательный платёж оплачен", "success"); closeFin(); }
   };
   const undoLastExpense = () => budgetAction("/expense/last", null, "DELETE");
 
@@ -633,7 +667,17 @@ export default function Yasnost() {
   }, [cards, loading]);
 
   useEffect(() => {
-    const h = (e) => { if (e.key === "Escape") setSelectedCardId(null); };
+    const h = (e) => {
+      if (e.key === "Escape") { setSelectedCardId(null); setFinModal(null); return; }
+      const tag = (e.target && e.target.tagName) || "";
+      const typing = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (e.target && e.target.isContentEditable);
+      if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === "/") { e.preventDefault(); searchRef.current && searchRef.current.focus(); }
+      else if (e.key === "n") { e.preventDefault(); setView("board"); setAdding(COLUMNS[0].id); setDraft({ title: "", desc: "", due: "", priority: "normal" }); }
+      else if (e.key === "1") setView("board");
+      else if (e.key === "2") setView("calendar");
+      else if (e.key === "3") setView("finance");
+    };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
   }, []);
@@ -1088,7 +1132,22 @@ export default function Yasnost() {
     setAdding(null);
   };
 
-  const removeCard = (id) => { if (selectedCardId === id) setSelectedCardId(null); setCards((cs) => cs.filter((c) => c.id !== id)); };
+  // Быстрое добавление задачи на конкретный день (календарь) — возвращает id
+  const addQuickCard = (day) => {
+    const newId = Math.max(0, ...cards.map((c) => c.id)) + 1;
+    setCards((cs) => [...cs, { id: newId, title: "Новая задача", desc: "", status: "todo", due: day, docs: 0, priority: "normal", notes: "", checklist: [] }]);
+    return newId;
+  };
+
+  const removeCard = (id) => {
+    const card = cards.find((c) => c.id === id);
+    if (selectedCardId === id) setSelectedCardId(null);
+    setCards((cs) => cs.filter((c) => c.id !== id));
+    if (card) {
+      toast("Задача удалена", "info", { ttl: 5000, actionLabel: "Отменить",
+        action: () => setCards((cs) => cs.some((c) => c.id === card.id) ? cs : [...cs, card]) });
+    }
+  };
   const resetCards = () => setCards(SEED.map((c) => ({ ...c })));
 
   const fmtDate = (d) => {
@@ -1097,14 +1156,16 @@ export default function Yasnost() {
     const tod = new Date(TODAY + "T00:00:00");
     const diff = Math.round((dt - tod) / 86400000);
     const s = dt.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
-    if (diff < 0)   return { tone: "#C0392B", label: s };
-    if (diff === 0) return { tone: "#C0392B", label: "Сегодня" };
+    if (diff < 0)   return { tone: "#C0392B", label: s, overdue: true };
+    if (diff === 0) return { tone: "#C0392B", label: "Сегодня", today: true };
     if (diff <= 2)  return { tone: "#B8860B", label: s };
     return { tone: "#6B7280", label: s };
   };
 
   const q            = searchQuery.toLowerCase();
-  const visibleCards = q ? cards.filter((c) => c.title.toLowerCase().includes(q)) : cards;
+  const visibleCards = cards
+    .filter((c) => (q ? c.title.toLowerCase().includes(q) : true))
+    .filter((c) => (priorityFilter === "all" ? true : (c.priority || "normal") === priorityFilter));
   const todayCards   = cards.filter((c) => c.due && c.due <= TODAY).sort((a, b) => a.due.localeCompare(b.due));
   const visibleToday = q ? todayCards.filter((c) => c.title.toLowerCase().includes(q)) : todayCards;
   const countBy      = (status) => visibleCards.filter((c) => c.status === status).length;
@@ -1124,9 +1185,11 @@ export default function Yasnost() {
 
   const renderCard = (c, accent) => {
     const colAccent = accent ?? COLUMNS.find((col) => col.id === c.status)?.accent ?? "#6B7280";
-    const d  = fmtDate(c.due);
+    let d  = fmtDate(c.due);
+    if (d && c.status === "done") d = { ...d, tone: "#6B7280", overdue: false, today: false }; // выполненные не «горят»
     const pr = priorities[c.priority] || priorities.normal;
     const cl = c.checklist || [];
+    const clDone = cl.filter((i) => i.done).length;
     return (
       <article
         key={c.id}
@@ -1151,12 +1214,17 @@ export default function Yasnost() {
             {pr.emoji} {pr.label}
           </span>
           {d && (
-            <span style={{ ...st.metaChip, color: d.tone, borderColor: d.tone + "33" }}>
-              <Icon name="clock" color={d.tone} /> {d.label}
+            <span style={{ ...st.metaChip, color: d.tone, borderColor: d.tone + (d.overdue || d.today ? "66" : "33"), background: (d.overdue || d.today) ? d.tone + "18" : st.metaChip.background, fontWeight: (d.overdue || d.today) ? 700 : st.metaChip.fontWeight }}>
+              <Icon name="clock" color={d.tone} /> {d.overdue ? "Просрочено · " : ""}{d.label}
             </span>
           )}
-          {cl.length > 0 && <span style={st.metaChip}>✓ {cl.filter((i) => i.done).length}/{cl.length}</span>}
+          {cl.length > 0 && <span style={st.metaChip}>✓ {clDone}/{cl.length}</span>}
         </div>
+        {cl.length > 0 && (
+          <div style={{ height: 3, marginTop: 9, borderRadius: 999, background: "rgba(128,128,128,.2)", overflow: "hidden", position: "relative", zIndex: 1 }}>
+            <div style={{ height: "100%", width: Math.round(clDone / cl.length * 100) + "%", background: st.checkboxAccent, borderRadius: 999, transition: "width .3s" }} />
+          </div>
+        )}
       </article>
     );
   };
@@ -1246,7 +1314,7 @@ export default function Yasnost() {
           <div style={st.headerRight}>
             <label style={st.searchWrap} className="ys-search">
               <Icon name="search" />
-              <input style={st.searchInput} placeholder="Поиск…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+              <input ref={searchRef} style={st.searchInput} placeholder="Поиск…  (/)" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
             </label>
             <div style={st.avatar}>И</div>
           </div>
@@ -1254,6 +1322,20 @@ export default function Yasnost() {
 
         {/* Board */}
         {view === "board" && (
+          <>
+          <div style={{ display: "flex", gap: 7, flexWrap: "wrap", padding: "14px 26px 0", alignItems: "center" }}>
+            {[["all", "Все", null], ["urgent", "🔴 Срочно", priorities.urgent], ["important", "🟡 Важно", priorities.important], ["normal", "⚪ Обычно", priorities.normal]].map(([key, label, pr]) => {
+              const active = priorityFilter === key;
+              const col = pr ? pr.color : st.checkboxAccent;
+              return (
+                <button key={key} onClick={() => setPriorityFilter(key)}
+                  style={{ ...st.prBtn, padding: "5px 12px", fontSize: 12,
+                    color: active ? col : st.cardDesc.color,
+                    background: active ? (pr ? pr.bg : col + "1A") : "transparent",
+                    borderColor: active ? col : (st.prBtn.border ? undefined : "rgba(128,128,128,.25)") }}>{label}</button>
+              );
+            })}
+          </div>
           <div style={st.board} className="ys-board">
             {COLUMNS.map((col) => (
               <section
@@ -1307,6 +1389,7 @@ export default function Yasnost() {
               </section>
             ))}
           </div>
+          </>
         )}
 
         {/* Calendar */}
@@ -1339,7 +1422,7 @@ export default function Yasnost() {
           const iso = (dt) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
           const navBtn = { ...st.btnGhost, padding: "7px 12px", lineHeight: 1, fontSize: 15 };
           return (
-            <div style={st.todayView}>
+            <div style={st.todayView} className="ys-fade-in">
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
                 <div style={{ fontSize: 20, fontWeight: 800, color: txt, letterSpacing: "-0.02em", minWidth: 170 }}>{MONTHS_RU[m]} {y}</div>
                 <button style={navBtn} onClick={() => setCalMonth(({ y, m }) => m === 0 ? { y: y - 1, m: 11 } : { y, m: m - 1 })}>‹</button>
@@ -1360,22 +1443,35 @@ export default function Yasnost() {
                         const inMonth = dt.getMonth() === m;
                         const isToday = dIso === TODAY;
                         const dayTasks = byDate[dIso] || [];
+                        const isDropTarget = calOverDay === dIso;
                         return (
-                          <div key={dIso} className="ys-calcell" style={{
+                          <div key={dIso} className="ys-calcell"
+                            onDragOver={(e) => { if (calDragId != null) { e.preventDefault(); setCalOverDay(dIso); } }}
+                            onDragLeave={() => setCalOverDay((d2) => (d2 === dIso ? null : d2))}
+                            onDrop={(e) => { e.preventDefault(); if (calDragId != null) { updateCard(calDragId, { due: dIso }); toast("Дедлайн перенесён", "success"); } setCalDragId(null); setCalOverDay(null); }}
+                            style={{
                             minHeight: 92, borderRadius: 10, padding: "5px 6px",
-                            border: isToday ? `1.5px solid ${accent}` : `1px solid ${cellBorder}`,
-                            background: isToday ? (accent + "14") : (inMonth ? "rgba(128,128,128,.04)" : "transparent"),
+                            border: (isDropTarget || isToday) ? `1.5px solid ${accent}` : `1px solid ${cellBorder}`,
+                            background: isDropTarget ? (accent + "28") : isToday ? (accent + "14") : (inMonth ? "rgba(128,128,128,.04)" : "transparent"),
                             opacity: inMonth ? 1 : 0.4,
                             display: "flex", flexDirection: "column", gap: 3, overflow: "hidden",
-                            transition: "background .15s, border-color .15s",
+                            transition: "background .15s, border-color .15s", position: "relative",
                           }}>
-                            <div style={{ fontSize: 12, fontWeight: isToday ? 800 : 600, color: isToday ? accent : (inMonth ? txt : muted), textAlign: "right" }}>{dt.getDate()}</div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                              <button title="Новая задача" className="ys-cal-add" onClick={(e) => { e.stopPropagation(); const id = addQuickCard(dIso); setSelectedCardId(id); }}
+                                style={{ border: "none", background: "transparent", color: accent, fontSize: 15, lineHeight: 1, cursor: "pointer", padding: 0, opacity: 0, transition: "opacity .15s", marginRight: "auto" }}>＋</button>
+                              <div style={{ fontSize: 12, fontWeight: isToday ? 800 : 600, color: isToday ? accent : (inMonth ? txt : muted), textAlign: "right" }}>{dt.getDate()}</div>
+                            </div>
                             {dayTasks.slice(0, 3).map((c) => {
                               const pr = priorities[c.priority] || priorities.normal;
+                              const over = c.due < TODAY && c.status !== "done";
                               return (
-                                <div key={c.id} onClick={(e) => { e.stopPropagation(); setSelectedCardId(c.id); }} className="ys-calchip"
-                                  style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: txt, background: "rgba(128,128,128,.1)", borderRadius: 6, padding: "2px 5px", cursor: "pointer", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
-                                  <span style={{ width: 6, height: 6, borderRadius: 999, background: pr.color, flexShrink: 0 }} />
+                                <div key={c.id} draggable
+                                  onDragStart={(e) => { setCalDragId(c.id); e.dataTransfer.effectAllowed = "move"; wasDragging.current = true; }}
+                                  onDragEnd={() => { setCalDragId(null); setCalOverDay(null); setTimeout(() => { wasDragging.current = false; }, 0); }}
+                                  onClick={(e) => { e.stopPropagation(); if (!wasDragging.current) setSelectedCardId(c.id); }} className="ys-calchip"
+                                  style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: over ? "#E5575C" : txt, background: over ? "rgba(229,87,92,.14)" : "rgba(128,128,128,.1)", borderRadius: 6, padding: "2px 5px", cursor: "grab", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", opacity: calDragId === c.id ? 0.4 : 1 }}>
+                                  <span style={{ width: 6, height: 6, borderRadius: 999, background: over ? "#E5575C" : pr.color, flexShrink: 0 }} />
                                   <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{c.title}</span>
                                 </div>
                               );
@@ -1396,7 +1492,7 @@ export default function Yasnost() {
 
         {/* Finance */}
         {view === "finance" && (
-          <div style={st.todayView}>
+          <div style={st.todayView} className="ys-fade-in">
             {budgetLoading && <div style={{ color: st.sub.color, fontSize: 14 }}>Загрузка…</div>}
             {!budgetLoading && budgetData && !budgetData.configured && (
               <div style={st.empty}>Бюджет ещё не настроен. Открой бота и напиши <b>/бюджет</b>.</div>
@@ -1418,8 +1514,38 @@ export default function Yasnost() {
               const lastIdx = (b.personal_expenses || []).length - 1;
               const categories = b.categories || [];
               const filterCat = finForm._filter || "__all__";
-              const shownPersonal = personalAll.filter((e) => filterCat === "__all__" || e.category === filterCat).slice().reverse();
+              const fsq = finSearch.trim().toLowerCase();
+              const matchSearch = (e) => !fsq || (e.note || "").toLowerCase().includes(fsq) || (e.category || "").toLowerCase().includes(fsq);
+              const shownPersonal = personalAll.filter((e) => (filterCat === "__all__" || e.category === filterCat) && matchSearch(e)).slice().reverse();
+              const shownCorp = corpAll.filter(matchSearch).slice().reverse();
               const lbl = { fontSize: 10, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 };
+              const scrollBox = { maxHeight: 360, overflowY: "auto", overflowX: "hidden", marginRight: -4, paddingRight: 4 };
+
+              // ── Прогноз трат ──
+              const forecast = (() => {
+                const nonMandatory = (b.personal_expenses || []).filter((e) => !e.mandatory).reduce((s, e) => s + (e.amount || 0), 0);
+                const daysPassed = Math.max(1, (b.days_total || 0) - (b.days_left || 0));
+                const avgDaily = nonMandatory / daysPassed;
+                const projected = avgDaily * (b.days_total || daysPassed);
+                const budgetRef = b.free || b.monthly_budget || 0;
+                const over = budgetRef > 0 && projected > budgetRef;
+                return { projected, over, budgetRef };
+              })();
+
+              // ── Экспорт CSV ──
+              const exportCsv = () => {
+                const esc = (v) => { const s = String(v == null ? "" : v); return /[",;\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+                const rows = [["Дата", "Тип", "Категория", "Заметка", "Сумма", "Компенсировано"]];
+                (b.personal_expenses || []).forEach((e) => rows.push([e.date || "", e.mandatory ? "Личный (обяз.)" : "Личный", e.category || "", e.note || "", e.amount || 0, ""]));
+                (b.corporate_expenses || []).forEach((e) => rows.push([e.date || "", "Корпоративный", e.category || "", e.note || "", e.amount || 0, e.compensated || 0]));
+                const csv = "﻿" + rows.map((r) => r.map(esc).join(";")).join("\r\n");
+                const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url; a.download = `yasnost-rashody-${TODAY}.csv`;
+                document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+                toast("CSV выгружен", "success");
+              };
               // donut palette (theme-aware-ish, 10 colors anchored on accent family)
               const PALETTE = [accent, "#4D7CFF", "#7C3AFF", "#E8A13A", "#3FB27F", "#E5575C", "#40C4D0", "#D4FF5E", "#C77DFF", "#FF8FA3"];
               const stat = (label, value, color) => (
@@ -1532,6 +1658,7 @@ export default function Yasnost() {
                     {tbtn("＋ Расход", () => { setFinForm({ kind: "personal", amount: "", category: "", note: "" }); setFinError(""); setFinModal("add"); }, true)}
                     {tbtn("🐷 Копилка", () => { setFinForm({ action: "add", amount: "" }); setFinError(""); setFinModal("piggybank"); })}
                     {lastIdx >= 0 && tbtn("↩️ Отменить последнюю", undoLastExpense)}
+                    {tbtn("⬇️ CSV", exportCsv)}
                     <button onClick={runBudgetAnalysis} disabled={aiBudgetLoading}
                       style={{ ...st.btnPrimary, flex: "none", padding: "9px 16px", opacity: aiBudgetLoading ? .6 : 1 }}>
                       {aiBudgetLoading ? "Анализирую…" : "✨ AI-анализ"}
@@ -1549,6 +1676,11 @@ export default function Yasnost() {
                     {stat("Потрачено", fmt(b.today_spent), b.remaining < 0 ? RED : txt)}
                     {stat("Остаток", fmt(b.remaining), b.remaining < 0 ? RED : GREEN)}
                     {stat("Копилка", fmt(b.piggybank), AMBER)}
+                    <div style={panel}>
+                      <div style={{ fontSize: 10, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Прогноз до конца периода</div>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: forecast.over ? RED : GREEN, letterSpacing: "-0.02em" }}>{fmt(Math.round(forecast.projected))}</div>
+                      <div style={{ fontSize: 11, color: forecast.over ? RED : GREEN, marginTop: 4, fontWeight: 600 }}>{forecast.budgetRef > 0 ? (forecast.over ? "превышение бюджета" : "в рамках бюджета") : "—"}</div>
+                    </div>
                   </div>
 
                   <div style={panel}>
@@ -1576,14 +1708,17 @@ export default function Yasnost() {
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14 }}>
                     <div style={panel}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
-                        <div style={{ ...lbl, marginBottom: 0 }}>Последние расходы</div>
+                        <div style={{ ...lbl, marginBottom: 0 }}>Последние расходы ({shownPersonal.length})</div>
                         <select value={filterCat} onChange={(e) => setFinForm({ ...finForm, _filter: e.target.value })}
                           style={{ ...st.input, width: "auto", padding: "5px 8px", fontSize: 12 }}>
                           <option value="__all__">Все</option>
                           {categories.map((c) => <option key={c} value={c}>{c}</option>)}
                         </select>
                       </div>
+                      <input value={finSearch} onChange={(e) => setFinSearch(e.target.value)} placeholder="Поиск по заметке/категории…"
+                        style={{ ...st.input, padding: "7px 10px", fontSize: 12, marginBottom: 10 }} />
                       {shownPersonal.length === 0 && <div style={{ color: muted, fontSize: 13 }}>Пока пусто</div>}
+                      <div style={scrollBox}>
                       {shownPersonal.map((e) => {
                         const isMand = !!e.mandatory;
                         return (
@@ -1602,6 +1737,7 @@ export default function Yasnost() {
                           </div>
                         );
                       })}
+                      </div>
                     </div>
 
                     <div style={panel}>
@@ -1661,9 +1797,12 @@ export default function Yasnost() {
                     </div>
 
                     <div style={panel}>
-                      <div style={lbl}>Корпоративные расходы</div>
-                      {corpAll.length === 0 && <div style={{ color: muted, fontSize: 13 }}>Пока пусто</div>}
-                      {corpAll.slice().reverse().map((e) => {
+                      <div style={lbl}>Корпоративные расходы ({shownCorp.length})</div>
+                      <input value={finSearch} onChange={(e) => setFinSearch(e.target.value)} placeholder="Поиск по заметке/категории…"
+                        style={{ ...st.input, padding: "7px 10px", fontSize: 12, marginBottom: 10 }} />
+                      {shownCorp.length === 0 && <div style={{ color: muted, fontSize: 13 }}>Пока пусто</div>}
+                      <div style={scrollBox}>
+                      {shownCorp.map((e) => {
                         const comp = e.compensated || 0;
                         const left = (e.amount || 0) - comp;
                         return (
@@ -1689,6 +1828,7 @@ export default function Yasnost() {
                           </div>
                         );
                       })}
+                      </div>
                     </div>
                   </div>
                   )}
@@ -1921,6 +2061,25 @@ export default function Yasnost() {
         </div>
         );
       })()}
+
+      {/* ── Тосты ── */}
+      <div style={{ position: "fixed", right: 18, bottom: 18, zIndex: 3000, display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end", pointerEvents: "none", maxWidth: "min(360px, 90vw)" }}>
+        {toasts.map((t) => {
+          const tone = t.type === "success" ? "#3FB27F" : t.type === "error" ? "#E5575C" : st.checkboxAccent;
+          return (
+            <div key={t.id} className="ys-toast"
+              style={{ pointerEvents: "auto", display: "flex", alignItems: "center", gap: 10, background: st.modal.background, border: `1px solid ${tone}66`, borderLeft: `3px solid ${tone}`, color: st.cardTitle.color, borderRadius: 10, padding: "10px 13px", fontSize: 13, fontWeight: 500, boxShadow: "0 8px 28px rgba(0,0,0,.4)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", maxWidth: "100%" }}>
+              <span style={{ color: tone, flexShrink: 0 }}>{t.type === "success" ? "✓" : t.type === "error" ? "✕" : "ⓘ"}</span>
+              <span style={{ flex: 1, minWidth: 0 }}>{t.msg}</span>
+              {t.action && (
+                <button onClick={() => { t.action(); dismissToast(t.id); }}
+                  style={{ background: "transparent", border: "none", color: tone, fontWeight: 700, fontSize: 12.5, cursor: "pointer", fontFamily: "inherit", flexShrink: 0, padding: 0 }}>{t.actionLabel || "OK"}</button>
+              )}
+              <button onClick={() => dismissToast(t.id)} style={{ background: "transparent", border: "none", color: st.cardDesc.color, fontSize: 16, lineHeight: 1, cursor: "pointer", padding: 0, flexShrink: 0 }}>×</button>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
