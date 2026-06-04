@@ -41,8 +41,8 @@ const THEMES = {
       brandName:    { fontWeight: 700, fontSize: 16, letterSpacing: "-0.01em", color: "#ffffff" },
       brandSub:     { fontSize: 10.5, color: "#5a5a5a", letterSpacing: "0.14em", textTransform: "uppercase", marginTop: 3, fontWeight: 600 },
       nav:          { display: "flex", flexDirection: "column", gap: 3, flex: 1 },
-      navItem:      { display: "flex", alignItems: "center", gap: 11, padding: "10px 13px", borderRadius: 8, fontSize: 13.5, fontWeight: 500, color: "#8a8a8a", cursor: "pointer", transition: "all .16s" },
-      navActive:    { background: "rgba(77,124,255,.08)", color: "#ffffff", boxShadow: "inset 2px 0 0 #4D7CFF" },
+      navItem:      { position: "relative", display: "flex", alignItems: "center", gap: 11, padding: "10px 13px", borderRadius: 9, fontSize: 13.5, fontWeight: 500, color: "#8a8a8a", cursor: "pointer", transition: "color .2s cubic-bezier(.2,.7,.3,1), background .2s cubic-bezier(.2,.7,.3,1)" },
+      navActive:    { background: "linear-gradient(90deg, rgba(77,124,255,.16), rgba(124,58,255,.06))", color: "#ffffff", boxShadow: "inset 0 0 0 1px rgba(77,124,255,.18)" },
       navDivider:   { height: 1, background: "rgba(255,255,255,.06)", margin: "12px 8px" },
       navBadge:     { marginLeft: "auto", background: "#4D7CFF", color: "#fff", borderRadius: 999, fontSize: 11, fontWeight: 700, padding: "1px 8px", lineHeight: 1.6, boxShadow: "0 0 10px rgba(77,124,255,.6)" },
       sidebarFoot:  { fontSize: 10.5, color: "#4a4a4a", paddingLeft: 8, lineHeight: 1.8 },
@@ -66,7 +66,7 @@ const THEMES = {
       colCount:     { fontSize: 11.5, fontWeight: 600, color: "#7a7a7a", background: "rgba(255,255,255,.05)", borderRadius: 999, padding: "1px 8px" },
       colAdd:       { width: 25, height: 25, borderRadius: 8, border: "1px solid rgba(255,255,255,.08)", background: "transparent", color: "#4D7CFF", fontSize: 17, fontWeight: 600, cursor: "pointer", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" },
       cardList:     { display: "flex", flexDirection: "column", gap: 10, flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", paddingRight: 2 },
-      card:         { background: "rgba(255,255,255,.03)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderRadius: 14, padding: "14px 15px 13px", cursor: "pointer", border: "1px solid rgba(255,255,255,.07)", position: "relative", transformStyle: "preserve-3d", willChange: "transform" },
+      card:         { background: "linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.018))", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderRadius: 14, padding: "14px 15px 13px", cursor: "pointer", border: "1px solid rgba(255,255,255,.08)", boxShadow: "0 1px 2px rgba(0,0,0,.4), 0 10px 28px -12px rgba(0,0,0,.6)", position: "relative", transformStyle: "preserve-3d", willChange: "transform" },
       cardTop:      { display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "absolute", top: 0, left: 0, right: 0, zIndex: 2 },
       cardStripe:   { width: 26, height: 3, borderRadius: 3, margin: "13px 0 0 15px" },
       cardDel:      { border: "none", background: "transparent", color: "#3a3a3a", fontSize: 18, cursor: "pointer", padding: "6px 10px", lineHeight: 1 },
@@ -79,14 +79,14 @@ const THEMES = {
       priorityPicker: { display: "flex", gap: 6, flexWrap: "wrap" },
       prBtn:        { border: "1px solid rgba(255,255,255,.1)", borderRadius: 999, padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all .12s" },
       composerRow:  { display: "flex", gap: 8, marginTop: 2 },
-      btnPrimary:   { flex: 1, background: "linear-gradient(135deg, #4D7CFF, #7C3AFF)", color: "#fff", border: "none", borderRadius: 10, padding: "10px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 18px rgba(77,124,255,.3)" },
-      btnGhost:     { background: "transparent", color: "#8a8a8a", border: "1px solid rgba(255,255,255,.1)", borderRadius: 10, padding: "10px 16px", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit" },
+      btnPrimary:   { flex: 1, background: "linear-gradient(135deg, #4D7CFF, #7C3AFF)", color: "#fff", border: "none", borderRadius: 10, padding: "10px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 18px rgba(77,124,255,.3)", transition: "transform .15s cubic-bezier(.2,.7,.3,1), box-shadow .2s, filter .2s" },
+      btnGhost:     { background: "transparent", color: "#8a8a8a", border: "1px solid rgba(255,255,255,.1)", borderRadius: 10, padding: "10px 16px", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", transition: "transform .15s cubic-bezier(.2,.7,.3,1), border-color .2s, color .2s, background .2s" },
       empty:        { textAlign: "center", color: "#3a3a3a", fontSize: 12, padding: "26px 0", border: "1.5px dashed rgba(255,255,255,.08)", borderRadius: 12 },
       todayView:    { flex: 1, overflowY: "auto", padding: 26, position: "relative", zIndex: 1 },
       todayList:    { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(330px, 1fr))", gap: 13 },
       todayEmpty:   { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", maxWidth: 380, margin: "48px auto", padding: "44px 32px", background: "#0d0d0d", border: "1px solid rgba(255,255,255,.08)", borderRadius: 18, color: "#8a8a8a" },
-      overlay:      { position: "fixed", inset: 0, background: "rgba(0,0,0,.72)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, backdropFilter: "blur(6px)" },
-      modal:        { background: "#0f0f0f", borderRadius: 20, width: "min(640px, 94vw)", maxHeight: "88vh", display: "flex", flexDirection: "column", boxShadow: "0 30px 80px rgba(0,0,0,.7)", overflow: "hidden", border: "1px solid rgba(255,255,255,.1)" },
+      overlay:      { position: "fixed", inset: 0, background: "rgba(0,0,0,.62)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, backdropFilter: "blur(14px) saturate(1.1)", WebkitBackdropFilter: "blur(14px) saturate(1.1)" },
+      modal:        { background: "linear-gradient(180deg, rgba(20,22,30,.86), rgba(13,14,20,.9))", backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)", borderRadius: 20, width: "min(640px, 94vw)", maxHeight: "88vh", display: "flex", flexDirection: "column", boxShadow: "0 30px 90px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.08)", overflow: "hidden", border: "1px solid rgba(255,255,255,.12)" },
       modalHeader:  { display: "flex", alignItems: "center", gap: 12, padding: "20px 22px 16px", borderBottom: "1px solid rgba(255,255,255,.07)", flexShrink: 0 },
       modalTitle:   { flex: 1, border: "none", outline: "none", fontSize: 20, fontWeight: 700, color: "#ffffff", fontFamily: "inherit", letterSpacing: "-0.01em", background: "transparent" },
       modalClose:   { border: "none", background: "transparent", color: "#5a5a5a", fontSize: 22, cursor: "pointer", lineHeight: 1, padding: "0 2px" },
@@ -129,9 +129,43 @@ const THEMES = {
         opacity: 0; transition: opacity .25s ease;
       }
       .ys-card:hover::before { opacity: 1; }
-      .ys-card:hover { border-color: rgba(77,124,255,.4); }
+      .ys-card:hover { border-color: rgba(77,124,255,.4); box-shadow: 0 1px 2px rgba(0,0,0,.5), 0 18px 40px -16px rgba(40,80,220,.55); }
       .ys-pr-urgent { box-shadow: 0 0 10px rgba(255,68,68,.35); }
-      .ys-nav-item:hover { background: rgba(255,255,255,.04); color: #ffffff; }
+      .ys-nav-item { position: relative; }
+      .ys-nav-item:hover { background: rgba(255,255,255,.05); color: #ffffff; }
+      .ys-nav-item.ys-nav-active::before { content: ""; position: absolute; left: 4px; top: 50%; width: 3px; height: 0; border-radius: 3px; background: linear-gradient(#4D7CFF, #7C3AFF); box-shadow: 0 0 10px rgba(77,124,255,.7); transform: translateY(-50%); animation: ys-nav-ind .26s cubic-bezier(.2,.7,.3,1) forwards; }
+      @keyframes ys-nav-ind { to { height: 58%; } }
+      .ys-btn-primary:hover, .ys-ai-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+      .ys-btn-primary:active, .ys-ai-btn:active, .ys-btn-ghost:active { transform: scale(.97); }
+      .ys-btn-ghost:hover { border-color: rgba(77,124,255,.4); color: #cdd6e6; background: rgba(77,124,255,.06); }
+      .ys-btn-primary:focus-visible, .ys-btn-ghost:focus-visible, .ys-ai-btn:focus-visible, .ys-nav-item:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(77,124,255,.45); }
+      .ys-chip:hover { filter: brightness(1.12); }
+      .ys-stat { position: relative; overflow: hidden; transition: transform .18s cubic-bezier(.2,.7,.3,1), box-shadow .2s, border-color .2s; }
+      .ys-stat::after { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--ys-accent, #4D7CFF), transparent); opacity: .8; }
+      .ys-stat:hover { transform: translateY(-3px); box-shadow: 0 1px 2px rgba(0,0,0,.5), 0 16px 36px -14px rgba(40,80,220,.5); }
+      .ys-num { font-variant-numeric: tabular-nums; }
+      .ys-skel { position: relative; overflow: hidden; background: rgba(255,255,255,.05); border-radius: 10px; }
+      .ys-skel::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,.09), transparent); animation: ys-shimmer 1.3s infinite; }
+      @keyframes ys-shimmer { 100% { transform: translateX(100%); } }
+      .ys-toast { position: relative; overflow: hidden; }
+      .ys-toast-bar { position: absolute; left: 0; bottom: 0; height: 2px; width: 100%; transform-origin: left; pointer-events: none; border-radius: 0 0 11px 11px; animation: ys-toast-bar linear forwards; }
+      @keyframes ys-toast-bar { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+      .ys-today-cell::after { content: ""; position: absolute; inset: -1px; border-radius: 11px; pointer-events: none; box-shadow: 0 0 0 1px var(--ys-accent, #4D7CFF), 0 0 16px -2px var(--ys-accent, #4D7CFF); opacity: .55; animation: ys-pulse 2.6s ease-in-out infinite; }
+      @keyframes ys-pulse { 0%,100% { opacity: .35; } 50% { opacity: .8; } }
+      .ys-modal { animation: ys-modal-in .26s cubic-bezier(.2,.7,.3,1) both; }
+      @keyframes ys-modal-in { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: none; } }
+      .ys-draw { stroke-dasharray: var(--len, 600); stroke-dashoffset: var(--len, 600); animation: ys-draw 1s cubic-bezier(.4,0,.2,1) forwards; }
+      @keyframes ys-draw { to { stroke-dashoffset: 0; } }
+      .ys-bar { animation: ys-bar-grow .5s cubic-bezier(.2,.7,.3,1) both; transform-origin: bottom; }
+      @keyframes ys-bar-grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+      @keyframes ys-donut-in { from { transform: scale(.86) rotate(-12deg); opacity: 0; } to { transform: none; opacity: 1; } }
+      .ys-daybar:hover .ys-bar { filter: brightness(1.25); }
+      @media (prefers-reduced-motion: reduce) {
+        .ys-draw, .ys-bar, .ys-today-cell::after, .ys-nav-item.ys-nav-active::before, .ys-toast-bar, .ys-skel::after, .ys-modal, svg g { animation: none !important; }
+        .ys-draw { stroke-dashoffset: 0 !important; }
+        .ys-bar { transform: none !important; }
+        .ys-nav-item.ys-nav-active::before { height: 56% !important; }
+      }
       .ys-search:focus-within { border-color: rgba(77,124,255,.55) !important; box-shadow: 0 0 0 3px rgba(77,124,255,.12); }
       .ys-doc-zone:hover { border-color: rgba(77,124,255,.5); color: #4D7CFF; }
       .ys-ai-btn:hover { box-shadow: 0 6px 28px rgba(77,124,255,.55); }
@@ -232,8 +266,8 @@ const THEMES = {
       priorityPicker: { display: "flex", gap: 6, flexWrap: "wrap" },
       prBtn:        { border: "1px solid rgba(255,255,255,.12)", borderRadius: 999, padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all .12s" },
       composerRow:  { display: "flex", gap: 8, marginTop: 2 },
-      btnPrimary:   { flex: 1, background: "linear-gradient(150deg, #D4FF5E, #B6EE3C)", color: "#0A0B0D", border: "none", borderRadius: 10, padding: "10px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 18px rgba(198,242,77,.28)" },
-      btnGhost:     { background: "transparent", color: "#8A9099", border: "1px solid rgba(255,255,255,.12)", borderRadius: 10, padding: "10px 16px", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit" },
+      btnPrimary:   { flex: 1, background: "linear-gradient(150deg, #D4FF5E, #B6EE3C)", color: "#0A0B0D", border: "none", borderRadius: 10, padding: "10px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 18px rgba(198,242,77,.28)", transition: "transform .15s cubic-bezier(.2,.7,.3,1), box-shadow .2s, filter .2s" },
+      btnGhost:     { background: "transparent", color: "#8A9099", border: "1px solid rgba(255,255,255,.12)", borderRadius: 10, padding: "10px 16px", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", transition: "transform .15s cubic-bezier(.2,.7,.3,1), border-color .2s, color .2s, background .2s" },
       empty:        { textAlign: "center", color: "#5B616D", fontSize: 12, padding: "26px 0", border: "1.5px dashed rgba(255,255,255,.1)", borderRadius: 14 },
       todayView:    { flex: 1, overflowY: "auto", padding: 26 },
       todayList:    { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(330px, 1fr))", gap: 13 },
@@ -270,7 +304,41 @@ const THEMES = {
       * { box-sizing: border-box; }
       .ys-card:hover { box-shadow: 0 12px 30px rgba(0,0,0,.55), 0 0 0 1px rgba(198,242,77,.18) !important; transform: translateY(-2px); border-color: rgba(198,242,77,.32) !important; }
       .ys-card:active { transform: scale(0.985); }
+      .ys-nav-item { position: relative; }
       .ys-nav-item:hover { background: rgba(255,255,255,.05); color: #EDEEF0; }
+      .ys-nav-item.ys-nav-active::before { content: ""; position: absolute; left: 4px; top: 50%; width: 3px; height: 0; border-radius: 3px; background: #D4FF5E; box-shadow: 0 0 12px rgba(198,242,77,.8); transform: translateY(-50%); animation: ys-nav-ind .26s cubic-bezier(.2,.7,.3,1) forwards; }
+      @keyframes ys-nav-ind { to { height: 56%; } }
+      .ys-btn-primary:hover, .ys-ai-btn:hover { filter: brightness(1.06); transform: translateY(-1px); box-shadow: 0 8px 26px rgba(198,242,77,.4); }
+      .ys-btn-primary:active, .ys-ai-btn:active, .ys-btn-ghost:active { transform: scale(.97); }
+      .ys-btn-ghost:hover { border-color: rgba(198,242,77,.4); color: #D9FF73; background: rgba(198,242,77,.06); }
+      .ys-btn-primary:focus-visible, .ys-btn-ghost:focus-visible, .ys-ai-btn:focus-visible, .ys-nav-item:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(198,242,77,.4); }
+      .ys-chip:hover { filter: brightness(1.1); }
+      .ys-stat { position: relative; overflow: hidden; transition: transform .18s cubic-bezier(.2,.7,.3,1), box-shadow .2s, border-color .2s; }
+      .ys-stat::after { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--ys-accent, #D4FF5E), transparent); opacity: .85; }
+      .ys-stat:hover { transform: translateY(-3px); box-shadow: 0 14px 34px -14px rgba(198,242,77,.4); }
+      .ys-num { font-variant-numeric: tabular-nums; }
+      .ys-skel { position: relative; overflow: hidden; background: rgba(255,255,255,.05); border-radius: 12px; }
+      .ys-skel::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,.09), transparent); animation: ys-shimmer 1.3s infinite; }
+      @keyframes ys-shimmer { 100% { transform: translateX(100%); } }
+      .ys-toast { position: relative; overflow: hidden; }
+      .ys-toast-bar { position: absolute; left: 0; bottom: 0; height: 2px; width: 100%; transform-origin: left; pointer-events: none; border-radius: 0 0 11px 11px; animation: ys-toast-bar linear forwards; }
+      @keyframes ys-toast-bar { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+      .ys-today-cell::after { content: ""; position: absolute; inset: -1px; border-radius: 11px; pointer-events: none; box-shadow: 0 0 0 1px var(--ys-accent, #D4FF5E), 0 0 16px -2px var(--ys-accent, #D4FF5E); opacity: .55; animation: ys-pulse 2.6s ease-in-out infinite; }
+      @keyframes ys-pulse { 0%,100% { opacity: .35; } 50% { opacity: .8; } }
+      .ys-modal { animation: ys-modal-in .26s cubic-bezier(.2,.7,.3,1) both; }
+      @keyframes ys-modal-in { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: none; } }
+      .ys-draw { stroke-dasharray: var(--len, 600); stroke-dashoffset: var(--len, 600); animation: ys-draw 1s cubic-bezier(.4,0,.2,1) forwards; }
+      @keyframes ys-draw { to { stroke-dashoffset: 0; } }
+      .ys-bar { animation: ys-bar-grow .5s cubic-bezier(.2,.7,.3,1) both; transform-origin: bottom; }
+      @keyframes ys-bar-grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+      @keyframes ys-donut-in { from { transform: scale(.86) rotate(-12deg); opacity: 0; } to { transform: none; opacity: 1; } }
+      .ys-daybar:hover .ys-bar { filter: brightness(1.25); }
+      @media (prefers-reduced-motion: reduce) {
+        .ys-draw, .ys-bar, .ys-today-cell::after, .ys-nav-item.ys-nav-active::before, .ys-toast-bar, .ys-skel::after, .ys-modal, svg g { animation: none !important; }
+        .ys-draw { stroke-dashoffset: 0 !important; }
+        .ys-bar { transform: none !important; }
+        .ys-nav-item.ys-nav-active::before { height: 56% !important; }
+      }
       .ys-search:focus-within { border-color: rgba(198,242,77,.55) !important; box-shadow: 0 0 0 3px rgba(198,242,77,.12); }
       ::-webkit-scrollbar { width: 9px; height: 9px; }
       ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 999px; }
@@ -349,7 +417,7 @@ const THEMES = {
       normal:    { label: "Обычно",  emoji: "⚪", color: "#9B948A", bg: "#F4F3F0" },
     },
     st: {
-      app:          { display: "flex", height: "100vh", fontFamily: "'Inter', system-ui, sans-serif", background: "#FBFBFA", color: "#37352F", overflow: "hidden" },
+      app:          { display: "flex", height: "100vh", fontFamily: "'Inter', system-ui, sans-serif", background: "radial-gradient(110% 80% at 12% -8%, #F4F6FB 0%, transparent 55%), radial-gradient(90% 70% at 95% 0%, #FAF5EF 0%, transparent 50%), radial-gradient(80% 90% at 80% 110%, #F1F4F9 0%, transparent 60%), #FBFBFA", color: "#37352F", overflow: "hidden" },
       sidebar:      { width: 248, background: "#F7F6F3", color: "#37352F", display: "flex", flexDirection: "column", padding: "20px 12px", flexShrink: 0, borderRight: "1px solid #ECEAE4" },
       brand:        { display: "flex", alignItems: "center", gap: 11, marginBottom: 26, padding: "0 6px" },
       logo:         { width: 36, height: 36, borderRadius: 9, background: "linear-gradient(135deg, #1B4F8A, #0D2240)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 18, color: "#fff", boxShadow: "0 2px 8px rgba(13,34,64,.2)", flexShrink: 0 },
@@ -381,7 +449,7 @@ const THEMES = {
       colCount:     { fontSize: 12, fontWeight: 600, color: "#9B948A", background: "rgba(0,0,0,.05)", borderRadius: 20, padding: "1px 8px" },
       colAdd:       { width: 26, height: 26, borderRadius: 7, border: "1px solid #E5E2DB", background: "#fff", color: "#1B4F8A", fontSize: 18, fontWeight: 600, cursor: "pointer", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" },
       cardList:     { display: "flex", flexDirection: "column", gap: 9, flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", paddingRight: 2 },
-      card:         { background: "#fff", borderRadius: 9, padding: "13px 14px 12px", boxShadow: "0 1px 2px rgba(15,15,15,.04)", cursor: "pointer", border: "1px solid #ECEAE4", transition: "box-shadow .15s, transform .15s, border-color .15s", position: "relative" },
+      card:         { background: "#fff", borderRadius: 10, padding: "13px 14px 12px", boxShadow: "0 1px 2px rgba(15,15,15,.05), 0 4px 12px -6px rgba(15,15,15,.08)", cursor: "pointer", border: "1px solid #ECEAE4", transition: "box-shadow .18s cubic-bezier(.2,.7,.3,1), transform .18s cubic-bezier(.2,.7,.3,1), border-color .18s", position: "relative" },
       cardTop:      { display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "absolute", top: 0, left: 0, right: 0 },
       cardStripe:   { width: 28, height: 3, borderRadius: 3, margin: "12px 0 0 14px" },
       cardDel:      { border: "none", background: "transparent", color: "#C4C0B6", fontSize: 18, cursor: "pointer", padding: "6px 10px", lineHeight: 1 },
@@ -394,14 +462,14 @@ const THEMES = {
       priorityPicker: { display: "flex", gap: 6, flexWrap: "wrap" },
       prBtn:        { border: "1px solid #E5E2DB", borderRadius: 7, padding: "6px 11px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all .12s" },
       composerRow:  { display: "flex", gap: 8, marginTop: 2 },
-      btnPrimary:   { flex: 1, background: "#1B4F8A", color: "#fff", border: "none", borderRadius: 7, padding: "9px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" },
-      btnGhost:     { background: "transparent", color: "#787066", border: "1px solid #E5E2DB", borderRadius: 7, padding: "9px 14px", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit" },
+      btnPrimary:   { flex: 1, background: "linear-gradient(135deg, #2360A4, #1B4F8A)", color: "#fff", border: "none", borderRadius: 8, padding: "9px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 2px 8px -2px rgba(27,79,138,.4)", transition: "transform .15s cubic-bezier(.2,.7,.3,1), box-shadow .2s, filter .2s" },
+      btnGhost:     { background: "#fff", color: "#787066", border: "1px solid #E5E2DB", borderRadius: 8, padding: "9px 14px", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", transition: "transform .15s cubic-bezier(.2,.7,.3,1), border-color .2s, color .2s, background .2s" },
       empty:        { textAlign: "center", color: "#B0A99D", fontSize: 12.5, padding: "24px 0", border: "1.5px dashed #E0DCD3", borderRadius: 9 },
       todayView:    { flex: 1, overflowY: "auto", padding: 26 },
       todayList:    { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 12 },
       todayEmpty:   { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "60%", color: "#787066" },
-      overlay:      { position: "fixed", inset: 0, background: "rgba(15,15,15,.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, backdropFilter: "blur(2px)" },
-      modal:        { background: "#fff", borderRadius: 14, width: "min(620px, 94vw)", maxHeight: "88vh", display: "flex", flexDirection: "column", boxShadow: "0 24px 60px rgba(15,15,15,.22)", overflow: "hidden", border: "1px solid #ECEAE4" },
+      overlay:      { position: "fixed", inset: 0, background: "rgba(40,42,48,.32)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, backdropFilter: "blur(6px) saturate(1.05)", WebkitBackdropFilter: "blur(6px) saturate(1.05)" },
+      modal:        { background: "#fff", borderRadius: 16, width: "min(620px, 94vw)", maxHeight: "88vh", display: "flex", flexDirection: "column", boxShadow: "0 24px 70px rgba(15,15,15,.24), 0 2px 6px rgba(15,15,15,.06)", overflow: "hidden", border: "1px solid #ECEAE4" },
       modalHeader:  { display: "flex", alignItems: "center", gap: 12, padding: "18px 20px 16px", borderBottom: "1px solid #F0EEE9", flexShrink: 0 },
       modalTitle:   { flex: 1, border: "none", outline: "none", fontSize: 17, fontWeight: 700, color: "#1F1B16", fontFamily: "inherit", letterSpacing: "-0.01em", background: "transparent" },
       modalClose:   { border: "none", background: "transparent", color: "#9B948A", fontSize: 22, cursor: "pointer", lineHeight: 1, padding: "0 2px" },
@@ -430,9 +498,43 @@ const THEMES = {
     css: `
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
       * { box-sizing: border-box; }
-      .ys-card:hover { box-shadow: 0 4px 14px rgba(15,15,15,.1) !important; transform: translateY(-1px); border-color: #DAD7CF !important; }
+      .ys-card:hover { box-shadow: 0 1px 2px rgba(15,15,15,.05), 0 10px 24px -10px rgba(27,79,138,.22) !important; transform: translateY(-2px); border-color: #D2DCEA !important; }
       .ys-card:active { transform: scale(0.98); }
+      .ys-nav-item { position: relative; }
       .ys-nav-item:hover { background: #EFEDE8; color: #37352F; }
+      .ys-nav-item.ys-nav-active::before { content: ""; position: absolute; left: 3px; top: 50%; width: 3px; height: 0; border-radius: 3px; background: #1B4F8A; transform: translateY(-50%); animation: ys-nav-ind .26s cubic-bezier(.2,.7,.3,1) forwards; }
+      @keyframes ys-nav-ind { to { height: 54%; } }
+      .ys-btn-primary:hover, .ys-ai-btn:hover { filter: brightness(1.06); transform: translateY(-1px); box-shadow: 0 6px 18px -6px rgba(27,79,138,.5); }
+      .ys-btn-primary:active, .ys-ai-btn:active, .ys-btn-ghost:active { transform: scale(.97); }
+      .ys-btn-ghost:hover { border-color: #C3D0E2; color: #1B4F8A; background: #F2F6FB; }
+      .ys-btn-primary:focus-visible, .ys-btn-ghost:focus-visible, .ys-ai-btn:focus-visible, .ys-nav-item:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(27,79,138,.28); }
+      .ys-chip:hover { filter: brightness(.97); }
+      .ys-stat { position: relative; overflow: hidden; transition: transform .18s cubic-bezier(.2,.7,.3,1), box-shadow .2s, border-color .2s; }
+      .ys-stat::after { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--ys-accent, #1B4F8A), transparent); opacity: .7; }
+      .ys-stat:hover { transform: translateY(-3px); box-shadow: 0 1px 2px rgba(15,15,15,.05), 0 14px 30px -12px rgba(27,79,138,.28); }
+      .ys-num { font-variant-numeric: tabular-nums; }
+      .ys-skel { position: relative; overflow: hidden; background: #ECEAE4; border-radius: 9px; }
+      .ys-skel::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,.65), transparent); animation: ys-shimmer 1.3s infinite; }
+      @keyframes ys-shimmer { 100% { transform: translateX(100%); } }
+      .ys-toast { position: relative; overflow: hidden; }
+      .ys-toast-bar { position: absolute; left: 0; bottom: 0; height: 2px; width: 100%; transform-origin: left; pointer-events: none; border-radius: 0 0 11px 11px; animation: ys-toast-bar linear forwards; }
+      @keyframes ys-toast-bar { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+      .ys-today-cell::after { content: ""; position: absolute; inset: -1px; border-radius: 11px; pointer-events: none; box-shadow: 0 0 0 1px var(--ys-accent, #1B4F8A), 0 0 14px -4px var(--ys-accent, #1B4F8A); opacity: .4; animation: ys-pulse 2.8s ease-in-out infinite; }
+      @keyframes ys-pulse { 0%,100% { opacity: .25; } 50% { opacity: .6; } }
+      .ys-modal { animation: ys-modal-in .26s cubic-bezier(.2,.7,.3,1) both; }
+      @keyframes ys-modal-in { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: none; } }
+      .ys-draw { stroke-dasharray: var(--len, 600); stroke-dashoffset: var(--len, 600); animation: ys-draw 1s cubic-bezier(.4,0,.2,1) forwards; }
+      @keyframes ys-draw { to { stroke-dashoffset: 0; } }
+      .ys-bar { animation: ys-bar-grow .5s cubic-bezier(.2,.7,.3,1) both; transform-origin: bottom; }
+      @keyframes ys-bar-grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+      @keyframes ys-donut-in { from { transform: scale(.86) rotate(-12deg); opacity: 0; } to { transform: none; opacity: 1; } }
+      .ys-daybar:hover .ys-bar { filter: brightness(1.25); }
+      @media (prefers-reduced-motion: reduce) {
+        .ys-draw, .ys-bar, .ys-today-cell::after, .ys-nav-item.ys-nav-active::before, .ys-toast-bar, .ys-skel::after, .ys-modal, svg g { animation: none !important; }
+        .ys-draw { stroke-dashoffset: 0 !important; }
+        .ys-bar { transform: none !important; }
+        .ys-nav-item.ys-nav-active::before { height: 56% !important; }
+      }
       ::-webkit-scrollbar { width: 8px; height: 8px; }
       ::-webkit-scrollbar-thumb { background: #DAD7CF; border-radius: 5px; }
       ::-webkit-scrollbar-thumb:hover { background: #C4C0B6; }
@@ -573,8 +675,8 @@ export default function Yasnost() {
   };
   const toast = (msg, type = "info", opts = {}) => {
     const id = Date.now() + Math.random();
-    setToasts((ts) => [...ts, { id, msg, type, action: opts.action, actionLabel: opts.actionLabel }]);
     const ttl = opts.ttl != null ? opts.ttl : 2500;
+    setToasts((ts) => [...ts, { id, msg, type, action: opts.action, actionLabel: opts.actionLabel, ttl }]);
     toastTimers.current[id] = setTimeout(() => dismissToast(id), ttl);
     return id;
   };
@@ -1287,14 +1389,14 @@ export default function Yasnost() {
         </div>
 
         <nav style={st.nav} className="ys-nav">
-          <div className="ys-nav-item" style={{ ...st.navItem, ...(view === "board" ? st.navActive : {}) }} onClick={() => setView("board")}>
+          <div className={"ys-nav-item" + (view === "board" ? " ys-nav-active" : "")} tabIndex={0} style={{ ...st.navItem, ...(view === "board" ? st.navActive : {}) }} onClick={() => setView("board")}>
             <Icon name="board" /> Доска задач
           </div>
-          <div className="ys-nav-item" style={{ ...st.navItem, ...(view === "calendar" ? st.navActive : {}) }} onClick={() => setView("calendar")}>
+          <div className={"ys-nav-item" + (view === "calendar" ? " ys-nav-active" : "")} tabIndex={0} style={{ ...st.navItem, ...(view === "calendar" ? st.navActive : {}) }} onClick={() => setView("calendar")}>
             <Icon name="today" /> Календарь
             {todayCards.length > 0 && <span style={st.navBadge}>{todayCards.length}</span>}
           </div>
-          <div className="ys-nav-item" style={{ ...st.navItem, ...(view === "finance" ? st.navActive : {}) }} onClick={() => setView("finance")}>
+          <div className={"ys-nav-item" + (view === "finance" ? " ys-nav-active" : "")} tabIndex={0} style={{ ...st.navItem, ...(view === "finance" ? st.navActive : {}) }} onClick={() => setView("finance")}>
             <Icon name="wallet" /> Финансы
           </div>
           <div style={st.navItem}><Icon name="doc" /> Документы</div>
@@ -1371,7 +1473,7 @@ export default function Yasnost() {
               const active = priorityFilter === key;
               const col = pr ? pr.color : st.checkboxAccent;
               return (
-                <button key={key} onClick={() => setPriorityFilter(key)}
+                <button key={key} onClick={() => setPriorityFilter(key)} className="ys-chip"
                   style={{ ...st.prBtn, padding: "5px 12px", fontSize: 12,
                     color: active ? col : st.cardDesc.color,
                     background: active ? (pr ? pr.bg : col + "1A") : "transparent",
@@ -1460,8 +1562,8 @@ export default function Yasnost() {
                         ))}
                       </div>
                       <div style={st.composerRow}>
-                        <button style={st.btnPrimary} onClick={() => addCard(col.id)}>Добавить</button>
-                        <button style={st.btnGhost}   onClick={() => setAdding(null)}>Отмена</button>
+                        <button className="ys-btn-primary" style={st.btnPrimary} onClick={() => addCard(col.id)}>Добавить</button>
+                        <button className="ys-btn-ghost" style={st.btnGhost}   onClick={() => setAdding(null)}>Отмена</button>
                       </div>
                     </div>
                   )}
@@ -1568,11 +1670,12 @@ export default function Yasnost() {
             const hasOverdue = dayTasks.some((c) => c.due < TODAY && c.status !== "done");
             const isDropTarget = calOverDay === dIso;
             return (
-              <div key={dIso} className="ys-calcell"
+              <div key={dIso} className={"ys-calcell" + (isToday && !isDropTarget ? " ys-today-cell" : "")}
                 onDragOver={(e) => { if (calDragId != null) { e.preventDefault(); setCalOverDay(dIso); } }}
                 onDragLeave={() => setCalOverDay((d2) => (d2 === dIso ? null : d2))}
                 onDrop={(e) => { e.preventDefault(); if (calDragId != null) { updateCard(calDragId, { due: dIso }); toast("Дедлайн перенесён", "success"); } setCalDragId(null); setCalOverDay(null); }}
                 style={{
+                  "--ys-accent": accent,
                   minHeight: cellMinH, borderRadius: 10, padding: "5px 6px",
                   border: (isDropTarget || isToday) ? `1.5px solid ${accent}` : `1px solid ${cellBorder}`,
                   background: isDropTarget ? (accent + "28") : isToday ? (accent + "14") : (inMonth ? "rgba(128,128,128,.04)" : "transparent"),
@@ -1612,9 +1715,9 @@ export default function Yasnost() {
             <div style={st.todayView} className="ys-fade-in">
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
                 <div style={{ fontSize: 20, fontWeight: 800, color: txt, letterSpacing: "-0.02em", minWidth: 170 }}>{periodLabel}</div>
-                <button style={navBtn} onClick={() => shiftPeriod(-1)}>‹</button>
-                <button style={navBtn} onClick={() => shiftPeriod(1)}>›</button>
-                <button style={{ ...st.btnGhost, padding: "7px 14px" }} onClick={goToday}>Сегодня</button>
+                <button className="ys-btn-ghost" style={navBtn} onClick={() => shiftPeriod(-1)}>‹</button>
+                <button className="ys-btn-ghost" style={navBtn} onClick={() => shiftPeriod(1)}>›</button>
+                <button className="ys-btn-ghost" style={{ ...st.btnGhost, padding: "7px 14px" }} onClick={goToday}>Сегодня</button>
                 <div style={{ display: "flex", gap: 3, marginLeft: "auto", background: "rgba(128,128,128,.1)", borderRadius: 9, padding: 3 }}>
                   {seg("week", "Неделя")}
                   {seg("month", "Месяц")}
@@ -1672,7 +1775,26 @@ export default function Yasnost() {
         {/* Finance */}
         {view === "finance" && (
           <div style={st.todayView} className="ys-fade-in">
-            {budgetLoading && <div style={{ color: st.sub.color, fontSize: 14 }}>Загрузка…</div>}
+            {budgetLoading && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} style={{ ...st.card, cursor: "default", padding: "16px 18px" }}>
+                      <div className="ys-skel" style={{ height: 9, width: "55%", marginBottom: 12 }} />
+                      <div className="ys-skel" style={{ height: 20, width: "75%" }} />
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14 }}>
+                  {Array.from({ length: 2 }).map((_, i) => (
+                    <div key={i} style={{ ...st.card, cursor: "default", padding: "16px 18px" }}>
+                      <div className="ys-skel" style={{ height: 9, width: "40%", marginBottom: 16 }} />
+                      <div className="ys-skel" style={{ height: 120, width: "100%" }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             {!budgetLoading && budgetData && !budgetData.configured && (
               <div style={st.empty}>Бюджет ещё не настроен. Открой бота и напиши <b>/бюджет</b>.</div>
             )}
@@ -1683,6 +1805,7 @@ export default function Yasnost() {
               const txt = st.cardTitle.color;
               const muted = st.cardDesc.color;
               const RED = "#E5575C", GREEN = "#3FB27F", AMBER = "#E8A13A";
+              const isLight = themeName === "light";
               const panel = { ...st.card, cursor: "default", padding: "16px 18px" };
               const fmt = (n) => (n || 0).toLocaleString("ru-RU") + " ₽";
               const pct = b.days_total ? Math.min(100, Math.max(0, Math.round((b.days_total - b.days_left) / b.days_total * 100))) : 0;
@@ -1741,22 +1864,23 @@ export default function Yasnost() {
               // donut palette (theme-aware-ish, 10 colors anchored on accent family)
               const PALETTE = [accent, "#4D7CFF", "#7C3AFF", "#E8A13A", "#3FB27F", "#E5575C", "#40C4D0", "#D4FF5E", "#C77DFF", "#FF8FA3"];
               const stat = (label, numValue, color) => (
-                <div style={panel}>
+                <div style={{ ...panel, "--ys-accent": color }} className="ys-stat">
                   <div style={{ fontSize: 10, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>{label}</div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color, letterSpacing: "-0.02em" }}><CountUp value={numValue || 0} format={fmt} /></div>
+                  <div className="ys-num" style={{ fontSize: 22, fontWeight: 800, color, letterSpacing: "-0.02em" }}><CountUp value={numValue || 0} format={fmt} /></div>
                 </div>
               );
               const tbtn = (label, on, primary) => (
-                <button onClick={on} disabled={finBusy}
+                <button onClick={on} disabled={finBusy} className={primary ? "ys-btn-primary" : "ys-btn-ghost"}
                   style={primary
                     ? { ...st.btnPrimary, flex: "none", padding: "9px 16px", opacity: finBusy ? .6 : 1 }
                     : { ...st.btnGhost, padding: "9px 14px", opacity: finBusy ? .6 : 1 }}>{label}</button>
               );
               const tab = (key, label) => (
-                <button className="ys-fin-tab" onClick={() => setFinTab(key)}
+                <button className="ys-fin-tab ys-chip" onClick={() => setFinTab(key)}
                   style={{ ...st.prBtn, padding: "8px 18px", fontWeight: 700,
                     color: finTab === key ? accent : muted,
                     background: finTab === key ? (accent + "16") : "transparent",
+                    boxShadow: finTab === key ? `inset 0 0 0 1px ${accent}55, 0 0 14px -4px ${accent}` : "none",
                     borderColor: finTab === key ? accent : (st.prBtn.border ? undefined : "rgba(128,128,128,.25)") }}>{label}</button>
               );
               const catChip = { display: "inline-block", fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 999, background: accent + "18", color: accent, border: `1px solid ${accent}33` };
@@ -1780,10 +1904,25 @@ export default function Yasnost() {
                   a0 = a1;
                   return { d, color: PALETTE[i % PALETTE.length], cat, sum };
                 });
+                const totalStr = total >= 1000000 ? (total / 1000000).toFixed(1).replace(".0", "") + "М" : total >= 10000 ? Math.round(total / 1000) + "к" : total.toLocaleString("ru-RU");
                 return (
                   <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
-                    <svg width="140" height="140" viewBox="0 0 140 140" style={{ flexShrink: 0 }}>
-                      {arcs.map((a, i) => <path key={i} d={a.d} fill={a.color} stroke="rgba(0,0,0,.25)" strokeWidth="1" />)}
+                    <svg width="140" height="140" viewBox="0 0 140 140" style={{ flexShrink: 0, overflow: "visible" }}>
+                      <defs>
+                        {arcs.map((a, i) => (
+                          <linearGradient key={i} id={`ys-donut-${i}`} x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stopColor={a.color} stopOpacity="1" />
+                            <stop offset="100%" stopColor={a.color} stopOpacity="0.72" />
+                          </linearGradient>
+                        ))}
+                      </defs>
+                      <g style={{ transformOrigin: "70px 70px", animation: "ys-donut-in .7s cubic-bezier(.2,.7,.3,1) both" }}>
+                        {arcs.map((a, i) => (
+                          <path key={i} d={a.d} fill={`url(#ys-donut-${i})`} stroke={isLight ? "#fff" : "rgba(0,0,0,.3)"} strokeWidth="1.2" style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,.22))" }} />
+                        ))}
+                      </g>
+                      <text x="70" y="66" textAnchor="middle" fontSize="20" fontWeight="800" fill={txt} className="ys-num" style={{ letterSpacing: "-0.02em" }}>{totalStr}</text>
+                      <text x="70" y="84" textAnchor="middle" fontSize="9.5" fontWeight="600" fill={muted} style={{ letterSpacing: "0.08em", textTransform: "uppercase" }}>всего ₽</text>
                     </svg>
                     <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0, flex: 1 }}>
                       {arcs.map((a, i) => {
@@ -1791,9 +1930,9 @@ export default function Yasnost() {
                         return (
                           <div key={i} className="ys-fin-row" onClick={() => toggleCatFilter(a.cat)} title="Фильтровать по категории"
                             style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, cursor: "pointer", padding: "3px 6px", borderRadius: 7, background: active ? accent + "1f" : "transparent", boxShadow: active ? `inset 0 0 0 1px ${accent}55` : "none" }}>
-                            <span style={{ width: 10, height: 10, borderRadius: 3, background: a.color, flexShrink: 0 }} />
+                            <span style={{ width: 10, height: 10, borderRadius: 3, background: a.color, flexShrink: 0, boxShadow: `0 0 6px ${a.color}66` }} />
                             <span style={{ color: active ? txt : muted, fontWeight: active ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{a.cat}</span>
-                            <span style={{ color: txt, fontWeight: 600, flexShrink: 0 }}>{fmt(a.sum)}</span>
+                            <span className="ys-num" style={{ color: txt, fontWeight: 600, flexShrink: 0 }}>{fmt(a.sum)}</span>
                           </div>
                         );
                       })}
@@ -1827,13 +1966,25 @@ export default function Yasnost() {
                 // ideal line: remaining budget from budget→0 ; but we plot cumulative ideal spend 0→budget
                 const idealPts = `${xAt(0)},${yAt(0)} ${xAt(days - 1)},${yAt(budget)}`;
                 const actualPts = actual.map((v, i) => `${xAt(i)},${yAt(v)}`).join(" ");
+                const areaPts = `${xAt(0)},${yAt(0)} ${actualPts} ${xAt(days - 1)},${yAt(0)}`;
                 const todayIdx = Math.min(days - 1, Math.max(0, Math.round((new Date(TODAY + "T00:00:00") - start) / 86400000)));
+                const tx = xAt(todayIdx), ty = yAt(actual[todayIdx] || 0);
+                const lineLen = Math.round(innerW * 1.6);
                 return (
-                  <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: "block", maxWidth: "100%" }}>
+                  <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: "block", maxWidth: "100%", overflow: "visible" }}>
+                    <defs>
+                      <linearGradient id="ys-burn-area" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={accent} stopOpacity="0.34" />
+                        <stop offset="100%" stopColor={accent} stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
                     <line x1={padL} y1={yAt(0)} x2={W - padR} y2={yAt(0)} stroke="rgba(128,128,128,.25)" strokeWidth="1" />
-                    <polyline points={idealPts} fill="none" stroke={muted} strokeWidth="1.5" strokeDasharray="5 5" opacity="0.7" />
-                    <polyline points={actualPts} fill="none" stroke={accent} strokeWidth="2.2" />
-                    <line x1={xAt(todayIdx)} y1={padT} x2={xAt(todayIdx)} y2={H - padB} stroke={AMBER} strokeWidth="1" strokeDasharray="3 4" opacity="0.7" />
+                    <polygon points={areaPts} fill="url(#ys-burn-area)" />
+                    <polyline points={idealPts} fill="none" stroke={muted} strokeWidth="1.5" strokeDasharray="5 5" opacity="0.6" />
+                    <polyline className="ys-draw" style={{ "--len": lineLen }} points={actualPts} fill="none" stroke={accent} strokeWidth="2.4" strokeLinejoin="round" strokeLinecap="round" />
+                    <line x1={tx} y1={padT} x2={tx} y2={H - padB} stroke={AMBER} strokeWidth="1" strokeDasharray="3 4" opacity="0.6" />
+                    <circle cx={tx} cy={ty} r="6" fill={accent} opacity="0.22" />
+                    <circle cx={tx} cy={ty} r="3.2" fill={accent} style={{ filter: `drop-shadow(0 0 5px ${accent})` }} />
                     <text x={padL} y={H - 4} fontSize="9" fill={muted}>{fmtRu(b.start_date)}</text>
                     <text x={W - padR} y={H - 4} fontSize="9" fill={muted} textAnchor="end">{fmtRu(b.end_date)}</text>
                     <text x={padL} y={yAt(maxY) + 8} fontSize="9" fill={muted}>{Math.round(maxY).toLocaleString("ru-RU")} ₽</text>
@@ -1871,11 +2022,11 @@ export default function Yasnost() {
                         const h = v > 0 ? Math.max(3, Math.round(v / maxV * 100)) : 1;
                         const dt = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
                         return (
-                          <div key={i} title={`${fmtRu(iso(dt))}: ${fmt(v)}`}
+                          <div key={i} title={`${fmtRu(iso(dt))}: ${fmt(v)}`} className="ys-daybar"
                             style={{ flex: 1, minWidth: 0, height: "100%", display: "flex", alignItems: "flex-end" }}>
-                            <div style={{ width: "100%", height: h + "%", borderRadius: "3px 3px 0 0",
-                              background: isToday ? accent : (v > 0 ? accent + "66" : "rgba(128,128,128,.18)"),
-                              boxShadow: isToday ? `0 0 8px ${accent}88` : "none", transition: "height .3s" }} />
+                            <div className="ys-bar" style={{ width: "100%", height: h + "%", borderRadius: "4px 4px 1px 1px", animationDelay: Math.min(i * 12, 360) + "ms",
+                              background: isToday ? `linear-gradient(${accent}, ${accent}cc)` : (v > 0 ? `linear-gradient(${accent}99, ${accent}33)` : "rgba(128,128,128,.18)"),
+                              boxShadow: isToday ? `0 0 10px ${accent}aa` : "none", transition: "height .3s, filter .15s" }} />
                           </div>
                         );
                       })}
@@ -1903,7 +2054,7 @@ export default function Yasnost() {
                     {tbtn("🐷 Копилка", () => { setFinForm({ action: "add", amount: "" }); setFinError(""); setFinModal("piggybank"); })}
                     {lastIdx >= 0 && tbtn("↩️ Отменить последнюю", undoLastExpense)}
                     {tbtn("⬇️ CSV", exportCsv)}
-                    <button onClick={runBudgetAnalysis} disabled={aiBudgetLoading}
+                    <button onClick={runBudgetAnalysis} disabled={aiBudgetLoading} className="ys-btn-primary"
                       style={{ ...st.btnPrimary, flex: "none", padding: "9px 16px", opacity: aiBudgetLoading ? .6 : 1 }}>
                       {aiBudgetLoading ? "Анализирую…" : "✨ AI-анализ"}
                     </button>
@@ -1921,9 +2072,9 @@ export default function Yasnost() {
                     {stat("Остаток", b.remaining, b.remaining < 0 ? RED : GREEN)}
                     {stat("Копилка", b.piggybank, AMBER)}
                     {stat("Средний / день", avgPerDay, accent)}
-                    <div style={panel}>
+                    <div style={{ ...panel, "--ys-accent": forecast.over ? RED : GREEN }} className="ys-stat">
                       <div style={{ fontSize: 10, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Прогноз до конца периода</div>
-                      <div style={{ fontSize: 22, fontWeight: 800, color: forecast.over ? RED : GREEN, letterSpacing: "-0.02em" }}><CountUp value={Math.round(forecast.projected)} format={fmt} /></div>
+                      <div className="ys-num" style={{ fontSize: 22, fontWeight: 800, color: forecast.over ? RED : GREEN, letterSpacing: "-0.02em" }}><CountUp value={Math.round(forecast.projected)} format={fmt} /></div>
                       <div style={{ fontSize: 11, color: forecast.over ? RED : GREEN, marginTop: 4, fontWeight: 600 }}>{forecast.budgetRef > 0 ? (forecast.over ? "превышение бюджета" : "в рамках бюджета") : "—"}</div>
                     </div>
                   </div>
@@ -1933,8 +2084,8 @@ export default function Yasnost() {
                       <span style={{ color: txt, fontWeight: 600 }}>Период {fmtRu(b.start_date)} → {fmtRu(b.end_date)}</span>
                       <span style={{ color: muted }}>{b.days_left} дн. осталось</span>
                     </div>
-                    <div style={{ height: 6, background: "rgba(128,128,128,.18)", borderRadius: 999, overflow: "hidden" }}>
-                      <div style={{ height: "100%", width: pct + "%", background: barFill, borderRadius: 999, transition: "width .4s" }} />
+                    <div style={{ height: 7, background: "rgba(128,128,128,.18)", borderRadius: 999, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: pct + "%", background: barFill, borderRadius: 999, transition: "width .5s cubic-bezier(.2,.7,.3,1)", boxShadow: `0 0 10px -1px ${accent}88` }} />
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 11, color: muted, flexWrap: "wrap", gap: 8 }}>
                       <span>Бюджет: {fmt(b.monthly_budget)}</span>
@@ -2001,8 +2152,8 @@ export default function Yasnost() {
                             <span style={{ color: active ? txt : muted, fontWeight: active ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginRight: 8 }}>{cat}</span>
                             <span style={{ color: txt, fontWeight: 600, flexShrink: 0 }}>{sum.toLocaleString("ru-RU")} ₽</span>
                           </div>
-                          <div style={{ height: 4, background: "rgba(128,128,128,.18)", borderRadius: 999, overflow: "hidden" }}>
-                            <div style={{ height: "100%", width: Math.round(sum / totalCats * 100) + "%", background: accent, borderRadius: 999 }} />
+                          <div style={{ height: 5, background: "rgba(128,128,128,.18)", borderRadius: 999, overflow: "hidden" }}>
+                            <div style={{ height: "100%", width: Math.round(sum / totalCats * 100) + "%", background: `linear-gradient(90deg, ${accent}, ${accent}aa)`, borderRadius: 999, transition: "width .5s cubic-bezier(.2,.7,.3,1)" }} />
                           </div>
                         </div>
                         );
@@ -2040,9 +2191,9 @@ export default function Yasnost() {
                       {tbtn("＋ Корпоративная", () => { setFinForm({ kind: "corp", amount: "", category: "", note: "" }); setFinError(""); setFinModal("add"); }, true)}
                     </div>
 
-                    <div style={{ ...panel, padding: "20px 22px" }}>
+                    <div style={{ ...panel, padding: "20px 22px", "--ys-accent": (b.corporate_debt > 0 ? accent : GREEN) }} className="ys-stat">
                       <div style={{ fontSize: 11, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Компания должна вам</div>
-                      <div style={{ fontSize: 30, fontWeight: 800, color: (b.corporate_debt > 0 ? accent : GREEN), letterSpacing: "-0.02em" }}>{fmt(b.corporate_debt)}</div>
+                      <div className="ys-num" style={{ fontSize: 30, fontWeight: 800, color: (b.corporate_debt > 0 ? accent : GREEN), letterSpacing: "-0.02em" }}>{fmt(b.corporate_debt)}</div>
                       <div style={{ display: "flex", gap: 18, marginTop: 12, flexWrap: "wrap", fontSize: 12, color: muted }}>
                         <span>Всего потрачено: <b style={{ color: txt }}>{fmt(b.corporate_total)}</b></span>
                         <span>Компенсировано: <b style={{ color: GREEN }}>{fmt(b.corporate_compensated)}</b></span>
@@ -2300,14 +2451,14 @@ export default function Yasnost() {
               )}
               {finError && <div style={{ color: "#E5575C", fontSize: 12 }}>{finError === "insufficient" ? "В копилке недостаточно средств" : finError === "bad_amount" ? "Неверная сумма" : finError === "not_configured" ? "Бюджет не настроен" : finError}</div>}
               <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-                <button style={{ ...st.btnPrimary, opacity: finBusy ? .6 : 1 }} disabled={finBusy}
+                <button className="ys-btn-primary" style={{ ...st.btnPrimary, opacity: finBusy ? .6 : 1 }} disabled={finBusy}
                   onClick={isExpenseForm ? onExpenseSubmit : finModal === "compensate" ? submitCompensate : finModal === "piggybank" ? submitPiggy : submitPay}>
                   {finBusy ? "…" : isAdd ? "Добавить" : isEdit ? "Сохранить" : finModal === "compensate" ? "Компенсировать" : finModal === "piggybank" ? "Применить" : "Оплатить"}
                 </button>
                 {isEdit && (
-                  <button style={{ ...st.btnGhost, color: "#E5575C", borderColor: "#E5575C55" }} disabled={finBusy} onClick={deleteExpense}>Удалить</button>
+                  <button className="ys-btn-ghost" style={{ ...st.btnGhost, color: "#E5575C", borderColor: "#E5575C55" }} disabled={finBusy} onClick={deleteExpense}>Удалить</button>
                 )}
-                <button style={st.btnGhost} onClick={closeFin}>Отмена</button>
+                <button className="ys-btn-ghost" style={st.btnGhost} onClick={closeFin}>Отмена</button>
               </div>
             </div>
           </div>
@@ -2321,14 +2472,15 @@ export default function Yasnost() {
           const tone = t.type === "success" ? "#3FB27F" : t.type === "error" ? "#E5575C" : st.checkboxAccent;
           return (
             <div key={t.id} className="ys-toast"
-              style={{ pointerEvents: "auto", display: "flex", alignItems: "center", gap: 10, background: st.modal.background, border: `1px solid ${tone}66`, borderLeft: `3px solid ${tone}`, color: st.cardTitle.color, borderRadius: 10, padding: "10px 13px", fontSize: 13, fontWeight: 500, boxShadow: "0 8px 28px rgba(0,0,0,.4)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", maxWidth: "100%" }}>
-              <span style={{ color: tone, flexShrink: 0 }}>{t.type === "success" ? "✓" : t.type === "error" ? "✕" : "ⓘ"}</span>
+              style={{ pointerEvents: "auto", display: "flex", alignItems: "center", gap: 10, background: st.modal.background, border: `1px solid ${tone}66`, borderLeft: `3px solid ${tone}`, color: st.cardTitle.color, borderRadius: 11, padding: "10px 13px 12px", fontSize: 13, fontWeight: 500, boxShadow: "0 10px 32px -8px rgba(0,0,0,.45)", backdropFilter: "blur(16px) saturate(1.2)", WebkitBackdropFilter: "blur(16px) saturate(1.2)", maxWidth: "100%" }}>
+              <span style={{ width: 18, height: 18, borderRadius: "50%", display: "inline-flex", alignItems: "center", justifyContent: "center", background: tone + "22", color: tone, fontSize: 11, fontWeight: 800, flexShrink: 0 }}>{t.type === "success" ? "✓" : t.type === "error" ? "!" : "i"}</span>
               <span style={{ flex: 1, minWidth: 0 }}>{t.msg}</span>
               {t.action && (
                 <button onClick={() => { t.action(); dismissToast(t.id); }}
                   style={{ background: "transparent", border: "none", color: tone, fontWeight: 700, fontSize: 12.5, cursor: "pointer", fontFamily: "inherit", flexShrink: 0, padding: 0 }}>{t.actionLabel || "OK"}</button>
               )}
               <button onClick={() => dismissToast(t.id)} style={{ background: "transparent", border: "none", color: st.cardDesc.color, fontSize: 16, lineHeight: 1, cursor: "pointer", padding: 0, flexShrink: 0 }}>×</button>
+              <span className="ys-toast-bar" style={{ background: tone, opacity: .55, animationDuration: (t.ttl || 2500) + "ms" }} />
             </div>
           );
         })}
