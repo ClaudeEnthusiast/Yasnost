@@ -1334,7 +1334,7 @@ export default function Yasnost() {
         {c.desc && <div style={st.cardDesc}>{c.desc}</div>}
         <div style={st.cardMeta}>
           <span style={{ ...st.metaChip, color: pr.color, borderColor: pr.color + "33", background: pr.bg }} className={"ys-pr ys-pr-" + c.priority}>
-            {pr.emoji} {pr.label}
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><span style={{ width: 7, height: 7, borderRadius: "50%", background: pr.color, flexShrink: 0 }} />{pr.label}</span>
           </span>
           {d && (
             <span style={{ ...st.metaChip, color: d.tone, borderColor: d.tone + (d.overdue || d.today ? "66" : "33"), background: (d.overdue || d.today) ? d.tone + "18" : st.metaChip.background, fontWeight: (d.overdue || d.today) ? 700 : st.metaChip.fontWeight }}>
@@ -1445,15 +1445,16 @@ export default function Yasnost() {
         {view === "board" && (
           <>
           <div style={{ display: "flex", gap: 7, flexWrap: "wrap", padding: "14px 26px 0", alignItems: "center" }}>
-            {[["all", "Все", null], ["urgent", "🔴 Срочно", priorities.urgent], ["important", "🟡 Важно", priorities.important], ["normal", "⚪ Обычно", priorities.normal]].map(([key, label, pr]) => {
+            {[["all", "Все", null], ["urgent", "Срочно", priorities.urgent], ["important", "Важно", priorities.important], ["normal", "Обычно", priorities.normal]].map(([key, label, pr]) => {
               const active = priorityFilter === key;
               const col = pr ? pr.color : st.checkboxAccent;
               return (
                 <button key={key} onClick={() => setPriorityFilter(key)} className="ys-chip"
-                  style={{ ...st.prBtn, padding: "5px 12px", fontSize: 12,
+                  style={{ ...st.prBtn, padding: "5px 12px", fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6,
                     color: active ? col : st.cardDesc.color,
                     background: active ? (pr ? pr.bg : col + "1A") : "transparent",
-                    borderColor: active ? col : (st.prBtn.border ? undefined : "rgba(128,128,128,.25)") }}>{label}</button>
+                    borderColor: active ? col : (st.prBtn.border ? undefined : "rgba(128,128,128,.25)") }}>
+                  {pr && <span style={{ width: 7, height: 7, borderRadius: "50%", background: col, flexShrink: 0 }} />}{label}</button>
               );
             })}
             <div style={{ display: "flex", gap: 3, marginLeft: "auto", alignItems: "center", background: "rgba(128,128,128,.08)", borderRadius: 999, padding: 3 }}>
@@ -1533,7 +1534,7 @@ export default function Yasnost() {
                         {Object.entries(priorities).map(([key, pr]) => (
                           <button key={key} onClick={() => setDraft({ ...draft, priority: key })}
                             style={{ ...st.prBtn, background: draft.priority === key ? pr.bg : "transparent", border: draft.priority === key ? `1px solid ${pr.color}` : st.prBtn.border || "1px solid rgba(255,255,255,.15)", color: draft.priority === key ? pr.color : "#7a8898" }}>
-                            {pr.emoji} {pr.label}
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><span style={{ width: 7, height: 7, borderRadius: "50%", background: pr.color, flexShrink: 0 }} />{pr.label}</span>
                           </button>
                         ))}
                       </div>
@@ -1662,7 +1663,7 @@ export default function Yasnost() {
                 {hasOverdue && <span title="Есть просроченная задача" style={{ position: "absolute", top: 6, left: 6, width: 7, height: 7, borderRadius: 999, background: RED, boxShadow: `0 0 6px ${RED}99`, zIndex: 2 }} />}
                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                   <button title="Новая задача" className="ys-cal-add" onClick={(e) => { e.stopPropagation(); const id = addQuickCard(dIso); setSelectedCardId(id); }}
-                    style={{ border: "none", background: "transparent", color: accent, fontSize: 15, lineHeight: 1, cursor: "pointer", padding: 0, opacity: 0, transition: "opacity .15s", marginRight: "auto" }}>＋</button>
+                    style={{ border: "none", background: "transparent", color: accent, fontSize: 15, lineHeight: 1, cursor: "pointer", padding: 0, opacity: 0, transition: "opacity .15s", marginRight: "auto" }}><Icon name="plus" /></button>
                   {isWeek && <span style={{ fontSize: 10.5, fontWeight: 700, color: muted, textTransform: "uppercase", marginRight: "auto" }}>{WEEKDAYS_RU[(dt.getDay() + 6) % 7]}</span>}
                   <div style={{ fontSize: 12, fontWeight: isToday ? 800 : 600, color: isToday ? accent : (inMonth ? txt : muted), textAlign: "right" }}>{dt.getDate()}</div>
                 </div>
@@ -1837,8 +1838,13 @@ export default function Yasnost() {
                 document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
                 toast("CSV выгружен", "success");
               };
-              // donut palette (theme-aware-ish, 10 colors anchored on accent family)
-              const PALETTE = [accent, "#4D7CFF", "#7C3AFF", "#E8A13A", "#3FB27F", "#E5575C", "#40C4D0", "#D4FF5E", "#C77DFF", "#FF8FA3"];
+              // палитра категорий: 10 различимых цветов, соседние максимально контрастны, не зависит от accent
+              const PALETTE = ["#4D7CFF", "#F2A03D", "#3FB27F", "#E5575C", "#9B6DFF", "#37C2D4", "#FF8FA3", "#C9B23A", "#7BD148", "#FF7A45"];
+              // hex-интерполяция для тепловой шкалы баров «по дням»
+              const _rgb = (h) => { const s = h.replace("#", ""); const n = s.length === 3 ? s.split("").map((ch) => ch + ch).join("") : s; return [parseInt(n.slice(0, 2), 16), parseInt(n.slice(2, 4), 16), parseInt(n.slice(4, 6), 16)]; };
+              const _h2 = (n) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, "0");
+              const mix = (c1, c2, t) => { const a = _rgb(c1), b2 = _rgb(c2), k = Math.max(0, Math.min(1, t)); return `#${_h2(Math.round(a[0] + (b2[0] - a[0]) * k))}${_h2(Math.round(a[1] + (b2[1] - a[1]) * k))}${_h2(Math.round(a[2] + (b2[2] - a[2]) * k))}`; };
+              const heat = (t) => t <= 0 ? "rgba(128,128,128,.18)" : t < 0.5 ? mix(accent, AMBER, t / 0.5) : mix(AMBER, RED, (t - 0.5) / 0.5);
               const stat = (label, numValue, color) => (
                 <div style={{ ...panel, "--ys-accent": color }} className="ys-stat">
                   <div style={{ fontSize: 10, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>{label}</div>
@@ -1851,6 +1857,7 @@ export default function Yasnost() {
                     ? { ...st.btnPrimary, flex: "none", padding: "9px 16px", opacity: finBusy ? .6 : 1 }
                     : { ...st.btnGhost, padding: "9px 14px", opacity: finBusy ? .6 : 1 }}>{label}</button>
               );
+              const ic = { display: "inline-flex", alignItems: "center", gap: 7 };
               const tab = (key, label) => (
                 <button className="ys-fin-tab ys-chip" onClick={() => setFinTab(key)}
                   style={{ ...st.prBtn, padding: "8px 18px", fontWeight: 700,
@@ -1990,27 +1997,35 @@ export default function Yasnost() {
                 });
                 const maxV = Math.max(1, ...sums);
                 const todayIdx = Math.round((new Date(TODAY + "T00:00:00") - start) / 86400000);
+                const tickN = Math.min(7, days);
+                const ticks = Array.from({ length: tickN }, (_, k) => {
+                  const di = tickN <= 1 ? 0 : Math.round((k * (days - 1)) / (tickN - 1));
+                  const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + di);
+                  return { di, label: `${d.getDate()}.${String(d.getMonth() + 1).padStart(2, "0")}` };
+                });
                 return (
                   <div>
+                    <div style={{ display: "flex", justifyContent: "flex-end", fontSize: 10, color: muted, marginBottom: 6 }}>макс. за день:&nbsp;<b style={{ color: txt }}>{fmt(maxV)}</b></div>
                     <div style={{ display: "flex", alignItems: "flex-end", gap: days > 45 ? 1 : 2, height: 110, padding: "0 2px" }}>
                       {sums.map((v, i) => {
                         const isToday = i === todayIdx;
-                        const h = v > 0 ? Math.max(3, Math.round(v / maxV * 100)) : 1;
+                        const h = v > 0 ? Math.max(3, Math.round((v / maxV) * 100)) : 1;
+                        const c = v > 0 ? heat(maxV > 0 ? v / maxV : 0) : null;
                         const dt = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
                         return (
                           <div key={i} title={`${fmtRu(iso(dt))}: ${fmt(v)}`} className="ys-daybar"
                             style={{ flex: 1, minWidth: 0, height: "100%", display: "flex", alignItems: "flex-end" }}>
                             <div className="ys-bar" style={{ width: "100%", height: h + "%", borderRadius: "4px 4px 1px 1px", animationDelay: Math.min(i * 12, 360) + "ms",
-                              background: isToday ? `linear-gradient(${accent}, ${accent}cc)` : (v > 0 ? `linear-gradient(${accent}99, ${accent}33)` : "rgba(128,128,128,.18)"),
-                              boxShadow: isToday ? `0 0 10px ${accent}aa` : "none", transition: "height .3s, filter .15s" }} />
+                              background: v > 0 ? `linear-gradient(180deg, ${c}, ${c}55)` : "rgba(128,128,128,.18)",
+                              boxShadow: isToday ? `0 0 0 1.5px ${accent}, 0 0 10px ${accent}aa` : "none", transition: "height .3s, filter .15s" }} />
                           </div>
                         );
                       })}
                     </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 9.5, color: muted }}>
-                      <span>{fmtRu(iso(start))}</span>
-                      <span>макс. {fmt(maxV)}</span>
-                      <span>{fmtRu(iso(end))}</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 7, fontSize: 9, color: muted, fontVariantNumeric: "tabular-nums" }}>
+                      {ticks.map((t, k) => (
+                        <span key={k} style={{ color: t.di === todayIdx ? accent : muted, fontWeight: t.di === todayIdx ? 700 : 400 }}>{t.label}</span>
+                      ))}
                     </div>
                   </div>
                 );
@@ -2026,13 +2041,13 @@ export default function Yasnost() {
                   {finTab === "personal" && (
                   <div className="ys-fade-in" style={{ display: "flex", flexDirection: "column", gap: 18 }}>
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    {tbtn("＋ Расход", () => { setFinForm({ kind: "personal", amount: "", category: "", note: "" }); setFinError(""); setFinModal("add"); }, true)}
-                    {tbtn("🐷 Копилка", () => { setFinForm({ action: "add", amount: "" }); setFinError(""); setFinModal("piggybank"); })}
-                    {lastIdx >= 0 && tbtn("↩️ Отменить последнюю", undoLastExpense)}
-                    {tbtn("⬇️ CSV", exportCsv)}
+                    {tbtn(<span style={ic}><Icon name="plus" /> Расход</span>, () => { setFinForm({ kind: "personal", amount: "", category: "", note: "" }); setFinError(""); setFinModal("add"); }, true)}
+                    {tbtn(<span style={ic}><Icon name="coins" /> Копилка</span>, () => { setFinForm({ action: "add", amount: "" }); setFinError(""); setFinModal("piggybank"); })}
+                    {lastIdx >= 0 && tbtn(<span style={ic}><Icon name="undo" /> Отменить последнюю</span>, undoLastExpense)}
+                    {tbtn(<span style={ic}><Icon name="download" /> CSV</span>, exportCsv)}
                     <button onClick={runBudgetAnalysis} disabled={aiBudgetLoading} className="ys-btn-primary"
                       style={{ ...st.btnPrimary, flex: "none", padding: "9px 16px", opacity: aiBudgetLoading ? .6 : 1 }}>
-                      {aiBudgetLoading ? "Анализирую…" : "✨ AI-анализ"}
+                      {aiBudgetLoading ? "Анализирую…" : <span style={ic}><Icon name="sparkle" /> AI-анализ</span>}
                     </button>
                   </div>
 
@@ -2141,13 +2156,13 @@ export default function Yasnost() {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 4 }}>
                       <div style={{ ...lbl, marginBottom: 0 }}>Обязательные расходы</div>
                       <button onClick={() => { setFinForm({ name: "", amount: "" }); setFinError(""); setFinModal("mandatory"); }} disabled={finBusy}
-                        style={{ ...st.btnGhost, padding: "5px 11px", fontSize: 12, flexShrink: 0 }}>＋ Добавить</button>
+                        style={{ ...st.btnGhost, padding: "5px 11px", fontSize: 12, flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="plus" /> Добавить</button>
                     </div>
                     {(b.mandatory_expenses || []).length === 0 && <div style={{ color: muted, fontSize: 13, marginTop: 8 }}>Список пуст — добавь регулярные платежи (аренда, подписки, кредит).</div>}
                     {(b.mandatory_expenses || []).map((e, i) => (
                       <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(128,128,128,.12)", gap: 8 }}>
                         <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: 13, color: txt }}>{e.paid ? "✅" : "⬜"} {e.name}</div>
+                          <div style={{ fontSize: 13, color: txt, display: "flex", alignItems: "center", gap: 6 }}><Icon name={e.paid ? "checkSquare" : "square"} color={e.paid ? GREEN : muted} /><span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.name}</span></div>
                           <div style={{ fontSize: 11, color: muted }}>
                             план {(e.amount || 0).toLocaleString("ru-RU")} ₽{e.paid ? ` · факт ${(e.paid_amount || 0).toLocaleString("ru-RU")} ₽` : ""}
                           </div>
@@ -2172,7 +2187,7 @@ export default function Yasnost() {
                   {finTab === "corporate" && (
                   <div className="ys-fade-in" style={{ display: "flex", flexDirection: "column", gap: 18 }}>
                     <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                      {tbtn("＋ Корпоративная", () => { setFinForm({ kind: "corp", amount: "", category: "", note: "" }); setFinError(""); setFinModal("add"); }, true)}
+                      {tbtn(<span style={ic}><Icon name="plus" /> Корпоративная</span>, () => { setFinForm({ kind: "corp", amount: "", category: "", note: "" }); setFinError(""); setFinModal("add"); }, true)}
                     </div>
 
                     <div style={{ ...panel, padding: "20px 22px", "--ys-accent": (b.corporate_debt > 0 ? accent : GREEN) }} className="ys-stat">
@@ -2244,7 +2259,7 @@ export default function Yasnost() {
                   {Object.entries(priorities).map(([key, pr]) => (
                     <button key={key} onClick={() => updateCard(selectedCard.id, { priority: key })}
                       style={{ ...st.prBtn, background: selectedCard.priority === key ? pr.bg : "transparent", border: selectedCard.priority === key ? `1px solid ${pr.color}` : st.prBtn.border || "1px solid rgba(255,255,255,.15)", color: selectedCard.priority === key ? pr.color : "#7a8898" }}>
-                      {pr.emoji} {pr.label}
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><span style={{ width: 7, height: 7, borderRadius: "50%", background: pr.color, flexShrink: 0 }} />{pr.label}</span>
                     </button>
                   ))}
                 </div>
@@ -2413,9 +2428,9 @@ export default function Yasnost() {
                 <>
                   <div style={{ fontSize: 13, color: st.cardDesc.color }}>Сейчас в копилке: <b style={{ color: st.cardTitle.color }}>{(budgetData?.piggybank || 0).toLocaleString("ru-RU")} ₽</b></div>
                   <div style={st.priorityPicker}>
-                    {[["add", "💰 Пополнить"], ["withdraw", "📤 Снять"]].map(([k, l]) => (
+                    {[["add", "plus", "Пополнить"], ["withdraw", "minus", "Снять"]].map(([k, icn, l]) => (
                       <button key={k} onClick={() => setFinForm({ ...finForm, action: k })}
-                        style={{ ...st.prBtn, color: (finForm.action || "add") === k ? st.checkboxAccent : st.cardDesc.color, borderColor: (finForm.action || "add") === k ? st.checkboxAccent : undefined }}>{l}</button>
+                        style={{ ...st.prBtn, display: "inline-flex", alignItems: "center", gap: 6, color: (finForm.action || "add") === k ? st.checkboxAccent : st.cardDesc.color, borderColor: (finForm.action || "add") === k ? st.checkboxAccent : undefined }}><Icon name={icn} /> {l}</button>
                     ))}
                   </div>
                   <input style={st.input} type="text" inputMode="decimal" placeholder="Сумма, ₽" autoFocus
@@ -2515,17 +2530,25 @@ function CountUp({ value, format }) {
   return <>{format ? format(display) : Math.round(display)}</>;
 }
 
-function Icon({ name, color = "currentColor" }) {
-  const p = { width: 14, height: 14, fill: "none", stroke: color, strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" };
+function Icon({ name, color = "currentColor", size = 14 }) {
+  const p = { width: size, height: size, fill: "none", stroke: color, strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round", flexShrink: 0 };
   const paths = {
     board:  <><rect x="3" y="3" width="6" height="18" rx="1" /><rect x="11" y="3" width="6" height="11" rx="1" /></>,
     wallet: <><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 3H6a2 2 0 0 0-2 2" /><circle cx="17" cy="14" r="1" fill={color} stroke="none" /></>,
     doc:    <><path d="M6 2h7l5 5v15H6z" /><path d="M13 2v5h5" /></>,
     bell:   <><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10 21a2 2 0 0 0 4 0" /></>,
     plus:   <><path d="M12 5v14M5 12h14" /></>,
+    minus:  <><path d="M5 12h14" /></>,
     search: <><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></>,
     clock:  <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
     today:  <><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></>,
+    coins:  <><ellipse cx="12" cy="6.5" rx="7" ry="3" /><path d="M5 6.5v5c0 1.66 3.13 3 7 3s7-1.34 7-3v-5" /><path d="M5 11.5v5c0 1.66 3.13 3 7 3s7-1.34 7-3v-5" /></>,
+    undo:   <><path d="M9 14 4 9l5-5" /><path d="M4 9h11a5 5 0 0 1 0 10h-4" /></>,
+    download: <><path d="M12 3v13" /><path d="m7 12 5 5 5-5" /><path d="M5 21h14" /></>,
+    sparkle: <><path d="M12 3.5 13.7 9 19 10.5 13.7 12 12 17.5 10.3 12 5 10.5 10.3 9z" /><path d="M19 4v3M20.5 5.5h-3" /></>,
+    check:  <><path d="M5 12.5 10 17.5 19 7" /></>,
+    square: <><rect x="4" y="4" width="16" height="16" rx="3.5" /></>,
+    checkSquare: <><rect x="4" y="4" width="16" height="16" rx="3.5" /><path d="M8.5 12.2 11 14.7 15.7 9.3" /></>,
   };
   return <svg viewBox="0 0 24 24" style={p}>{paths[name]}</svg>;
 }
