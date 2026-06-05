@@ -124,6 +124,7 @@ const THEMES = {
       .ys-fin-row:hover { transform: translateX(2px); }
       .ys-daybar .ys-bar { transition: filter .15s, transform .15s; }
       .ys-daybar:hover .ys-bar { transform: scaleY(1.04); }
+      .ys-checkbtn:hover { color: #3FB27F !important; }
       @media (prefers-reduced-motion: reduce) { .ys-btn-primary::after, .ys-ai-btn::after { display: none !important; } .ys-pr:hover, .ys-chip:hover, .ys-fin-row:hover, .ys-daybar:hover .ys-bar { transform: none !important; } }
       button:focus-visible, [tabindex]:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid #6AA0FF; outline-offset: 2px; }
       @media (prefers-reduced-motion: no-preference) {
@@ -320,6 +321,7 @@ const THEMES = {
       .ys-fin-row:hover { transform: translateX(2px); }
       .ys-daybar .ys-bar { transition: filter .15s, transform .15s; }
       .ys-daybar:hover .ys-bar { transform: scaleY(1.04); }
+      .ys-checkbtn:hover { color: #3FB27F !important; }
       @media (prefers-reduced-motion: reduce) { .ys-btn-primary::after, .ys-ai-btn::after { display: none !important; } .ys-pr:hover, .ys-chip:hover, .ys-fin-row:hover, .ys-daybar:hover .ys-bar { transform: none !important; } }
       button:focus-visible, [tabindex]:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid #6AA0FF; outline-offset: 2px; }
       .ys-card:hover { box-shadow: 0 12px 30px rgba(0,0,0,.55), 0 0 0 1px rgba(198,242,77,.18) !important; transform: translateY(-2px); border-color: rgba(198,242,77,.32) !important; }
@@ -524,6 +526,7 @@ const THEMES = {
       .ys-fin-row:hover { transform: translateX(2px); }
       .ys-daybar .ys-bar { transition: filter .15s, transform .15s; }
       .ys-daybar:hover .ys-bar { transform: scaleY(1.04); }
+      .ys-checkbtn:hover { color: #3FB27F !important; }
       @media (prefers-reduced-motion: reduce) { .ys-btn-primary::after, .ys-ai-btn::after { display: none !important; } .ys-pr:hover, .ys-chip:hover, .ys-fin-row:hover, .ys-daybar:hover .ys-bar { transform: none !important; } }
       button:focus-visible, [tabindex]:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid #6AA0FF; outline-offset: 2px; }
       .ys-card:hover { box-shadow: 0 1px 2px rgba(15,15,15,.05), 0 10px 24px -10px rgba(27,79,138,.22) !important; transform: translateY(-2px); border-color: #D2DCEA !important; }
@@ -2381,6 +2384,8 @@ export default function Yasnost() {
               <div key={c.id} onClick={() => setSelectedCardId(c.id)} className="ys-fin-row" role="button" tabIndex={0}
                 onKeyDown={(e) => { if (e.key === "Enter") setSelectedCardId(c.id); }}
                 style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 8px", borderBottom: "1px solid rgba(128,128,128,.1)", cursor: "pointer" }}>
+                <button className="ys-checkbtn" title="Отметить выполненной" onClick={(ev) => { ev.stopPropagation(); setStatus(c.id, "done"); toast("Задача выполнена", "success"); }}
+                  style={{ border: "none", background: "transparent", cursor: "pointer", padding: 2, display: "inline-flex", flexShrink: 0, color: muted }}><Icon name="square" size={19} /></button>
                 <span style={{ width: 8, height: 8, borderRadius: "50%", background: pr.color, flexShrink: 0 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, color: txt, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.title}</div>
