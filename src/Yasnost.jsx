@@ -401,7 +401,7 @@ const THEMES = {
     `,
   },
 
-  // ── Light (Clarity) ───────────────────────────────────────────────────────
+  // ── Light (Ясность) ───────────────────────────────────────────────────────
   light: {
     priorities: {
       urgent:    { label: "Срочно",  emoji: "🔴", color: "#C0392B", bg: "#FDEDEC" },
@@ -565,7 +565,7 @@ const THEMES = {
 const THEME_DOTS = [
   { key: "cosmos", color: "#4D7CFF", label: "Космос" },
   { key: "signal", color: "#D4FF5E", label: "Сигнал" },
-  { key: "light",  color: "#C4C0B6", label: "Clarity" },
+  { key: "light",  color: "#C4C0B6", label: "Ясность" },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1338,7 +1338,7 @@ export default function Yasnost() {
     { id: "add-expense", label: "Добавить расход", icon: "wallet", run: () => { setView("finance"); setFinTab("personal"); setFinForm({ kind: "personal", amount: "", category: "", note: "" }); setFinError(""); setFinModal("add"); } },
     { id: "theme-cosmos", label: "Тема: Космос", icon: "sun", run: () => switchTheme("cosmos") },
     { id: "theme-signal", label: "Тема: Сигнал", icon: "sun", run: () => switchTheme("signal") },
-    { id: "theme-light", label: "Тема: Clarity", icon: "sun", run: () => switchTheme("light") },
+    { id: "theme-light", label: "Тема: Ясность", icon: "sun", run: () => switchTheme("light") },
     { id: "toggle-done", label: doneCollapsed ? "Развернуть «Готово»" : "Свернуть «Готово»", icon: "board", run: () => setDoneCollapsed((v) => !v) },
   ];
   const palItems = (() => {
