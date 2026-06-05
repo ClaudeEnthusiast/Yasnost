@@ -774,7 +774,7 @@ export default function Yasnost() {
     const category = resolveCategory();
     if (!category) { setFinError("Укажите категорию"); return; }
     const path = finForm.kind === "corp" ? "/corporate" : "/expense";
-    if (await budgetAction(path, { amount, category, note: (finForm.note || "").trim() })) { toast("Расход добавлен", "success"); closeFin(); }
+    if (await budgetAction(path, { amount, category, note: (finForm.note || "").trim(), date: finForm.date || undefined })) { toast("Расход добавлен", "success"); closeFin(); }
   };
   const submitEditExpense = async () => {
     const amount = parseMoney(finForm.amount);
@@ -794,6 +794,11 @@ export default function Yasnost() {
     const amount = raw === "" || raw == null ? undefined : parseMoney(raw);
     if (raw !== "" && raw != null && (!amount || amount <= 0)) { setFinError("Введите сумму"); return; }
     if (await budgetAction("/corporate/compensate", { id: finForm.id, amount }, "POST")) { toast("Компенсация учтена", "success"); closeFin(); }
+  };
+  const submitCompensateAll = async () => {
+    const amount = parseMoney(finForm.amount);
+    if (!amount || amount <= 0) { setFinError("Введите сумму"); return; }
+    if (await budgetAction("/corporate/compensate-all", { amount }, "POST")) { toast("Компенсация внесена", "success"); closeFin(); }
   };
   const unpayMandatory = (index) => budgetAction("/mandatory/unpay", { index });
   const submitMandatory = async () => {
@@ -1374,7 +1379,7 @@ export default function Yasnost() {
     { id: "nav-cal", label: "Перейти: Календарь", icon: "today", run: () => setView("calendar") },
     { id: "nav-fin", label: "Перейти: Финансы", icon: "wallet", run: () => setView("finance") },
     { id: "new-task", label: "Новая задача", icon: "plus", run: () => { setView("board"); setAdding(COLUMNS[0].id); setDraft({ title: "", desc: "", due: "", priority: "normal" }); } },
-    { id: "add-expense", label: "Добавить расход", icon: "wallet", run: () => { setView("finance"); setFinTab("personal"); setFinForm({ kind: "personal", amount: "", category: "", note: "" }); setFinError(""); setFinModal("add"); } },
+    { id: "add-expense", label: "Добавить расход", icon: "wallet", run: () => { setView("finance"); setFinTab("personal"); setFinForm({ kind: "personal", amount: "", category: "", note: "", date: TODAY }); setFinError(""); setFinModal("add"); } },
     { id: "theme-cosmos", label: "Тема: Космос", icon: "sun", run: () => switchTheme("cosmos") },
     { id: "theme-signal", label: "Тема: Сигнал", icon: "sun", run: () => switchTheme("signal") },
     { id: "theme-light", label: "Тема: Ясность", icon: "sun", run: () => switchTheme("light") },
@@ -2154,7 +2159,7 @@ export default function Yasnost() {
                   {finTab === "personal" && (
                   <div className="ys-fade-in" style={{ display: "flex", flexDirection: "column", gap: 18 }}>
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    {tbtn(<span style={ic}><Icon name="plus" /> Расход</span>, () => { setFinForm({ kind: "personal", amount: "", category: "", note: "" }); setFinError(""); setFinModal("add"); }, true)}
+                    {tbtn(<span style={ic}><Icon name="plus" /> Расход</span>, () => { setFinForm({ kind: "personal", amount: "", category: "", note: "", date: TODAY }); setFinError(""); setFinModal("add"); }, true)}
                     {tbtn(<span style={ic}><Icon name="coins" /> Копилка</span>, () => { setFinForm({ action: "add", amount: "" }); setFinError(""); setFinModal("piggybank"); })}
                     {tbtn(<span style={ic}><Icon name="download" /> CSV</span>, exportCsv)}
                     <button onClick={runBudgetAnalysis} disabled={aiBudgetLoading} className="ys-btn-primary"
@@ -2236,7 +2241,10 @@ export default function Yasnost() {
                               {e.note && <div style={{ fontSize: 12, color: muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.note}</div>}
                               <div style={{ fontSize: 11, color: muted }}>{fmtRu(e.date)}</div>
                             </div>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: RED, flexShrink: 0 }}>−{(e.amount || 0).toLocaleString("ru-RU")} ₽</span>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: RED }}>−{(e.amount || 0).toLocaleString("ru-RU")} ₽</span>
+                              {!isMand && <button title="Дублировать" onClick={(ev) => { ev.stopPropagation(); setFinForm({ kind: "personal", amount: String(e.amount || ""), category: categories.includes(e.category) ? e.category : "__custom__", customCategory: categories.includes(e.category) ? "" : e.category, note: e.note || "", date: TODAY }); setFinError(""); setFinModal("add"); }} style={{ border: "none", background: "transparent", color: muted, cursor: "pointer", padding: "4px 5px", display: "inline-flex" }}><Icon name="copy" color={muted} /></button>}
+                            </div>
                           </div>
                         );
                       })}
@@ -2299,7 +2307,9 @@ export default function Yasnost() {
                   {finTab === "corporate" && (
                   <div className="ys-fade-in" style={{ display: "flex", flexDirection: "column", gap: 18 }}>
                     <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                      {tbtn(<span style={ic}><Icon name="plus" /> Корпоративная</span>, () => { setFinForm({ kind: "corp", amount: "", category: "", note: "" }); setFinError(""); setFinModal("add"); }, true)}
+                      {tbtn(<span style={ic}><Icon name="plus" /> Корпоративная</span>, () => { setFinForm({ kind: "corp", amount: "", category: "", note: "", date: TODAY }); setFinError(""); setFinModal("add"); }, true)}
+                      {tbtn(<span style={ic}><Icon name="coins" /> Внести компенсацию</span>, () => { setFinForm({ amount: "" }); setFinError(""); setFinModal("compensateAll"); })}
+                      {tbtn(<span style={ic}><Icon name="download" /> Excel</span>, () => window.open("/api/budget/corporate.xlsx", "_blank"))}
                     </div>
 
                     <div style={{ ...panel, padding: "20px 22px", "--ys-accent": (b.corporate_debt > 0 ? accent : GREEN) }} className="ys-stat">
@@ -2335,6 +2345,7 @@ export default function Yasnost() {
                             </div>
                             <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                               <span style={{ fontSize: 13, fontWeight: 700, color: txt }}>{(e.amount || 0).toLocaleString("ru-RU")} ₽</span>
+                              <button title="Дублировать" onClick={(ev) => { ev.stopPropagation(); setFinForm({ kind: "corp", amount: String(e.amount || ""), category: categories.includes(e.category) ? e.category : "__custom__", customCategory: categories.includes(e.category) ? "" : e.category, note: e.note || "", date: TODAY }); setFinError(""); setFinModal("add"); }} style={{ border: "none", background: "transparent", color: muted, cursor: "pointer", padding: "4px 5px", display: "inline-flex" }}><Icon name="copy" color={muted} /></button>
                               {left > 0 && (
                                 <button onClick={() => { setFinForm({ id: e.id != null ? e.id : e.idx, amount: "" }); setFinError(""); setFinModal("compensate"); }} disabled={finBusy}
                                   style={{ ...st.btnGhost, padding: "5px 10px", fontSize: 11.5 }}>Компенсировать</button>
@@ -2586,6 +2597,7 @@ export default function Yasnost() {
         const title = isAdd ? (isCorp ? "Корпоративная трата" : "Личная трата")
           : isEdit ? (isCorp ? "Редактировать корпоративную" : "Редактировать расход")
           : finModal === "compensate" ? "Компенсация"
+          : finModal === "compensateAll" ? "Внести компенсацию"
           : finModal === "piggybank" ? "Копилка"
           : finModal === "mandatory" ? "Новый обязательный расход"
           : "Оплата обязательного";
@@ -2600,7 +2612,7 @@ export default function Yasnost() {
             <div style={{ ...st.modalBody, gap: 14 }}>
               {isExpenseForm && (
                 <>
-                  {isEdit && (
+                  {isExpenseForm && (
                     <div>
                       <div style={st.modalLabel}>Дата</div>
                       <input style={st.input} type="date" value={finForm.date || ""}
@@ -2640,6 +2652,15 @@ export default function Yasnost() {
                   <input style={st.input} type="text" inputMode="decimal" placeholder="Сумма, ₽ (пусто = весь остаток)" autoFocus
                     value={finForm.amount || ""} onChange={(e) => setFinForm({ ...finForm, amount: e.target.value })}
                     onKeyDown={(e) => e.key === "Enter" && submitCompensate()} />
+                </>
+              )}
+              {finModal === "compensateAll" && (
+                <>
+                  <div style={{ fontSize: 13, color: st.cardDesc.color }}>Сумма, которую выдала компания. Распределится по корпоративным тратам (старые сначала).</div>
+                  <div style={{ fontSize: 12, color: st.cardDesc.color }}>Сейчас к компенсации: <b style={{ color: st.cardTitle.color }}>{(budgetData?.corporate_debt || 0).toLocaleString("ru-RU")} ₽</b></div>
+                  <input style={st.input} type="text" inputMode="decimal" placeholder="Сумма, ₽" autoFocus
+                    value={finForm.amount || ""} onChange={(e) => setFinForm({ ...finForm, amount: e.target.value })}
+                    onKeyDown={(e) => e.key === "Enter" && submitCompensateAll()} />
                 </>
               )}
               {finModal === "piggybank" && (
@@ -2687,8 +2708,8 @@ export default function Yasnost() {
               {finError && <div style={{ color: "#E5575C", fontSize: 12 }}>{finErrText(finError)}</div>}
               <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
                 <button className="ys-btn-primary" style={{ ...st.btnPrimary, opacity: finBusy ? .6 : 1 }} disabled={finBusy}
-                  onClick={isExpenseForm ? onExpenseSubmit : finModal === "compensate" ? submitCompensate : finModal === "piggybank" ? submitPiggy : finModal === "mandatory" ? submitMandatory : submitPay}>
-                  {finBusy ? "…" : isAdd ? "Добавить" : isEdit ? "Сохранить" : finModal === "compensate" ? "Компенсировать" : finModal === "piggybank" ? "Применить" : finModal === "mandatory" ? "Добавить" : "Оплатить"}
+                  onClick={isExpenseForm ? onExpenseSubmit : finModal === "compensate" ? submitCompensate : finModal === "compensateAll" ? submitCompensateAll : finModal === "piggybank" ? submitPiggy : finModal === "mandatory" ? submitMandatory : submitPay}>
+                  {finBusy ? "…" : isAdd ? "Добавить" : isEdit ? "Сохранить" : finModal === "compensate" ? "Компенсировать" : finModal === "compensateAll" ? "Внести" : finModal === "piggybank" ? "Применить" : finModal === "mandatory" ? "Добавить" : "Оплатить"}
                 </button>
                 {isEdit && (
                   <button className="ys-btn-ghost" style={{ ...st.btnGhost, color: "#E5575C", borderColor: "#E5575C55" }} disabled={finBusy} onClick={deleteExpense}>Удалить</button>
@@ -2785,6 +2806,7 @@ function Icon({ name, color = "currentColor", size = 14 }) {
     bell:   <><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10 21a2 2 0 0 0 4 0" /></>,
     plus:   <><path d="M12 5v14M5 12h14" /></>,
     minus:  <><path d="M5 12h14" /></>,
+    copy:   <><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h8" /></>,
     search: <><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></>,
     clock:  <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
     today:  <><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></>,
