@@ -714,7 +714,7 @@ export default function Yasnost() {
         body: body ? JSON.stringify(body) : undefined,
       });
       const d = await r.json();
-      if (!r.ok) { const msg = d.error || "Ошибка"; setFinError(msg); setFinBusy(false); toast("Ошибка: " + finErrText(msg), "error"); return false; }
+      if (!r.ok) { const msg = d.error || "Ошибка"; setFinError(msg); setFinBusy(false); toast("Ошибка: " + finErrText(msg), "error"); if (msg === "stale") { loadBudget(); closeFin(); } return false; }
       setBudgetData(d); setFinBusy(false); return true;
     } catch {
       setFinError("Сеть недоступна"); setFinBusy(false); toast("Сеть недоступна", "error"); return false;
@@ -722,7 +722,7 @@ export default function Yasnost() {
   };
   const closeFin = () => { setFinModal(null); setFinForm({}); setFinError(""); };
   const parseMoney = (v) => parseFloat(String(v == null ? "" : v).replace(/\s/g, "").replace(",", "."));
-  const finErrText = (msg) => ({ insufficient: "В копилке недостаточно средств", bad_amount: "Неверная сумма", bad_name: "Введите название", duplicate_name: "Такой обязательный уже есть", already_paid: "Сначала откатите оплату", not_configured: "Бюджет не настроен", bad_index: "Запись не найдена — обнови страницу" }[msg] || msg);
+  const finErrText = (msg) => ({ insufficient: "В копилке недостаточно средств", bad_amount: "Неверная сумма", bad_name: "Введите название", duplicate_name: "Такой обязательный уже есть", already_paid: "Сначала откатите оплату", not_configured: "Бюджет не настроен", bad_index: "Запись не найдена — обнови страницу", stale: "Запись изменилась — обновляю…" }[msg] || msg);
   const fmtRu = (iso) => { if (!iso) return ""; const parts = String(iso).split("-"); if (parts.length < 3) return iso; const [y, m, d] = parts; return `${d}.${m}.${y.slice(2)}`; };
   // итоговая категория из формы (учитывает «Своя…»)
   const resolveCategory = () => {
@@ -743,18 +743,18 @@ export default function Yasnost() {
     const category = resolveCategory();
     if (!category) { setFinError("Укажите категорию"); return; }
     const base = finForm.kind === "corp" ? "/corporate/" : "/expense/";
-    if (await budgetAction(base + finForm.idx, { date: finForm.date || undefined, amount, category, note: (finForm.note || "").trim() }, "PATCH")) { toast("Расход изменён", "success"); closeFin(); }
+    if (await budgetAction(base + finForm.id, { date: finForm.date || undefined, amount, category, note: (finForm.note || "").trim() }, "PATCH")) { toast("Расход изменён", "success"); closeFin(); }
   };
   const deleteExpense = async () => {
     if (!window.confirm("Удалить этот расход?")) return;
     const base = finForm.kind === "corp" ? "/corporate/" : "/expense/";
-    if (await budgetAction(base + finForm.idx, null, "DELETE")) { toast("Расход удалён", "success"); closeFin(); }
+    if (await budgetAction(base + finForm.id, null, "DELETE")) { toast("Расход удалён", "success"); closeFin(); }
   };
   const submitCompensate = async () => {
     const raw = finForm.amount;
     const amount = raw === "" || raw == null ? undefined : parseMoney(raw);
     if (raw !== "" && raw != null && (!amount || amount <= 0)) { setFinError("Введите сумму"); return; }
-    if (await budgetAction("/corporate/compensate", { index: finForm.idx, amount }, "POST")) { toast("Компенсация учтена", "success"); closeFin(); }
+    if (await budgetAction("/corporate/compensate", { id: finForm.id, amount }, "POST")) { toast("Компенсация учтена", "success"); closeFin(); }
   };
   const unpayMandatory = (index) => budgetAction("/mandatory/unpay", { index });
   const submitMandatory = async () => {
@@ -2188,7 +2188,7 @@ export default function Yasnost() {
                         const isMand = !!e.mandatory;
                         return (
                           <div key={e.idx} className={isMand ? "" : "ys-fin-row"}
-                            onClick={() => { if (isMand) return; setFinForm({ kind: "personal", idx: e.idx, date: e.date, amount: String(e.amount), category: categories.includes(e.category) ? e.category : "__custom__", customCategory: categories.includes(e.category) ? "" : e.category, note: e.note || "" }); setFinError(""); setFinModal("edit"); }}
+                            onClick={() => { if (isMand) return; setFinForm({ kind: "personal", id: e.id != null ? e.id : e.idx, date: e.date, amount: String(e.amount), category: categories.includes(e.category) ? e.category : "__custom__", customCategory: categories.includes(e.category) ? "" : e.category, note: e.note || "" }); setFinError(""); setFinModal("edit"); }}
                             style={{ display: "flex", justifyContent: "space-between", padding: "8px 6px", borderBottom: "1px solid rgba(128,128,128,.12)", alignItems: "center", gap: 8, cursor: isMand ? "default" : "pointer" }}>
                             <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
@@ -2284,7 +2284,7 @@ export default function Yasnost() {
                         const left = (e.amount || 0) - comp;
                         return (
                           <div key={e.idx} style={{ display: "flex", justifyContent: "space-between", padding: "9px 6px", borderBottom: "1px solid rgba(128,128,128,.12)", alignItems: "center", gap: 8 }}>
-                            <div className="ys-fin-row" onClick={() => { setFinForm({ kind: "corp", idx: e.idx, date: e.date, amount: String(e.amount), category: categories.includes(e.category) ? e.category : "__custom__", customCategory: categories.includes(e.category) ? "" : e.category, note: e.note || "" }); setFinError(""); setFinModal("edit"); }}
+                            <div className="ys-fin-row" onClick={() => { setFinForm({ kind: "corp", id: e.id != null ? e.id : e.idx, date: e.date, amount: String(e.amount), category: categories.includes(e.category) ? e.category : "__custom__", customCategory: categories.includes(e.category) ? "" : e.category, note: e.note || "" }); setFinError(""); setFinModal("edit"); }}
                               style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 3, cursor: "pointer", flex: 1, padding: "2px 4px" }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                 <span style={catChip}>{e.category}</span>
@@ -2298,7 +2298,7 @@ export default function Yasnost() {
                             <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                               <span style={{ fontSize: 13, fontWeight: 700, color: txt }}>{(e.amount || 0).toLocaleString("ru-RU")} ₽</span>
                               {left > 0 && (
-                                <button onClick={() => { setFinForm({ idx: e.idx, amount: "" }); setFinError(""); setFinModal("compensate"); }} disabled={finBusy}
+                                <button onClick={() => { setFinForm({ id: e.id != null ? e.id : e.idx, amount: "" }); setFinError(""); setFinModal("compensate"); }} disabled={finBusy}
                                   style={{ ...st.btnGhost, padding: "5px 10px", fontSize: 11.5 }}>Компенсировать</button>
                               )}
                             </div>
