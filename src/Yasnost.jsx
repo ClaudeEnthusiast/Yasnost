@@ -401,7 +401,7 @@ const THEMES = {
     `,
   },
 
-  // ── Light (Notion) ────────────────────────────────────────────────────────
+  // ── Light (Clarity) ───────────────────────────────────────────────────────
   light: {
     priorities: {
       urgent:    { label: "Срочно",  emoji: "🔴", color: "#C0392B", bg: "#FDEDEC" },
@@ -565,7 +565,7 @@ const THEMES = {
 const THEME_DOTS = [
   { key: "cosmos", color: "#4D7CFF", label: "Космос" },
   { key: "signal", color: "#D4FF5E", label: "Сигнал" },
-  { key: "light",  color: "#C4C0B6", label: "Notion" },
+  { key: "light",  color: "#C4C0B6", label: "Clarity" },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1338,7 +1338,7 @@ export default function Yasnost() {
     { id: "add-expense", label: "Добавить расход", icon: "wallet", run: () => { setView("finance"); setFinTab("personal"); setFinForm({ kind: "personal", amount: "", category: "", note: "" }); setFinError(""); setFinModal("add"); } },
     { id: "theme-cosmos", label: "Тема: Космос", icon: "sun", run: () => switchTheme("cosmos") },
     { id: "theme-signal", label: "Тема: Сигнал", icon: "sun", run: () => switchTheme("signal") },
-    { id: "theme-light", label: "Тема: Notion", icon: "sun", run: () => switchTheme("light") },
+    { id: "theme-light", label: "Тема: Clarity", icon: "sun", run: () => switchTheme("light") },
     { id: "toggle-done", label: doneCollapsed ? "Развернуть «Готово»" : "Свернуть «Готово»", icon: "board", run: () => setDoneCollapsed((v) => !v) },
   ];
   const palItems = (() => {
@@ -1469,21 +1469,20 @@ export default function Yasnost() {
           </div>
           <button style={st.resetBtn} onClick={resetCards}><span style={{ display: "inline-flex", alignItems: "center", gap: 6, justifyContent: "center" }}><Icon name="undo" /> Сбросить данные</span></button>
           {/* Theme switcher */}
-          <div style={{ display: "flex", gap: 8, paddingLeft: 0, marginTop: 12, alignItems: "center" }}>
-            {THEME_DOTS.map(({ key, color, label }) => (
-              <button
-                key={key}
-                title={label}
-                onClick={() => switchTheme(key)}
-                style={{
-                  width: 14, height: 14, borderRadius: "50%", border: "2px solid",
-                  background: themeName === key ? color : "transparent",
-                  borderColor: color,
-                  cursor: "pointer", padding: 0, transition: "all .15s", opacity: themeName === key ? 1 : 0.45,
-                  flexShrink: 0,
-                }}
-              />
-            ))}
+          <div style={{ display: "flex", gap: 6, marginTop: 12, flexWrap: "wrap" }}>
+            {THEME_DOTS.map(({ key, color, label }) => {
+              const active = themeName === key;
+              return (
+                <button key={key} onClick={() => switchTheme(key)} title={label}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 9px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 600,
+                    border: `1px solid ${active ? color : "rgba(128,128,128,.32)"}`,
+                    background: active ? color + "22" : "transparent",
+                    color: active ? st.cardTitle.color : st.cardDesc.color, transition: "all .15s" }}>
+                  <span style={{ width: 9, height: 9, borderRadius: "50%", background: color, flexShrink: 0, boxShadow: active ? `0 0 6px ${color}` : "none", border: "1px solid rgba(0,0,0,.15)" }} />
+                  {label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </aside>
@@ -1507,7 +1506,7 @@ export default function Yasnost() {
               <input ref={searchRef} style={st.searchInput} placeholder="Поиск…  (/)" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
             </label>
             <button onClick={() => setPaletteOpen(true)} title="Командная палитра" className="ys-kbd"
-              style={{ display: "flex", alignItems: "center", gap: 4, background: "transparent", border: "1px solid rgba(128,128,128,.28)", borderRadius: 8, padding: "7px 10px", cursor: "pointer", color: st.cardDesc.color, fontSize: 11.5, fontWeight: 700, fontFamily: "inherit", letterSpacing: ".02em" }}>⌘K</button>
+              style={{ display: "flex", alignItems: "center", gap: 4, background: "transparent", border: "1px solid rgba(128,128,128,.28)", borderRadius: 8, padding: "7px 10px", cursor: "pointer", color: st.cardDesc.color, fontSize: 11.5, fontWeight: 700, fontFamily: "inherit", letterSpacing: ".02em" }}>Ctrl K</button>
             <button onClick={() => { setView("board"); setAdding(COLUMNS[0].id); setDraft({ title: "", desc: "", due: "", priority: "normal" }); }}
               className="ys-btn-primary ys-header-new" style={{ ...st.btnPrimary, flex: "none", padding: "9px 15px", display: "inline-flex", alignItems: "center", gap: 7 }}>
               <Icon name="plus" /> Задача</button>
@@ -1531,17 +1530,19 @@ export default function Yasnost() {
                   {pr && <span style={{ width: 7, height: 7, borderRadius: "50%", background: col, flexShrink: 0 }} />}{label}</button>
               );
             })}
-            <div style={{ display: "flex", gap: 3, marginLeft: "auto", alignItems: "center", background: "rgba(128,128,128,.08)", borderRadius: 999, padding: 3 }}>
-              <span style={{ fontSize: 11, color: st.cardDesc.color, fontWeight: 600, padding: "0 6px 0 8px" }}>Сортировка</span>
-              {[["manual", "Вручную"], ["priority", "Приоритет"], ["due", "Дедлайн"]].map(([key, label]) => {
-                const active = boardSort === key;
-                return (
-                  <button key={key} onClick={() => setBoardSort(key)}
-                    style={{ border: "none", borderRadius: 999, padding: "4px 11px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
-                      color: active ? (st.btnPrimary.color || "#fff") : st.cardDesc.color,
-                      background: active ? st.checkboxAccent : "transparent", transition: "all .14s" }}>{label}</button>
-                );
-              })}
+            <div style={{ display: "flex", gap: 8, marginLeft: "auto", alignItems: "center" }}>
+              <span style={{ fontSize: 10.5, color: st.cardDesc.color, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase" }}>Сортировка</span>
+              <div style={{ display: "flex", gap: 3, alignItems: "center", background: "rgba(128,128,128,.08)", borderRadius: 999, padding: 3 }}>
+                {[["manual", "Вручную"], ["priority", "Приоритет"], ["due", "Дедлайн"]].map(([key, label]) => {
+                  const active = boardSort === key;
+                  return (
+                    <button key={key} onClick={() => setBoardSort(key)}
+                      style={{ border: "none", borderRadius: 999, padding: "4px 11px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+                        color: active ? (st.btnPrimary.color || "#fff") : st.cardDesc.color,
+                        background: active ? st.checkboxAccent : "transparent", transition: "all .14s" }}>{label}</button>
+                  );
+                })}
+              </div>
             </div>
           </div>
           <div style={{ ...st.board, gridTemplateColumns: doneCollapsed ? "minmax(310px, 1fr) minmax(310px, 1fr) 56px" : st.board.gridTemplateColumns }} className="ys-board">
@@ -1768,7 +1769,6 @@ export default function Yasnost() {
                 <div style={{ fontSize: 20, fontWeight: 800, color: txt, letterSpacing: "-0.02em", minWidth: 170 }}>{periodLabel}</div>
                 <button className="ys-btn-ghost" style={navBtn} onClick={() => shiftPeriod(-1)}>‹</button>
                 <button className="ys-btn-ghost" style={navBtn} onClick={() => shiftPeriod(1)}>›</button>
-                <button className="ys-btn-ghost" style={{ ...st.btnGhost, padding: "7px 14px" }} onClick={goToday}>Сегодня</button>
                 <div style={{ display: "flex", gap: 3, marginLeft: "auto", background: "rgba(128,128,128,.1)", borderRadius: 9, padding: 3 }}>
                   {seg("week", "Неделя")}
                   {seg("month", "Месяц")}
@@ -2117,7 +2117,6 @@ export default function Yasnost() {
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                     {tbtn(<span style={ic}><Icon name="plus" /> Расход</span>, () => { setFinForm({ kind: "personal", amount: "", category: "", note: "" }); setFinError(""); setFinModal("add"); }, true)}
                     {tbtn(<span style={ic}><Icon name="coins" /> Копилка</span>, () => { setFinForm({ action: "add", amount: "" }); setFinError(""); setFinModal("piggybank"); })}
-                    {lastIdx >= 0 && tbtn(<span style={ic}><Icon name="undo" /> Отменить последнюю</span>, undoLastExpense)}
                     {tbtn(<span style={ic}><Icon name="download" /> CSV</span>, exportCsv)}
                     <button onClick={runBudgetAnalysis} disabled={aiBudgetLoading} className="ys-btn-primary"
                       style={{ ...st.btnPrimary, flex: "none", padding: "9px 16px", opacity: aiBudgetLoading ? .6 : 1 }}>
