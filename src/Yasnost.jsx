@@ -97,11 +97,7 @@ const THEMES = {
       checkItem:    { display: "flex", alignItems: "center", gap: 10, padding: "5px 0" },
       checkText:    { flex: 1, fontSize: 13, lineHeight: 1.4 },
       checkDel:     { border: "none", background: "transparent", color: "#3a3a3a", fontSize: 16, cursor: "pointer", padding: "2px 4px", lineHeight: 1 },
-      checkAdd:     { display: "flex", gap: 8, alignItems: "center" },
-      texture:      { display: "none" },
-      cursorDot:    { position: "fixed", top: 0, left: 0, fontSize: 13, lineHeight: 1, color: "#ffffff", textShadow: "0 0 6px rgba(220,235,255,1), 0 0 14px rgba(100,150,255,.9)", pointerEvents: "none", zIndex: 1001, transform: "translate(-50%, -50%)", userSelect: "none" },
-      cursorHalo:   { display: "none" },
-      blob1:        { position: "fixed", width: 700, height: 700, top: "-15%", left: "-10%", borderRadius: "50%", background: "radial-gradient(circle, rgba(40,80,200,.18) 0%, transparent 70%)", filter: "blur(60px)", pointerEvents: "none", zIndex: 0 },
+      checkAdd:     { display: "flex", gap: 8, alignItems: "center" },      cursorDot:    { position: "fixed", top: 0, left: 0, fontSize: 13, lineHeight: 1, color: "#ffffff", textShadow: "0 0 6px rgba(220,235,255,1), 0 0 14px rgba(100,150,255,.9)", pointerEvents: "none", zIndex: 1001, transform: "translate(-50%, -50%)", userSelect: "none" },      blob1:        { position: "fixed", width: 700, height: 700, top: "-15%", left: "-10%", borderRadius: "50%", background: "radial-gradient(circle, rgba(40,80,200,.18) 0%, transparent 70%)", filter: "blur(60px)", pointerEvents: "none", zIndex: 0 },
       blob2:        { position: "fixed", width: 600, height: 600, top: "30%", right: "-12%", borderRadius: "50%", background: "radial-gradient(circle, rgba(100,40,220,.14) 0%, transparent 70%)", filter: "blur(60px)", pointerEvents: "none", zIndex: 0 },
       blob3:        { position: "fixed", width: 500, height: 500, bottom: "-5%", left: "35%", borderRadius: "50%", background: "radial-gradient(circle, rgba(0,160,200,.10) 0%, transparent 70%)", filter: "blur(60px)", pointerEvents: "none", zIndex: 0 },
       aiBtn:        { width: "100%", background: "linear-gradient(135deg, #4D7CFF, #7C3AFF)", color: "#fff", border: "none", borderRadius: 12, padding: "13px", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 20px rgba(77,124,255,.35)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 },
@@ -189,8 +185,7 @@ const THEMES = {
       input::placeholder, textarea::placeholder { color: #4a4a4a; }
       input[type="date"] { color-scheme: dark; }
       select { color-scheme: dark; }
-      @media (pointer: coarse) { .ys-cursor-dot, .ys-cursor-halo { display: none !important; } }
-      .ys-halo-lg { width: 32px !important; height: 32px !important; border-color: rgba(120,160,255,.9) !important; }
+      @media (pointer: coarse) { .ys-cursor-dot { display: none !important; } }
       .ys-stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
       @media (max-width: 768px) {
         .ys-app    { flex-direction: column !important; height: auto !important; min-height: 100dvh; overflow: auto !important; }
@@ -284,11 +279,7 @@ const THEMES = {
       checkItem:    { display: "flex", alignItems: "center", gap: 10, padding: "5px 0" },
       checkText:    { flex: 1, fontSize: 13, lineHeight: 1.4 },
       checkDel:     { border: "none", background: "transparent", color: "#5B616D", fontSize: 16, cursor: "pointer", padding: "2px 4px", lineHeight: 1 },
-      checkAdd:     { display: "flex", gap: 8, alignItems: "center" },
-      texture:      { display: "none" },
-      cursorDot:    { display: "none" },
-      cursorHalo:   { display: "none" },
-      blob1:        { display: "none" },
+      checkAdd:     { display: "flex", gap: 8, alignItems: "center" },      cursorDot:    { display: "none" },      blob1:        { display: "none" },
       blob2:        { display: "none" },
       blob3:        { display: "none" },
       aiBtn:        { width: "100%", background: "linear-gradient(150deg, #D4FF5E, #B6EE3C)", color: "#0A0B0D", border: "none", borderRadius: 12, padding: "13px", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 20px rgba(198,242,77,.28)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 },
@@ -480,11 +471,7 @@ const THEMES = {
       checkItem:    { display: "flex", alignItems: "center", gap: 10, padding: "5px 0" },
       checkText:    { flex: 1, fontSize: 13, lineHeight: 1.4 },
       checkDel:     { border: "none", background: "transparent", color: "#C4C0B6", fontSize: 16, cursor: "pointer", padding: "2px 4px", lineHeight: 1 },
-      checkAdd:     { display: "flex", gap: 8, alignItems: "center" },
-      texture:      { display: "none" },
-      cursorDot:    { display: "none" },
-      cursorHalo:   { display: "none" },
-      blob1:        { display: "none" },
+      checkAdd:     { display: "flex", gap: 8, alignItems: "center" },      cursorDot:    { display: "none" },      blob1:        { display: "none" },
       blob2:        { display: "none" },
       blob3:        { display: "none" },
       aiBtn:        { width: "100%", background: "#1B4F8A", color: "#fff", border: "none", borderRadius: 10, padding: "12px", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 },
@@ -628,12 +615,8 @@ export default function Yasnost() {
   const loadFailed    = useRef(false);
   const touchState    = useRef({ id: null, moved: false, ghost: null, el: null, offset: { x: 0, y: 0 }, startX: 0, startY: 0, rect: null });
   const mainRef       = useRef(null);
-  const cursorDot     = useRef(null);
-  const cursorHalo    = useRef(null);
-  const starsCanvas      = useRef(null);
-  const trailCanvas      = useRef(null);
-  const hoveredCardRect  = useRef(null);
-  const constellationRef = useRef(null);
+  const cursorDot     = useRef(null);  const starsCanvas      = useRef(null);
+  const trailCanvas      = useRef(null);  const constellationRef = useRef(null);
   const draggingRef      = useRef(false);
   const portalBurstRef   = useRef(null);
 
@@ -882,26 +865,18 @@ export default function Yasnost() {
     return () => document.removeEventListener("touchend", onEnd);
   }, []);
 
-  // Кастомный курсор — только Cosmos
+  // Кастомный курсор — только Cosmos (точка + glow-параллакс под мышью)
   useEffect(() => {
     if (themeName !== "cosmos") return;
     if (!window.matchMedia || !window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
-    const dot = cursorDot.current, halo = cursorHalo.current;
-    let mx = window.innerWidth / 2, my = window.innerHeight / 2, hx = mx, hy = my, raf;
+    const dot = cursorDot.current;
     const onMove = (e) => {
-      mx = e.clientX; my = e.clientY;
-      if (dot) dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%, -50%)`;
+      if (dot) dot.style.transform = `translate(${e.clientX}px, ${e.clientY}px) translate(-50%, -50%)`;
       const main = mainRef.current;
       if (main) { const r = main.getBoundingClientRect(); main.style.setProperty("--mx", (e.clientX - r.left) + "px"); main.style.setProperty("--my", (e.clientY - r.top) + "px"); }
     };
-    const loop = () => { hx += (mx - hx) * 0.22; hy += (my - hy) * 0.22; if (halo) halo.style.transform = `translate(${hx}px, ${hy}px) translate(-50%, -50%)`; raf = requestAnimationFrame(loop); };
-    const onOver = (e) => { if (halo && e.target.closest && e.target.closest(".ys-card")) halo.classList.add("ys-halo-lg"); };
-    const onOut  = (e) => { if (halo && e.target.closest && e.target.closest(".ys-card")) halo.classList.remove("ys-halo-lg"); };
     window.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseover", onOver);
-    document.addEventListener("mouseout", onOut);
-    raf = requestAnimationFrame(loop);
-    return () => { window.removeEventListener("mousemove", onMove); document.removeEventListener("mouseover", onOver); document.removeEventListener("mouseout", onOut); cancelAnimationFrame(raf); };
+    return () => { window.removeEventListener("mousemove", onMove); };
   }, [themeName]);
 
   // Звёздное поле с параллаксом — только Cosmos
@@ -1384,9 +1359,7 @@ export default function Yasnost() {
       <style>{css}</style>
       <canvas ref={starsCanvas} className="ys-stars" style={{ display: themeName === "cosmos" ? "block" : "none" }} aria-hidden="true" />
       <canvas ref={trailCanvas} style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 999, display: themeName === "cosmos" ? "block" : "none" }} aria-hidden="true" />
-      <div ref={cursorDot}  style={st.cursorDot}  className="ys-cursor-dot"  aria-hidden="true">{themeName === "cosmos" ? "✦" : ""}</div>
-      <div ref={cursorHalo} style={st.cursorHalo} className="ys-cursor-halo" aria-hidden="true" />
-      {loading && (
+      <div ref={cursorDot}  style={st.cursorDot}  className="ys-cursor-dot"  aria-hidden="true">{themeName === "cosmos" ? "✦" : ""}</div>      {loading && (
         <div style={{ position: "fixed", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 2000, fontFamily: st.app.fontFamily, background: st.app.background, gap: 14, color: "#6a6a6a" }}>
           <div style={{ ...st.logo }}>Я</div>
           <div style={{ fontSize: 14 }}>Загрузка…</div>
@@ -1448,9 +1421,9 @@ export default function Yasnost() {
 
       {/* ── Main ── */}
       <main style={st.main} className="ys-main" ref={mainRef}>
-        <div style={st.blob1} className="ys-blob ys-blob1" aria-hidden="true" />
-        <div style={st.blob2} className="ys-blob ys-blob2" aria-hidden="true" />
-        <div style={st.blob3} className="ys-blob ys-blob3" aria-hidden="true" />
+        <div style={st.blob1} className="ys-blob1" aria-hidden="true" />
+        <div style={st.blob2} className="ys-blob2" aria-hidden="true" />
+        <div style={st.blob3} className="ys-blob3" aria-hidden="true" />
 
         <header style={st.header} className="ys-header">
           <div>
