@@ -619,13 +619,13 @@ export default function Yasnost() {
   const [calBacklogOver, setCalBacklogOver] = useState(false);    // backlog drop-target highlight
   const [boardSort,      setBoardSort]      = useState(() => localStorage.getItem("ys-board-sort") || "manual"); // manual | priority | due
   const [doneCollapsed,  setDoneCollapsed]  = useState(() => localStorage.getItem("ys-done-collapsed") === "1");
-  const [density,        setDensity]        = useState(() => localStorage.getItem("ys-density") || "comfortable"); // comfortable | compact
   const [toasts,         setToasts]         = useState([]);       // {id,msg,type,action?}
   const toastTimers   = useRef({});
   const searchRef     = useRef(null);
   const wasDragging   = useRef(false);
   const saveTimer     = useRef(null);
   const isInitialLoad = useRef(true);
+  const loadFailed    = useRef(false);
   const touchState    = useRef({ id: null, moved: false, ghost: null, el: null, offset: { x: 0, y: 0 }, startX: 0, startY: 0, rect: null });
   const mainRef       = useRef(null);
   const cursorDot     = useRef(null);
@@ -648,7 +648,6 @@ export default function Yasnost() {
   useEffect(() => { localStorage.setItem("ys-cal-mode", calMode); }, [calMode]);
   useEffect(() => { localStorage.setItem("ys-board-sort", boardSort); }, [boardSort]);
   useEffect(() => { localStorage.setItem("ys-done-collapsed", doneCollapsed ? "1" : "0"); }, [doneCollapsed]);
-  useEffect(() => { localStorage.setItem("ys-density", density); }, [density]);
 
   const PRIORITY_RANK = { urgent: 0, important: 1, normal: 2 };
   const sortCards = (list) => {
@@ -666,7 +665,6 @@ export default function Yasnost() {
     }
     return arr;
   };
-  const compact = density === "compact";
 
   // ── Тосты ──
   const dismissToast = (id) => {
@@ -684,15 +682,20 @@ export default function Yasnost() {
 
   // Загрузка
   useEffect(() => {
+    const onLoadFail = () => { loadFailed.current = true; setCards(SEED); setLoading(false); toast("Не удалось загрузить задачи — изменения не сохраняются. Обнови страницу.", "error", { ttl: 7000 }); };
     fetch("/api/cards")
       .then((r) => r.json())
-      .then((data) => { setCards(Array.isArray(data) && data.length > 0 ? data : SEED); setLoading(false); })
-      .catch(() => { setCards(SEED); setLoading(false); });
+      .then((data) => {
+        if (!Array.isArray(data)) { onLoadFail(); return; }   // 500/ошибка отдаёт объект — не затираем прод сидом
+        setCards(data.length > 0 ? data : SEED); setLoading(false);
+      })
+      .catch(onLoadFail);
   }, []);
 
   // Автосохранение
   useEffect(() => {
     if (loading) return;
+    if (loadFailed.current) return;   // загрузка провалилась — не перезаписываем серверные данные
     if (isInitialLoad.current) { isInitialLoad.current = false; return; }
     setSaveStatus("saving");
     clearTimeout(saveTimer.current);
@@ -722,7 +725,7 @@ export default function Yasnost() {
         body: body ? JSON.stringify(body) : undefined,
       });
       const d = await r.json();
-      if (!r.ok) { const msg = d.error || "Ошибка"; setFinError(msg); setFinBusy(false); toast("Ошибка: " + (msg === "insufficient" ? "недостаточно средств" : msg === "bad_amount" ? "неверная сумма" : msg), "error"); return false; }
+      if (!r.ok) { const msg = d.error || "Ошибка"; setFinError(msg); setFinBusy(false); toast("Ошибка: " + finErrText(msg), "error"); return false; }
       setBudgetData(d); setFinBusy(false); return true;
     } catch {
       setFinError("Сеть недоступна"); setFinBusy(false); toast("Сеть недоступна", "error"); return false;
@@ -730,6 +733,7 @@ export default function Yasnost() {
   };
   const closeFin = () => { setFinModal(null); setFinForm({}); setFinError(""); };
   const parseMoney = (v) => parseFloat(String(v == null ? "" : v).replace(/\s/g, "").replace(",", "."));
+  const finErrText = (msg) => ({ insufficient: "В копилке недостаточно средств", bad_amount: "Неверная сумма", bad_name: "Введите название", duplicate_name: "Такой обязательный уже есть", already_paid: "Сначала откатите оплату", not_configured: "Бюджет не настроен", bad_index: "Запись не найдена — обнови страницу" }[msg] || msg);
   const fmtRu = (iso) => { if (!iso) return ""; const parts = String(iso).split("-"); if (parts.length < 3) return iso; const [y, m, d] = parts; return `${d}.${m}.${y.slice(2)}`; };
   // итоговая категория из формы (учитывает «Своя…»)
   const resolveCategory = () => {
@@ -764,6 +768,17 @@ export default function Yasnost() {
     if (await budgetAction("/corporate/compensate", { index: finForm.idx, amount }, "POST")) { toast("Компенсация учтена", "success"); closeFin(); }
   };
   const unpayMandatory = (index) => budgetAction("/mandatory/unpay", { index });
+  const submitMandatory = async () => {
+    const name = (finForm.name || "").trim();
+    if (!name) { setFinError("Введите название"); return; }
+    const amount = parseMoney(finForm.amount);
+    if (!(amount > 0)) { setFinError("Введите сумму"); return; }
+    if (await budgetAction("/mandatory", { name, amount })) { toast("Обязательный добавлен", "success"); closeFin(); }
+  };
+  const deleteMandatory = async (index, name) => {
+    if (!window.confirm(`Удалить обязательный «${name}»?`)) return;
+    if (await budgetAction("/mandatory/" + index, null, "DELETE")) toast("Обязательный удалён", "success");
+  };
   const runBudgetAnalysis = async () => {
     setAiBudgetLoading(true); setAiBudgetError(""); setAiAnalysis(null);
     try {
@@ -790,7 +805,7 @@ export default function Yasnost() {
 
   useEffect(() => {
     const onUnload = () => {
-      if (!loading && !isInitialLoad.current) {
+      if (!loading && !isInitialLoad.current && !loadFailed.current) {
         const blob = new Blob([JSON.stringify(cards)], { type: "application/json" });
         navigator.sendBeacon("/api/cards", blob);
       }
@@ -1281,7 +1296,7 @@ export default function Yasnost() {
         action: () => setCards((cs) => cs.some((c) => c.id === card.id) ? cs : [...cs, card]) });
     }
   };
-  const resetCards = () => setCards(SEED.map((c) => ({ ...c })));
+  const resetCards = () => { if (window.confirm("Сбросить все задачи на демо-набор? Текущие задачи будут безвозвратно удалены.")) setCards(SEED.map((c) => ({ ...c }))); };
 
   const fmtDate = (d) => {
     if (!d) return null;
@@ -1333,7 +1348,7 @@ export default function Yasnost() {
         onMouseMove={onCardTilt}
         onMouseLeave={onCardLeave}
         onTouchStart={(e) => onCardTouchStart(e, c.id)}
-        style={{ ...st.card, ...(compact ? { padding: "9px 12px 8px" } : {}), opacity: dragId === c.id ? 0.4 : 1 }}
+        style={{ ...st.card, opacity: dragId === c.id ? 0.4 : 1 }}
         className="ys-card"
       >
         <div style={st.cardTop}>
@@ -1411,18 +1426,6 @@ export default function Yasnost() {
             {saveStatus === "saving" ? "⏳ Сохраняется…" : saveStatus === "error" ? "✗ Ошибка сохранения" : "✓ Данные на сервере"}
           </div>
           <button style={st.resetBtn} onClick={resetCards}>↺ Сбросить данные</button>
-          {/* Density switcher */}
-          <div style={{ display: "flex", gap: 3, marginTop: 8, background: "rgba(128,128,128,.1)", borderRadius: 8, padding: 3 }}>
-            {[["comfortable", "Просторно"], ["compact", "Компактно"]].map(([key, label]) => {
-              const active = density === key;
-              return (
-                <button key={key} onClick={() => setDensity(key)}
-                  style={{ flex: 1, border: "none", borderRadius: 6, padding: "5px 6px", fontSize: 10.5, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
-                    color: active ? (st.btnPrimary.color || "#fff") : st.cardDesc.color,
-                    background: active ? st.checkboxAccent : "transparent", transition: "all .14s" }}>{label}</button>
-              );
-            })}
-          </div>
           {/* Theme switcher */}
           <div style={{ display: "flex", gap: 8, paddingLeft: 0, marginTop: 12, alignItems: "center" }}>
             {THEME_DOTS.map(({ key, color, label }) => (
@@ -2162,8 +2165,12 @@ export default function Yasnost() {
                   </div>
 
                   <div style={panel}>
-                    <div style={lbl}>Обязательные расходы</div>
-                    {(b.mandatory_expenses || []).length === 0 && <div style={{ color: muted, fontSize: 13 }}>Список пуст</div>}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <div style={{ ...lbl, marginBottom: 0 }}>Обязательные расходы</div>
+                      <button onClick={() => { setFinForm({ name: "", amount: "" }); setFinError(""); setFinModal("mandatory"); }} disabled={finBusy}
+                        style={{ ...st.btnGhost, padding: "5px 11px", fontSize: 12, flexShrink: 0 }}>＋ Добавить</button>
+                    </div>
+                    {(b.mandatory_expenses || []).length === 0 && <div style={{ color: muted, fontSize: 13, marginTop: 8 }}>Список пуст — добавь регулярные платежи (аренда, подписки, кредит).</div>}
                     {(b.mandatory_expenses || []).map((e, i) => (
                       <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(128,128,128,.12)", gap: 8 }}>
                         <div style={{ minWidth: 0 }}>
@@ -2172,12 +2179,16 @@ export default function Yasnost() {
                             план {(e.amount || 0).toLocaleString("ru-RU")} ₽{e.paid ? ` · факт ${(e.paid_amount || 0).toLocaleString("ru-RU")} ₽` : ""}
                           </div>
                         </div>
-                        {e.paid
-                          ? <button onClick={() => unpayMandatory(i)} disabled={finBusy}
-                              style={{ ...st.btnGhost, padding: "6px 12px", fontSize: 12, flexShrink: 0 }}>Откатить</button>
-                          : <button onClick={() => { setFinForm({ actual: "" }); setFinError(""); setFinModal({ type: "pay", index: i, name: e.name, budgeted: e.amount }); }} disabled={finBusy}
-                              style={{ ...st.btnGhost, padding: "6px 12px", fontSize: 12, flexShrink: 0 }}>Оплатить</button>
-                        }
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                          {e.paid
+                            ? <button onClick={() => unpayMandatory(i)} disabled={finBusy}
+                                style={{ ...st.btnGhost, padding: "6px 12px", fontSize: 12 }}>Откатить</button>
+                            : <button onClick={() => { setFinForm({ actual: "" }); setFinError(""); setFinModal({ type: "pay", index: i, name: e.name, budgeted: e.amount }); }} disabled={finBusy}
+                                style={{ ...st.btnGhost, padding: "6px 12px", fontSize: 12 }}>Оплатить</button>
+                          }
+                          {!e.paid && <button onClick={() => deleteMandatory(i, e.name)} disabled={finBusy} title="Удалить"
+                            style={{ border: "none", background: "transparent", color: muted, fontSize: 16, cursor: "pointer", padding: "4px 6px", lineHeight: 1 }}>✕</button>}
+                        </div>
                       </div>
                     ))}
                     <div style={{ fontSize: 11, color: muted, marginTop: 10 }}>Экономия на обязательных возвращается в бюджет.</div>
@@ -2370,6 +2381,7 @@ export default function Yasnost() {
           : isEdit ? (isCorp ? "Редактировать корпоративную" : "Редактировать расход")
           : finModal === "compensate" ? "Компенсация"
           : finModal === "piggybank" ? "Копилка"
+          : finModal === "mandatory" ? "Новый обязательный расход"
           : "Оплата обязательного";
         const onExpenseSubmit = isAdd ? submitExpense : submitEditExpense;
         return (
@@ -2439,6 +2451,23 @@ export default function Yasnost() {
                   {finForm.action === "withdraw" && <div style={{ fontSize: 11, color: st.cardDesc.color }}>Снятие увеличит лимит сегодняшнего дня.</div>}
                 </>
               )}
+              {finModal === "mandatory" && (
+                <>
+                  <div>
+                    <div style={st.modalLabel}>Название</div>
+                    <input style={st.input} type="text" placeholder="Напр. Аренда, Подписки, Кредит" autoFocus
+                      value={finForm.name || ""} onChange={(e) => setFinForm({ ...finForm, name: e.target.value })}
+                      onKeyDown={(e) => e.key === "Enter" && submitMandatory()} />
+                  </div>
+                  <div>
+                    <div style={st.modalLabel}>Сумма в месяц</div>
+                    <input style={st.input} type="text" inputMode="decimal" placeholder="Сумма, ₽"
+                      value={finForm.amount || ""} onChange={(e) => setFinForm({ ...finForm, amount: e.target.value })}
+                      onKeyDown={(e) => e.key === "Enter" && submitMandatory()} />
+                  </div>
+                  <div style={{ fontSize: 11, color: st.cardDesc.color }}>Обязательные вычитаются из бюджета и снижают дневной лимит. Отметишь оплату — экономия (план − факт) вернётся в свободные деньги.</div>
+                </>
+              )}
               {finModal && finModal.type === "pay" && (
                 <>
                   <div style={{ fontSize: 14, color: st.cardTitle.color }}>{finModal.name}</div>
@@ -2449,11 +2478,11 @@ export default function Yasnost() {
                   <div style={{ fontSize: 11, color: st.cardDesc.color }}>Экономия вернётся в бюджет.</div>
                 </>
               )}
-              {finError && <div style={{ color: "#E5575C", fontSize: 12 }}>{finError === "insufficient" ? "В копилке недостаточно средств" : finError === "bad_amount" ? "Неверная сумма" : finError === "not_configured" ? "Бюджет не настроен" : finError}</div>}
+              {finError && <div style={{ color: "#E5575C", fontSize: 12 }}>{finErrText(finError)}</div>}
               <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
                 <button className="ys-btn-primary" style={{ ...st.btnPrimary, opacity: finBusy ? .6 : 1 }} disabled={finBusy}
-                  onClick={isExpenseForm ? onExpenseSubmit : finModal === "compensate" ? submitCompensate : finModal === "piggybank" ? submitPiggy : submitPay}>
-                  {finBusy ? "…" : isAdd ? "Добавить" : isEdit ? "Сохранить" : finModal === "compensate" ? "Компенсировать" : finModal === "piggybank" ? "Применить" : "Оплатить"}
+                  onClick={isExpenseForm ? onExpenseSubmit : finModal === "compensate" ? submitCompensate : finModal === "piggybank" ? submitPiggy : finModal === "mandatory" ? submitMandatory : submitPay}>
+                  {finBusy ? "…" : isAdd ? "Добавить" : isEdit ? "Сохранить" : finModal === "compensate" ? "Компенсировать" : finModal === "piggybank" ? "Применить" : finModal === "mandatory" ? "Добавить" : "Оплатить"}
                 </button>
                 {isEdit && (
                   <button className="ys-btn-ghost" style={{ ...st.btnGhost, color: "#E5575C", borderColor: "#E5575C55" }} disabled={finBusy} onClick={deleteExpense}>Удалить</button>
