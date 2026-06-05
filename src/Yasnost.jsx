@@ -111,7 +111,7 @@ const THEMES = {
     },
     css: `
       @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
-      * { box-sizing: border-box; }
+      * { box-sizing: border-box; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
       button:focus-visible, [tabindex]:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid #6AA0FF; outline-offset: 2px; }
       @media (prefers-reduced-motion: no-preference) {
         .ys-blob1 { animation: ys-b1 22s ease-in-out infinite alternate; }
@@ -294,7 +294,7 @@ const THEMES = {
     },
     css: `
       @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap');
-      * { box-sizing: border-box; }
+      * { box-sizing: border-box; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
       button:focus-visible, [tabindex]:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid #6AA0FF; outline-offset: 2px; }
       .ys-card:hover { box-shadow: 0 12px 30px rgba(0,0,0,.55), 0 0 0 1px rgba(198,242,77,.18) !important; transform: translateY(-2px); border-color: rgba(198,242,77,.32) !important; }
       .ys-card:active { transform: scale(0.985); }
@@ -376,10 +376,8 @@ const THEMES = {
         .ys-card:nth-child(5){ animation-delay: .20s; }
         .ys-card:nth-child(n+6){ animation-delay: .24s; }
         @keyframes ys-rise { from { transform: translateY(10px); } to { transform: none; } }
-        .ys-brand > div:first-child { animation: ys-logo-glow 3.6s ease-in-out infinite; }
-        @keyframes ys-logo-glow { 0%,100% { box-shadow: 0 6px 20px rgba(198,242,77,.30); } 50% { box-shadow: 0 8px 30px rgba(198,242,77,.6); } }
-        .ys-h1 { animation: ys-title-glow 5s ease-in-out infinite; }
-        @keyframes ys-title-glow { 0%,100% { text-shadow: 0 0 18px rgba(198,242,77,.10); } 50% { text-shadow: 0 0 26px rgba(198,242,77,.30), 0 0 9px rgba(150,195,255,.18); } }
+        .ys-brand > div:first-child { box-shadow: 0 6px 22px rgba(198,242,77,.34); }
+        .ys-h1 { text-shadow: 0 0 20px rgba(198,242,77,.12); }
       }
       .ys-modal input[type="checkbox"] + span { color: #E7E9EC !important; }
       .ys-modal input[type="checkbox"]:checked + span { color: #6B7280 !important; }
@@ -487,7 +485,7 @@ const THEMES = {
     },
     css: `
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-      * { box-sizing: border-box; }
+      * { box-sizing: border-box; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
       button:focus-visible, [tabindex]:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid #6AA0FF; outline-offset: 2px; }
       .ys-card:hover { box-shadow: 0 1px 2px rgba(15,15,15,.05), 0 10px 24px -10px rgba(27,79,138,.22) !important; transform: translateY(-2px); border-color: #D2DCEA !important; }
       .ys-card:active { transform: scale(0.98); }
@@ -1508,6 +1506,11 @@ export default function Yasnost() {
               <Icon name="search" />
               <input ref={searchRef} style={st.searchInput} placeholder="Поиск…  (/)" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
             </label>
+            <button onClick={() => setPaletteOpen(true)} title="Командная палитра" className="ys-kbd"
+              style={{ display: "flex", alignItems: "center", gap: 4, background: "transparent", border: "1px solid rgba(128,128,128,.28)", borderRadius: 8, padding: "7px 10px", cursor: "pointer", color: st.cardDesc.color, fontSize: 11.5, fontWeight: 700, fontFamily: "inherit", letterSpacing: ".02em" }}>⌘K</button>
+            <button onClick={() => { setView("board"); setAdding(COLUMNS[0].id); setDraft({ title: "", desc: "", due: "", priority: "normal" }); }}
+              className="ys-btn-primary ys-header-new" style={{ ...st.btnPrimary, flex: "none", padding: "9px 15px", display: "inline-flex", alignItems: "center", gap: 7 }}>
+              <Icon name="plus" /> Задача</button>
             <div style={st.avatar}>И</div>
           </div>
         </header>
