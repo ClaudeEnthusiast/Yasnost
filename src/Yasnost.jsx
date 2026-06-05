@@ -1485,7 +1485,7 @@ export default function Yasnost() {
           <div style={st.logo}>Я</div>
           <div>
             <div style={st.brandName}>Ясность</div>
-            <div style={st.brandSub}>М.К ИНВЕСТ</div>
+            <div style={st.brandSub}>Личный ассистент</div>
           </div>
         </div>
 
@@ -2313,7 +2313,7 @@ export default function Yasnost() {
                     </div>
 
                     <div style={{ ...panel, padding: "20px 22px", "--ys-accent": (b.corporate_debt > 0 ? accent : GREEN) }} className="ys-stat">
-                      <div style={{ fontSize: 11, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Компания должна вам</div>
+                      <div style={{ fontSize: 11, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>К компенсации</div>
                       <div className="ys-num" style={{ fontSize: 30, fontWeight: 800, color: (b.corporate_debt > 0 ? accent : GREEN), letterSpacing: "-0.02em" }}>{fmt(b.corporate_debt)}</div>
                       <div style={{ display: "flex", gap: 18, marginTop: 12, flexWrap: "wrap", fontSize: 12, color: muted }}>
                         <span>Всего потрачено: <b style={{ color: txt }}>{fmt(b.corporate_total)}</b></span>
@@ -2656,7 +2656,7 @@ export default function Yasnost() {
               )}
               {finModal === "compensateAll" && (
                 <>
-                  <div style={{ fontSize: 13, color: st.cardDesc.color }}>Сумма, которую выдала компания. Распределится по корпоративным тратам (старые сначала).</div>
+                  <div style={{ fontSize: 13, color: st.cardDesc.color }}>Сумма, которую вам выдали. Распределится по корпоративным тратам (старые сначала).</div>
                   <div style={{ fontSize: 12, color: st.cardDesc.color }}>Сейчас к компенсации: <b style={{ color: st.cardTitle.color }}>{(budgetData?.corporate_debt || 0).toLocaleString("ru-RU")} ₽</b></div>
                   <input style={st.input} type="text" inputMode="decimal" placeholder="Сумма, ₽" autoFocus
                     value={finForm.amount || ""} onChange={(e) => setFinForm({ ...finForm, amount: e.target.value })}
