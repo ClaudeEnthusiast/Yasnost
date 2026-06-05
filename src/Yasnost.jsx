@@ -112,6 +112,19 @@ const THEMES = {
     css: `
       @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
       * { box-sizing: border-box; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+      .ys-btn-primary, .ys-ai-btn { position: relative; overflow: hidden; }
+      .ys-btn-primary::after, .ys-ai-btn::after { content: ""; position: absolute; top: 0; left: -120%; width: 60%; height: 100%; background: linear-gradient(115deg, transparent, rgba(255,255,255,.30), transparent); transform: skewX(-18deg); pointer-events: none; }
+      .ys-btn-primary:hover::after, .ys-ai-btn:hover::after { animation: ys-shine .75s cubic-bezier(.3,.5,.3,1); }
+      @keyframes ys-shine { from { left: -120%; } to { left: 140%; } }
+      .ys-stat .ys-num { transition: filter .2s; }
+      .ys-stat:hover .ys-num { filter: brightness(1.14); }
+      .ys-pr, .ys-chip { transition: transform .12s cubic-bezier(.2,.7,.3,1), filter .12s; }
+      .ys-pr:hover, .ys-chip:hover { transform: translateY(-1px); }
+      .ys-fin-row { transition: background .12s, transform .12s; }
+      .ys-fin-row:hover { transform: translateX(2px); }
+      .ys-daybar .ys-bar { transition: filter .15s, transform .15s; }
+      .ys-daybar:hover .ys-bar { transform: scaleY(1.04); }
+      @media (prefers-reduced-motion: reduce) { .ys-btn-primary::after, .ys-ai-btn::after { display: none !important; } .ys-pr:hover, .ys-chip:hover, .ys-fin-row:hover, .ys-daybar:hover .ys-bar { transform: none !important; } }
       button:focus-visible, [tabindex]:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid #6AA0FF; outline-offset: 2px; }
       @media (prefers-reduced-motion: no-preference) {
         .ys-blob1 { animation: ys-b1 22s ease-in-out infinite alternate; }
@@ -295,6 +308,19 @@ const THEMES = {
     css: `
       @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap');
       * { box-sizing: border-box; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+      .ys-btn-primary, .ys-ai-btn { position: relative; overflow: hidden; }
+      .ys-btn-primary::after, .ys-ai-btn::after { content: ""; position: absolute; top: 0; left: -120%; width: 60%; height: 100%; background: linear-gradient(115deg, transparent, rgba(255,255,255,.30), transparent); transform: skewX(-18deg); pointer-events: none; }
+      .ys-btn-primary:hover::after, .ys-ai-btn:hover::after { animation: ys-shine .75s cubic-bezier(.3,.5,.3,1); }
+      @keyframes ys-shine { from { left: -120%; } to { left: 140%; } }
+      .ys-stat .ys-num { transition: filter .2s; }
+      .ys-stat:hover .ys-num { filter: brightness(1.14); }
+      .ys-pr, .ys-chip { transition: transform .12s cubic-bezier(.2,.7,.3,1), filter .12s; }
+      .ys-pr:hover, .ys-chip:hover { transform: translateY(-1px); }
+      .ys-fin-row { transition: background .12s, transform .12s; }
+      .ys-fin-row:hover { transform: translateX(2px); }
+      .ys-daybar .ys-bar { transition: filter .15s, transform .15s; }
+      .ys-daybar:hover .ys-bar { transform: scaleY(1.04); }
+      @media (prefers-reduced-motion: reduce) { .ys-btn-primary::after, .ys-ai-btn::after { display: none !important; } .ys-pr:hover, .ys-chip:hover, .ys-fin-row:hover, .ys-daybar:hover .ys-bar { transform: none !important; } }
       button:focus-visible, [tabindex]:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid #6AA0FF; outline-offset: 2px; }
       .ys-card:hover { box-shadow: 0 12px 30px rgba(0,0,0,.55), 0 0 0 1px rgba(198,242,77,.18) !important; transform: translateY(-2px); border-color: rgba(198,242,77,.32) !important; }
       .ys-card:active { transform: scale(0.985); }
@@ -486,6 +512,19 @@ const THEMES = {
     css: `
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
       * { box-sizing: border-box; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+      .ys-btn-primary, .ys-ai-btn { position: relative; overflow: hidden; }
+      .ys-btn-primary::after, .ys-ai-btn::after { content: ""; position: absolute; top: 0; left: -120%; width: 60%; height: 100%; background: linear-gradient(115deg, transparent, rgba(255,255,255,.30), transparent); transform: skewX(-18deg); pointer-events: none; }
+      .ys-btn-primary:hover::after, .ys-ai-btn:hover::after { animation: ys-shine .75s cubic-bezier(.3,.5,.3,1); }
+      @keyframes ys-shine { from { left: -120%; } to { left: 140%; } }
+      .ys-stat .ys-num { transition: filter .2s; }
+      .ys-stat:hover .ys-num { filter: brightness(1.14); }
+      .ys-pr, .ys-chip { transition: transform .12s cubic-bezier(.2,.7,.3,1), filter .12s; }
+      .ys-pr:hover, .ys-chip:hover { transform: translateY(-1px); }
+      .ys-fin-row { transition: background .12s, transform .12s; }
+      .ys-fin-row:hover { transform: translateX(2px); }
+      .ys-daybar .ys-bar { transition: filter .15s, transform .15s; }
+      .ys-daybar:hover .ys-bar { transform: scaleY(1.04); }
+      @media (prefers-reduced-motion: reduce) { .ys-btn-primary::after, .ys-ai-btn::after { display: none !important; } .ys-pr:hover, .ys-chip:hover, .ys-fin-row:hover, .ys-daybar:hover .ys-bar { transform: none !important; } }
       button:focus-visible, [tabindex]:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid #6AA0FF; outline-offset: 2px; }
       .ys-card:hover { box-shadow: 0 1px 2px rgba(15,15,15,.05), 0 10px 24px -10px rgba(27,79,138,.22) !important; transform: translateY(-2px); border-color: #D2DCEA !important; }
       .ys-card:active { transform: scale(0.98); }
@@ -1545,7 +1584,7 @@ export default function Yasnost() {
               </div>
             </div>
           </div>
-          <div style={{ ...st.board, gridTemplateColumns: doneCollapsed ? "minmax(310px, 1fr) minmax(310px, 1fr) 56px" : st.board.gridTemplateColumns }} className="ys-board">
+          <div style={{ ...st.board, gridTemplateColumns: doneCollapsed ? "minmax(310px, 1fr) minmax(310px, 1fr) 56px" : st.board.gridTemplateColumns }} className="ys-board ys-fade-in">
             {COLUMNS.map((col) => {
               const collapsed = col.id === "done" && doneCollapsed;
               if (collapsed) {
@@ -2358,7 +2397,7 @@ export default function Yasnost() {
                     {[["Лимит сегодня", b.today_limit, accent], ["Потрачено", b.today_spent, b.remaining < 0 ? "#E5575C" : txt], ["Остаток", b.remaining, b.remaining < 0 ? "#E5575C" : "#3FB27F"]].map(([l, v, col]) => (
                       <div key={l} style={{ ...panel, "--ys-accent": col }} className="ys-stat">
                         <div style={{ fontSize: 10, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>{l}</div>
-                        <div className="ys-num" style={{ fontSize: 22, fontWeight: 800, color: col, letterSpacing: "-0.02em" }}>{fmt(v)}</div>
+                        <div className="ys-num" style={{ fontSize: 22, fontWeight: 800, color: col, letterSpacing: "-0.02em" }}><CountUp value={v || 0} format={fmt} /></div>
                       </div>
                     ))}
                   </div>
