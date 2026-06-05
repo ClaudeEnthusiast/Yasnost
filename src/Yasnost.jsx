@@ -10,6 +10,7 @@ const COLUMNS = [
 ];
 
 const MONTHS_RU = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
+const tagHue = (s) => { let h = 0; const str = String(s); for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 360; return h; };
 const WEEKDAYS_RU = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
 const SEED = [
@@ -39,21 +40,21 @@ const THEMES = {
       brand:        { display: "flex", alignItems: "center", gap: 12, marginBottom: 30, padding: "0 6px" },
       logo:         { width: 38, height: 38, borderRadius: 11, background: "linear-gradient(135deg, #4D7CFF, #7C3AFF)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 19, color: "#fff", boxShadow: "0 0 24px rgba(77,124,255,.5)", flexShrink: 0 },
       brandName:    { fontWeight: 700, fontSize: 16, letterSpacing: "-0.01em", color: "#ffffff" },
-      brandSub:     { fontSize: 10.5, color: "#5a5a5a", letterSpacing: "0.14em", textTransform: "uppercase", marginTop: 3, fontWeight: 600 },
+      brandSub:     { fontSize: 10.5, color: "#8a93a6", letterSpacing: "0.14em", textTransform: "uppercase", marginTop: 3, fontWeight: 600 },
       nav:          { display: "flex", flexDirection: "column", gap: 3, flex: 1 },
-      navItem:      { position: "relative", display: "flex", alignItems: "center", gap: 11, padding: "10px 13px", borderRadius: 9, fontSize: 13.5, fontWeight: 500, color: "#8a8a8a", cursor: "pointer", transition: "color .2s cubic-bezier(.2,.7,.3,1), background .2s cubic-bezier(.2,.7,.3,1)" },
+      navItem:      { position: "relative", display: "flex", alignItems: "center", gap: 11, padding: "10px 13px", borderRadius: 9, fontSize: 13.5, fontWeight: 500, color: "#9aa4b6", cursor: "pointer", transition: "color .2s cubic-bezier(.2,.7,.3,1), background .2s cubic-bezier(.2,.7,.3,1)" },
       navActive:    { background: "linear-gradient(90deg, rgba(77,124,255,.16), rgba(124,58,255,.06))", color: "#ffffff", boxShadow: "inset 0 0 0 1px rgba(77,124,255,.18)" },
       navDivider:   { height: 1, background: "rgba(255,255,255,.06)", margin: "12px 8px" },
       navBadge:     { marginLeft: "auto", background: "#4D7CFF", color: "#fff", borderRadius: 999, fontSize: 11, fontWeight: 700, padding: "1px 8px", lineHeight: 1.6, boxShadow: "0 0 10px rgba(77,124,255,.6)" },
-      sidebarFoot:  { fontSize: 10.5, color: "#4a4a4a", paddingLeft: 8, lineHeight: 1.8 },
+      sidebarFoot:  { fontSize: 10.5, color: "#6b7488", paddingLeft: 8, lineHeight: 1.8 },
       sidebarFootLine: {},
-      resetBtn:     { marginTop: 10, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)", color: "#7a7a7a", borderRadius: 8, padding: "7px 10px", fontSize: 11, cursor: "pointer", fontFamily: "inherit", width: "100%" },
+      resetBtn:     { marginTop: 10, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)", color: "#9aa4b6", borderRadius: 8, padding: "7px 10px", fontSize: 11, cursor: "pointer", fontFamily: "inherit", width: "100%" },
       main:         { flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative", background: "transparent" },
       header:       { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "22px 30px", borderBottom: "1px solid rgba(255,255,255,.06)", background: "rgba(6,8,14,.88)", flexShrink: 0, position: "relative", zIndex: 2, backdropFilter: "blur(12px)" },
       h1:           { fontSize: 28, fontWeight: 800, letterSpacing: "-0.02em", margin: 0, color: "#ffffff" },
-      sub:          { fontSize: 13, color: "#5a5a5a", margin: "5px 0 0" },
+      sub:          { fontSize: 13, color: "#8a93a6", margin: "5px 0 0" },
       headerRight:  { display: "flex", alignItems: "center", gap: 14 },
-      searchWrap:   { display: "flex", alignItems: "center", gap: 8, background: "#141414", border: "1px solid rgba(255,255,255,.08)", borderRadius: 10, padding: "9px 14px", width: 230, cursor: "text", color: "#5a5a5a" },
+      searchWrap:   { display: "flex", alignItems: "center", gap: 8, background: "#141414", border: "1px solid rgba(255,255,255,.08)", borderRadius: 10, padding: "9px 14px", width: 230, cursor: "text", color: "#8a93a6" },
       searchInput:  { border: "none", background: "transparent", outline: "none", fontSize: 13, color: "#e0e0e0", fontFamily: "inherit", width: "100%" },
       avatar:       { width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg, #4D7CFF, #7C3AFF)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, flexShrink: 0, boxShadow: "0 0 16px rgba(77,124,255,.45)" },
       board:        { display: "grid", gridTemplateColumns: "repeat(3, minmax(310px, 1fr))", gap: 18, padding: 26, overflowX: "auto", overflowY: "hidden", flex: 1, minHeight: 0, alignItems: "stretch", position: "relative", zIndex: 1 },
@@ -62,55 +63,56 @@ const THEMES = {
       colHead:      { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, padding: "2px 4px" },
       colTitleWrap: { display: "flex", alignItems: "center", gap: 9 },
       colDot:       { width: 8, height: 8, borderRadius: "50%", flexShrink: 0 },
-      colTitle:     { fontWeight: 600, fontSize: 11, color: "#6a7585", letterSpacing: "0.12em", textTransform: "uppercase" },
-      colCount:     { fontSize: 11.5, fontWeight: 600, color: "#7a7a7a", background: "rgba(255,255,255,.05)", borderRadius: 999, padding: "1px 8px" },
+      colTitle:     { fontWeight: 600, fontSize: 11, color: "#8893a8", letterSpacing: "0.12em", textTransform: "uppercase" },
+      colCount:     { fontSize: 11.5, fontWeight: 600, color: "#9aa4b6", background: "rgba(255,255,255,.05)", borderRadius: 999, padding: "1px 8px" },
       colAdd:       { width: 25, height: 25, borderRadius: 8, border: "1px solid rgba(255,255,255,.08)", background: "transparent", color: "#4D7CFF", fontSize: 17, fontWeight: 600, cursor: "pointer", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" },
       cardList:     { display: "flex", flexDirection: "column", gap: 10, flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", paddingRight: 2 },
       card:         { background: "linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.018))", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderRadius: 14, padding: "14px 15px 13px", cursor: "pointer", border: "1px solid rgba(255,255,255,.08)", boxShadow: "0 1px 2px rgba(0,0,0,.4), 0 10px 28px -12px rgba(0,0,0,.6)", position: "relative", transformStyle: "preserve-3d", willChange: "transform" },
       cardTop:      { display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "absolute", top: 0, left: 0, right: 0, zIndex: 2 },
       cardStripe:   { width: 26, height: 3, borderRadius: 3, margin: "13px 0 0 15px" },
-      cardDel:      { border: "none", background: "transparent", color: "#3a3a3a", fontSize: 18, cursor: "pointer", padding: "6px 10px", lineHeight: 1 },
+      cardDel:      { border: "none", background: "transparent", color: "#5b6478", fontSize: 18, cursor: "pointer", padding: "6px 10px", lineHeight: 1 },
       cardTitle:    { fontWeight: 600, fontSize: 15, color: "#e0e0e0", marginTop: 11, lineHeight: 1.38, cursor: "pointer", position: "relative", zIndex: 1 },
-      cardDesc:     { fontSize: 13, color: "#6a6a6a", marginTop: 5, lineHeight: 1.45, position: "relative", zIndex: 1 },
+      cardDesc:     { fontSize: 13, color: "#9aa4b6", marginTop: 5, lineHeight: 1.45, position: "relative", zIndex: 1 },
       cardMeta:     { display: "flex", gap: 6, marginTop: 12, flexWrap: "wrap", position: "relative", zIndex: 1 },
-      metaChip:     { display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 600, color: "#8a8a8a", border: "1px solid rgba(255,255,255,.08)", borderRadius: 999, padding: "3px 9px", background: "rgba(255,255,255,.03)" },
+      metaChip:     { display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 600, color: "#9aa4b6", border: "1px solid rgba(255,255,255,.08)", borderRadius: 999, padding: "3px 9px", background: "rgba(255,255,255,.03)" },
       composer:     { background: "#141414", borderRadius: 14, padding: 13, boxShadow: "0 8px 28px rgba(0,0,0,.6)", display: "flex", flexDirection: "column", gap: 8, border: "1px solid rgba(77,124,255,.3)" },
       input:        { border: "1px solid rgba(255,255,255,.1)", borderRadius: 10, padding: "9px 12px", fontSize: 13, fontFamily: "inherit", outline: "none", color: "#e0e0e0", width: "100%", boxSizing: "border-box", background: "#0d0d0d" },
       priorityPicker: { display: "flex", gap: 6, flexWrap: "wrap" },
       prBtn:        { border: "1px solid rgba(255,255,255,.1)", borderRadius: 999, padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all .12s" },
       composerRow:  { display: "flex", gap: 8, marginTop: 2 },
       btnPrimary:   { flex: 1, background: "linear-gradient(135deg, #4D7CFF, #7C3AFF)", color: "#fff", border: "none", borderRadius: 10, padding: "10px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 18px rgba(77,124,255,.3)", transition: "transform .15s cubic-bezier(.2,.7,.3,1), box-shadow .2s, filter .2s" },
-      btnGhost:     { background: "transparent", color: "#8a8a8a", border: "1px solid rgba(255,255,255,.1)", borderRadius: 10, padding: "10px 16px", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", transition: "transform .15s cubic-bezier(.2,.7,.3,1), border-color .2s, color .2s, background .2s" },
-      empty:        { textAlign: "center", color: "#3a3a3a", fontSize: 12, padding: "26px 0", border: "1.5px dashed rgba(255,255,255,.08)", borderRadius: 12 },
+      btnGhost:     { background: "transparent", color: "#9aa4b6", border: "1px solid rgba(255,255,255,.1)", borderRadius: 10, padding: "10px 16px", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", transition: "transform .15s cubic-bezier(.2,.7,.3,1), border-color .2s, color .2s, background .2s" },
+      empty:        { textAlign: "center", color: "#5b6478", fontSize: 12, padding: "26px 0", border: "1.5px dashed rgba(255,255,255,.08)", borderRadius: 12 },
       todayView:    { flex: 1, overflowY: "auto", padding: 26, position: "relative", zIndex: 1 },
       todayList:    { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(330px, 1fr))", gap: 13 },
-      todayEmpty:   { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", maxWidth: 380, margin: "48px auto", padding: "44px 32px", background: "#0d0d0d", border: "1px solid rgba(255,255,255,.08)", borderRadius: 18, color: "#8a8a8a" },
+      todayEmpty:   { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", maxWidth: 380, margin: "48px auto", padding: "44px 32px", background: "#0d0d0d", border: "1px solid rgba(255,255,255,.08)", borderRadius: 18, color: "#9aa4b6" },
       overlay:      { position: "fixed", inset: 0, background: "rgba(0,0,0,.62)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, backdropFilter: "blur(14px) saturate(1.1)", WebkitBackdropFilter: "blur(14px) saturate(1.1)" },
       modal:        { background: "linear-gradient(180deg, rgba(20,22,30,.86), rgba(13,14,20,.9))", backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)", borderRadius: 20, width: "min(640px, 94vw)", maxHeight: "88vh", display: "flex", flexDirection: "column", boxShadow: "0 30px 90px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.08)", overflow: "hidden", border: "1px solid rgba(255,255,255,.12)" },
       modalHeader:  { display: "flex", alignItems: "center", gap: 12, padding: "20px 22px 16px", borderBottom: "1px solid rgba(255,255,255,.07)", flexShrink: 0 },
       modalTitle:   { flex: 1, border: "none", outline: "none", fontSize: 20, fontWeight: 700, color: "#ffffff", fontFamily: "inherit", letterSpacing: "-0.01em", background: "transparent" },
-      modalClose:   { border: "none", background: "transparent", color: "#5a5a5a", fontSize: 22, cursor: "pointer", lineHeight: 1, padding: "0 2px" },
+      modalClose:   { border: "none", background: "transparent", color: "#8a93a6", fontSize: 22, cursor: "pointer", lineHeight: 1, padding: "0 2px" },
       modalBody:    { overflowY: "auto", padding: "16px 22px 24px", display: "flex", flexDirection: "column", gap: 4 },
       modalSection: { paddingBottom: 16, borderBottom: "1px solid rgba(255,255,255,.06)", marginBottom: 4 },
       modalLabel:   { fontSize: 11, fontWeight: 700, color: "#8090a8", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 9 },
       textarea:     { border: "1px solid rgba(255,255,255,.1)", borderRadius: 10, padding: "10px 12px", fontSize: 13, fontFamily: "inherit", outline: "none", color: "#e0e0e0", width: "100%", boxSizing: "border-box", resize: "vertical", minHeight: 64, lineHeight: 1.5, background: "#0d0d0d" },
       checkItem:    { display: "flex", alignItems: "center", gap: 10, padding: "5px 0" },
       checkText:    { flex: 1, fontSize: 13, lineHeight: 1.4 },
-      checkDel:     { border: "none", background: "transparent", color: "#3a3a3a", fontSize: 16, cursor: "pointer", padding: "2px 4px", lineHeight: 1 },
+      checkDel:     { border: "none", background: "transparent", color: "#5b6478", fontSize: 16, cursor: "pointer", padding: "2px 4px", lineHeight: 1 },
       checkAdd:     { display: "flex", gap: 8, alignItems: "center" },      cursorDot:    { position: "fixed", top: 0, left: 0, fontSize: 13, lineHeight: 1, color: "#ffffff", textShadow: "0 0 6px rgba(220,235,255,1), 0 0 14px rgba(100,150,255,.9)", pointerEvents: "none", zIndex: 1001, transform: "translate(-50%, -50%)", userSelect: "none" },      blob1:        { position: "fixed", width: 700, height: 700, top: "-15%", left: "-10%", borderRadius: "50%", background: "radial-gradient(circle, rgba(40,80,200,.18) 0%, transparent 70%)", filter: "blur(60px)", pointerEvents: "none", zIndex: 0 },
       blob2:        { position: "fixed", width: 600, height: 600, top: "30%", right: "-12%", borderRadius: "50%", background: "radial-gradient(circle, rgba(100,40,220,.14) 0%, transparent 70%)", filter: "blur(60px)", pointerEvents: "none", zIndex: 0 },
       blob3:        { position: "fixed", width: 500, height: 500, bottom: "-5%", left: "35%", borderRadius: "50%", background: "radial-gradient(circle, rgba(0,160,200,.10) 0%, transparent 70%)", filter: "blur(60px)", pointerEvents: "none", zIndex: 0 },
       aiBtn:        { width: "100%", background: "linear-gradient(135deg, #4D7CFF, #7C3AFF)", color: "#fff", border: "none", borderRadius: 12, padding: "13px", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 20px rgba(77,124,255,.35)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 },
       aiPanel:      { marginTop: 12, background: "#0d0d0d", border: "1px solid rgba(77,124,255,.25)", borderRadius: 12, padding: "14px 16px", fontSize: 13, lineHeight: 1.6, color: "#c0c0c0", whiteSpace: "pre-wrap" },
       docChip:      { display: "inline-flex", alignItems: "center", gap: 6, background: "#141414", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: "6px 10px", fontSize: 12, color: "#c0c0c0" },
-      docZone:      { border: "1.5px dashed rgba(255,255,255,.12)", borderRadius: 12, padding: "14px", textAlign: "center", color: "#5a5a5a", fontSize: 12.5, cursor: "pointer", transition: "border-color .15s, color .15s" },
+      docZone:      { border: "1.5px dashed rgba(255,255,255,.12)", borderRadius: 12, padding: "14px", textAlign: "center", color: "#8a93a6", fontSize: 12.5, cursor: "pointer", transition: "border-color .15s, color .15s" },
       checkboxAccent: "#4D7CFF",
       checkTextActive: "#e0e0e0",
-      checkTextDone:   "#5a5a5a",
+      checkTextDone:   "#8a93a6",
     },
     css: `
       @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
       * { box-sizing: border-box; }
+      button:focus-visible, [tabindex]:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid #6AA0FF; outline-offset: 2px; }
       @media (prefers-reduced-motion: no-preference) {
         .ys-blob1 { animation: ys-b1 22s ease-in-out infinite alternate; }
         .ys-blob2 { animation: ys-b2 30s ease-in-out infinite alternate-reverse; }
@@ -182,7 +184,7 @@ const THEMES = {
       @keyframes ys-fade-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
       .ys-toast { animation: ys-toast-in .22s cubic-bezier(.2,.7,.3,1) both; }
       @keyframes ys-toast-in { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
-      input::placeholder, textarea::placeholder { color: #4a4a4a; }
+      input::placeholder, textarea::placeholder { color: #6b7488; }
       input[type="date"] { color-scheme: dark; }
       select { color-scheme: dark; }
       @media (pointer: coarse) { .ys-cursor-dot { display: none !important; } }
@@ -293,6 +295,7 @@ const THEMES = {
     css: `
       @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap');
       * { box-sizing: border-box; }
+      button:focus-visible, [tabindex]:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid #6AA0FF; outline-offset: 2px; }
       .ys-card:hover { box-shadow: 0 12px 30px rgba(0,0,0,.55), 0 0 0 1px rgba(198,242,77,.18) !important; transform: translateY(-2px); border-color: rgba(198,242,77,.32) !important; }
       .ys-card:active { transform: scale(0.985); }
       .ys-nav-item { position: relative; }
@@ -485,6 +488,7 @@ const THEMES = {
     css: `
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
       * { box-sizing: border-box; }
+      button:focus-visible, [tabindex]:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid #6AA0FF; outline-offset: 2px; }
       .ys-card:hover { box-shadow: 0 1px 2px rgba(15,15,15,.05), 0 10px 24px -10px rgba(27,79,138,.22) !important; transform: translateY(-2px); border-color: #D2DCEA !important; }
       .ys-card:active { transform: scale(0.98); }
       .ys-nav-item { position: relative; }
@@ -584,6 +588,10 @@ export default function Yasnost() {
   const [searchQuery,    setSearchQuery]    = useState("");
   const [view,           setView]           = useState("board");
   const [selectedCardId, setSelectedCardId] = useState(null);
+  const [tagInput,       setTagInput]       = useState("");
+  const [paletteOpen,    setPaletteOpen]    = useState(false);
+  const [palQ,           setPalQ]           = useState("");
+  const [palIdx,         setPalIdx]         = useState(0);
   const [newCheckItem,   setNewCheckItem]   = useState("");
   const [aiLoading,      setAiLoading]      = useState(null);
   const [budgetData,     setBudgetData]     = useState(null);
@@ -697,7 +705,7 @@ export default function Yasnost() {
       .then((d) => { setBudgetData(d); setBudgetLoading(false); })
       .catch(() => setBudgetLoading(false));
   };
-  useEffect(() => { if (view === "finance") loadBudget(); }, [view]);
+  useEffect(() => { if (view === "finance" || view === "today") loadBudget(); }, [view]);
 
   const budgetAction = async (path, body, method = "POST") => {
     setFinBusy(true); setFinError("");
@@ -799,7 +807,8 @@ export default function Yasnost() {
 
   useEffect(() => {
     const h = (e) => {
-      if (e.key === "Escape") { setSelectedCardId(null); setFinModal(null); return; }
+      if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")) { e.preventDefault(); setPaletteOpen((o) => { if (!o) { setPalQ(""); setPalIdx(0); } return !o; }); return; }
+      if (e.key === "Escape") { setPaletteOpen(false); setSelectedCardId(null); setFinModal(null); return; }
       const tag = (e.target && e.target.tagName) || "";
       const typing = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (e.target && e.target.isContentEditable);
       if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -808,12 +817,13 @@ export default function Yasnost() {
       else if (e.key === "1") setView("board");
       else if (e.key === "2") setView("calendar");
       else if (e.key === "3") setView("finance");
+      else if (e.key === "t") setView("today");
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
   }, []);
 
-  useEffect(() => { setNewCheckItem(""); }, [selectedCardId]);
+  useEffect(() => { setNewCheckItem(""); setTagInput(""); }, [selectedCardId]);
 
   // Touch drag — move
   useEffect(() => {
@@ -1245,7 +1255,20 @@ export default function Yasnost() {
   const runAnalysis = (card) => { setAiLoading(card.id); setTimeout(() => { updateCard(card.id, { ai: buildAnalysis(card) }); setAiLoading(null); }, 1600); };
 
   const updateCard = (id, changes) => setCards((cs) => cs.map((c) => (c.id === id ? { ...c, ...changes } : c)));
-  const onDrop = (status) => { if (dragId != null) updateCard(dragId, { status }); setDragId(null); setOverCol(null); };
+  const shiftDue = (due, repeat) => { const base = due ? new Date(due + "T00:00:00") : new Date(TODAY + "T00:00:00"); if (repeat === "daily") base.setDate(base.getDate() + 1); else if (repeat === "weekly") base.setDate(base.getDate() + 7); else if (repeat === "monthly") base.setMonth(base.getMonth() + 1); return iso(base); };
+  const setStatus = (id, status) => {
+    const card = cards.find((c) => c.id === id);
+    if (card && status === "done" && card.status !== "done" && card.repeat && card.repeat !== "none") {
+      const newId = Math.max(0, ...cards.map((c) => c.id)) + 1;
+      const nd = shiftDue(card.due, card.repeat);
+      const clone = { ...card, id: newId, status: "todo", due: nd, checklist: (card.checklist || []).map((i) => ({ ...i, done: false })), ai: undefined };
+      setCards((cs) => [...cs.map((c) => (c.id === id ? { ...c, status } : c)), clone]);
+      toast(`Повтор создан: ${card.title} → ${fmtRu(nd)}`, "success");
+    } else updateCard(id, { status });
+  };
+  const addTag = (id, tags, raw) => { const t = String(raw || "").trim().replace(/^#/, "").toLowerCase().slice(0, 24); if (!t) return; if ((tags || []).includes(t)) { setTagInput(""); return; } updateCard(id, { tags: [...(tags || []), t] }); setTagInput(""); };
+  const removeTag = (id, tags, t) => updateCard(id, { tags: (tags || []).filter((x) => x !== t) });
+  const onDrop = (status) => { if (dragId != null) setStatus(dragId, status); setDragId(null); setOverCol(null); };
 
   const addCard = (status) => {
     if (!draft.title.trim()) return;
@@ -1287,11 +1310,54 @@ export default function Yasnost() {
 
   const q            = searchQuery.toLowerCase();
   const visibleCards = cards
-    .filter((c) => (q ? c.title.toLowerCase().includes(q) : true))
+    .filter((c) => (q ? (c.title.toLowerCase().includes(q) || (c.desc || "").toLowerCase().includes(q) || (c.tags || []).some((t) => t.toLowerCase().includes(q.replace(/^#/, "")))) : true))
     .filter((c) => (priorityFilter === "all" ? true : (c.priority || "normal") === priorityFilter));
   const todayCards   = cards.filter((c) => c.due && c.due <= TODAY).sort((a, b) => a.due.localeCompare(b.due));
+  const overdueCount = cards.filter((c) => c.status !== "done" && c.due && c.due < TODAY).length;
+  const todayTasks    = cards.filter((c) => c.status !== "done" && c.due && c.due <= TODAY).sort((a, b) => a.due.localeCompare(b.due));
+  const upcomingTasks = cards.filter((c) => c.status !== "done" && c.due && c.due > TODAY).sort((a, b) => a.due.localeCompare(b.due)).slice(0, 6);
+  const navItem = (key, icon, label, badge) => (
+    <div key={key} role="button" tabIndex={0}
+      className={"ys-nav-item" + (view === key ? " ys-nav-active" : "")}
+      style={{ ...st.navItem, ...(view === key ? st.navActive : {}) }}
+      onClick={() => setView(key)}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setView(key); } }}>
+      <Icon name={icon} /> <span style={{ flex: 1 }}>{label}</span>
+      {badge > 0 && <span style={st.navBadge}>{badge}</span>}
+    </div>
+  );
   const visibleToday = q ? todayCards.filter((c) => c.title.toLowerCase().includes(q)) : todayCards;
   const countBy      = (status) => visibleCards.filter((c) => c.status === status).length;
+  const allTags      = [...new Set(cards.flatMap((c) => c.tags || []))].sort();
+
+  // ── Командная палитра (⌘K) ──
+  const palCommands = [
+    { id: "nav-today", label: "Перейти: Сегодня", icon: "sun", run: () => setView("today") },
+    { id: "nav-board", label: "Перейти: Доска задач", icon: "board", run: () => setView("board") },
+    { id: "nav-cal", label: "Перейти: Календарь", icon: "today", run: () => setView("calendar") },
+    { id: "nav-fin", label: "Перейти: Финансы", icon: "wallet", run: () => setView("finance") },
+    { id: "new-task", label: "Новая задача", icon: "plus", run: () => { setView("board"); setAdding(COLUMNS[0].id); setDraft({ title: "", desc: "", due: "", priority: "normal" }); } },
+    { id: "add-expense", label: "Добавить расход", icon: "wallet", run: () => { setView("finance"); setFinTab("personal"); setFinForm({ kind: "personal", amount: "", category: "", note: "" }); setFinError(""); setFinModal("add"); } },
+    { id: "theme-cosmos", label: "Тема: Космос", icon: "sun", run: () => switchTheme("cosmos") },
+    { id: "theme-signal", label: "Тема: Сигнал", icon: "sun", run: () => switchTheme("signal") },
+    { id: "theme-light", label: "Тема: Notion", icon: "sun", run: () => switchTheme("light") },
+    { id: "toggle-done", label: doneCollapsed ? "Развернуть «Готово»" : "Свернуть «Готово»", icon: "board", run: () => setDoneCollapsed((v) => !v) },
+  ];
+  const palItems = (() => {
+    const ql = palQ.trim().toLowerCase();
+    const cmds = palCommands.filter((c) => !ql || c.label.toLowerCase().includes(ql));
+    const tasks = cards.filter((c) => !ql || c.title.toLowerCase().includes(ql) || (c.tags || []).some((t) => t.includes(ql.replace(/^#/, "")))).slice(0, 7)
+      .map((c) => ({ id: "task-" + c.id, label: c.title, sub: "Задача", icon: "board", run: () => setSelectedCardId(c.id) }));
+    return [...cmds, ...tasks];
+  })();
+  const palIdxClamped = palItems.length ? Math.min(palIdx, palItems.length - 1) : 0;
+  const runPal = (it) => { setPaletteOpen(false); setPalQ(""); setPalIdx(0); if (it) it.run(); };
+  const palKeyDown = (e) => {
+    if (e.key === "ArrowDown") { e.preventDefault(); setPalIdx((i) => Math.min(i + 1, palItems.length - 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setPalIdx((i) => Math.max(i - 1, 0)); }
+    else if (e.key === "Enter") { e.preventDefault(); runPal(palItems[palIdxClamped]); }
+    else if (e.key === "Escape") { e.preventDefault(); setPaletteOpen(false); }
+  };
   const selectedCard = cards.find((c) => c.id === selectedCardId) ?? null;
 
   const onCardTouchStart = (e, cardId) => {
@@ -1341,7 +1407,12 @@ export default function Yasnost() {
               <Icon name="clock" color={d.tone} /> {d.overdue ? "Просрочено · " : ""}{d.label}
             </span>
           )}
-          {cl.length > 0 && <span style={st.metaChip}>✓ {clDone}/{cl.length}</span>}
+          {cl.length > 0 && <span style={st.metaChip}><Icon name="check" /> {clDone}/{cl.length}</span>}
+          {c.repeat && c.repeat !== "none" && <span style={st.metaChip} title="Повторяется"><Icon name="repeat" /></span>}
+          {(c.tags || []).map((t) => { const h = tagHue(t); return (
+            <span key={t} onClick={(e) => { e.stopPropagation(); setSearchQuery("#" + t); }} title="Фильтр по тегу"
+              style={{ ...st.metaChip, cursor: "pointer", color: `hsl(${h},62%,62%)`, borderColor: `hsla(${h},55%,50%,.4)`, background: `hsla(${h},60%,50%,.13)` }}>#{t}</span>
+          ); })}
         </div>
         {cl.length > 0 && (
           <div style={{ height: 3, marginTop: 9, borderRadius: 999, background: "rgba(128,128,128,.2)", overflow: "hidden", position: "relative", zIndex: 1 }}>
@@ -1360,7 +1431,7 @@ export default function Yasnost() {
       <canvas ref={starsCanvas} className="ys-stars" style={{ display: themeName === "cosmos" ? "block" : "none" }} aria-hidden="true" />
       <canvas ref={trailCanvas} style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 999, display: themeName === "cosmos" ? "block" : "none" }} aria-hidden="true" />
       <div ref={cursorDot}  style={st.cursorDot}  className="ys-cursor-dot"  aria-hidden="true">{themeName === "cosmos" ? "✦" : ""}</div>      {loading && (
-        <div style={{ position: "fixed", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 2000, fontFamily: st.app.fontFamily, background: st.app.background, gap: 14, color: "#6a6a6a" }}>
+        <div style={{ position: "fixed", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 2000, fontFamily: st.app.fontFamily, background: st.app.background, gap: 14, color: "#9aa4b6" }}>
           <div style={{ ...st.logo }}>Я</div>
           <div style={{ fontSize: 14 }}>Загрузка…</div>
         </div>
@@ -1377,28 +1448,28 @@ export default function Yasnost() {
         </div>
 
         <nav style={st.nav} className="ys-nav">
-          <div className={"ys-nav-item" + (view === "board" ? " ys-nav-active" : "")} tabIndex={0} style={{ ...st.navItem, ...(view === "board" ? st.navActive : {}) }} onClick={() => setView("board")}>
-            <Icon name="board" /> Доска задач
-          </div>
-          <div className={"ys-nav-item" + (view === "calendar" ? " ys-nav-active" : "")} tabIndex={0} style={{ ...st.navItem, ...(view === "calendar" ? st.navActive : {}) }} onClick={() => setView("calendar")}>
-            <Icon name="today" /> Календарь
-            {todayCards.length > 0 && <span style={st.navBadge}>{todayCards.length}</span>}
-          </div>
-          <div className={"ys-nav-item" + (view === "finance" ? " ys-nav-active" : "")} tabIndex={0} style={{ ...st.navItem, ...(view === "finance" ? st.navActive : {}) }} onClick={() => setView("finance")}>
-            <Icon name="wallet" /> Финансы
-          </div>
-          <div style={st.navItem}><Icon name="doc" /> Документы</div>
-          <div style={st.navItem}><Icon name="bell" /> Напоминания</div>
+          {navItem("today", "sun", "Сегодня", overdueCount)}
+          {navItem("board", "board", "Доска задач", 0)}
+          {navItem("calendar", "today", "Календарь", todayCards.length)}
+          {navItem("finance", "wallet", "Финансы", 0)}
           <div style={st.navDivider} />
-          <div style={st.navItem}><Icon name="plus" /> Новый раздел</div>
+          {[["doc", "Документы"], ["bell", "Напоминания"], ["plus", "Новый раздел"]].map(([icon, label]) => (
+            <div key={label} role="button" tabIndex={0} className="ys-nav-item"
+              style={{ ...st.navItem, opacity: 0.5, cursor: "default" }}
+              onClick={() => toast(label + " — скоро", "info")}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toast(label + " — скоро", "info"); } }}>
+              <Icon name={icon} /> <span style={{ flex: 1 }}>{label}</span>
+              <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", opacity: 0.7, border: "1px solid currentColor", borderRadius: 5, padding: "1px 5px" }}>скоро</span>
+            </div>
+          ))}
         </nav>
 
         <div style={st.sidebarFoot} className="ys-sidebar-foot">
           <div style={st.sidebarFootLine}>v1.2 · прототип</div>
           <div style={{ ...st.sidebarFootLine, color: saveStatus === "error" ? "#E57373" : saveStatus === "saving" ? "#7E93B5" : "#4CAF82" }}>
-            {saveStatus === "saving" ? "⏳ Сохраняется…" : saveStatus === "error" ? "✗ Ошибка сохранения" : "✓ Данные на сервере"}
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><span style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, background: saveStatus === "error" ? "#E57373" : saveStatus === "saving" ? "#E8A13A" : "#4CAF82" }} />{saveStatus === "saving" ? "Сохраняется…" : saveStatus === "error" ? "Ошибка сохранения" : "Данные на сервере"}</span>
           </div>
-          <button style={st.resetBtn} onClick={resetCards}>↺ Сбросить данные</button>
+          <button style={st.resetBtn} onClick={resetCards}><span style={{ display: "inline-flex", alignItems: "center", gap: 6, justifyContent: "center" }}><Icon name="undo" /> Сбросить данные</span></button>
           {/* Theme switcher */}
           <div style={{ display: "flex", gap: 8, paddingLeft: 0, marginTop: 12, alignItems: "center" }}>
             {THEME_DOTS.map(({ key, color, label }) => (
@@ -1427,9 +1498,9 @@ export default function Yasnost() {
 
         <header style={st.header} className="ys-header">
           <div>
-            <h1 style={st.h1} className="ys-h1">{view === "board" ? "Доска задач" : view === "calendar" ? "Календарь" : "Финансы"}</h1>
+            <h1 style={st.h1} className="ys-h1">{view === "today" ? "Сегодня" : view === "board" ? "Доска задач" : view === "calendar" ? "Календарь" : "Финансы"}</h1>
             <p style={st.sub}>
-              {view === "board" ? `${cards.length} задач · ${countBy("in_progress")} в работе` : view === "calendar" ? `${MONTHS_RU[calMonth.m]} ${calMonth.y}` : budgetData ? `Период ${fmtRu(budgetData.start_date)} — ${fmtRu(budgetData.end_date)}` : "Загрузка…"}
+              {view === "today" ? (() => { const p = String(TODAY).split("-"); return `${+p[2]} ${MONTHS_RU[+p[1] - 1]} · ${todayTasks.length} задач${overdueCount ? ` · ${overdueCount} просрочено` : ""}`; })() : view === "board" ? `${cards.length} задач · ${countBy("in_progress")} в работе` : view === "calendar" ? `${MONTHS_RU[calMonth.m]} ${calMonth.y}` : budgetData ? `Период ${fmtRu(budgetData.start_date)} — ${fmtRu(budgetData.end_date)}` : "Загрузка…"}
             </p>
           </div>
           <div style={st.headerRight}>
@@ -2240,6 +2311,80 @@ export default function Yasnost() {
             })()}
           </div>
         )}
+
+        {/* Сегодня */}
+        {view === "today" && (() => {
+          const accent = st.checkboxAccent;
+          const txt = st.cardTitle.color;
+          const muted = st.cardDesc.color;
+          const panel = { ...st.card, cursor: "default", padding: "18px 20px" };
+          const lbl = { fontSize: 10, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 };
+          const fmt = (n) => (n || 0).toLocaleString("ru-RU") + " ₽";
+          const b = budgetData;
+          const unpaidMand = (b && b.configured && (b.mandatory_expenses || []).filter((e) => !e.paid)) || [];
+          const taskRow = (c) => {
+            const overdue = c.due && c.due < TODAY;
+            const pr = priorities[c.priority] || priorities.normal;
+            return (
+              <div key={c.id} onClick={() => setSelectedCardId(c.id)} className="ys-fin-row" role="button" tabIndex={0}
+                onKeyDown={(e) => { if (e.key === "Enter") setSelectedCardId(c.id); }}
+                style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 8px", borderBottom: "1px solid rgba(128,128,128,.1)", cursor: "pointer" }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: pr.color, flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, color: txt, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.title}</div>
+                  {c.desc && <div style={{ fontSize: 12, color: muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.desc}</div>}
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 600, color: overdue ? "#E5575C" : muted, flexShrink: 0 }}>{overdue ? "просрочено " : ""}{fmtRu(c.due)}</span>
+              </div>
+            );
+          };
+          return (
+            <div style={{ flex: 1, overflowY: "auto", padding: 26, position: "relative", zIndex: 1 }} className="ys-fade-in">
+              <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
+                <div style={panel}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                    <div style={{ ...lbl, marginBottom: 0 }}>Задачи на сегодня и просрочки</div>
+                    <span style={{ fontSize: 12, color: muted }}>{todayTasks.length}</span>
+                  </div>
+                  {todayTasks.length === 0
+                    ? <div style={{ color: muted, fontSize: 13, padding: "14px 0", textAlign: "center" }}>На сегодня всё чисто — нет задач с дедлайном.</div>
+                    : todayTasks.map(taskRow)}
+                </div>
+
+                {b && b.configured && (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
+                    {[["Лимит сегодня", b.today_limit, accent], ["Потрачено", b.today_spent, b.remaining < 0 ? "#E5575C" : txt], ["Остаток", b.remaining, b.remaining < 0 ? "#E5575C" : "#3FB27F"]].map(([l, v, col]) => (
+                      <div key={l} style={{ ...panel, "--ys-accent": col }} className="ys-stat">
+                        <div style={{ fontSize: 10, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>{l}</div>
+                        <div className="ys-num" style={{ fontSize: 22, fontWeight: 800, color: col, letterSpacing: "-0.02em" }}>{fmt(v)}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {unpaidMand.length > 0 && (
+                  <div style={panel}>
+                    <div style={lbl}>Неоплаченные обязательные</div>
+                    {unpaidMand.map((e, i) => (
+                      <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: "1px solid rgba(128,128,128,.1)", fontSize: 13 }}>
+                        <span style={{ color: txt, display: "inline-flex", alignItems: "center", gap: 8 }}><Icon name="square" color={muted} /> {e.name}</span>
+                        <span style={{ color: muted, fontWeight: 600 }}>{fmt(e.amount)}</span>
+                      </div>
+                    ))}
+                    <button onClick={() => setView("finance")} style={{ ...st.btnGhost, marginTop: 12, padding: "8px 14px", fontSize: 12 }}>Открыть финансы →</button>
+                  </div>
+                )}
+
+                {upcomingTasks.length > 0 && (
+                  <div style={panel}>
+                    <div style={lbl}>Скоро</div>
+                    {upcomingTasks.map(taskRow)}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
       </main>
 
       {/* ── Modal ── */}
@@ -2269,7 +2414,7 @@ export default function Yasnost() {
                 <div style={st.modalLabel}>Статус</div>
                 <div style={st.priorityPicker}>
                   {COLUMNS.map((col) => (
-                    <button key={col.id} onClick={() => updateCard(selectedCard.id, { status: col.id })}
+                    <button key={col.id} onClick={() => setStatus(selectedCard.id, col.id)}
                       style={{ ...st.prBtn, background: selectedCard.status === col.id ? col.accent + "18" : "transparent", border: selectedCard.status === col.id ? `1px solid ${col.accent}` : st.prBtn.border || "1px solid rgba(255,255,255,.15)", color: selectedCard.status === col.id ? col.accent : "#7a8898" }}>
                       {col.title}
                     </button>
@@ -2281,6 +2426,38 @@ export default function Yasnost() {
                 <div style={st.modalLabel}>Дедлайн</div>
                 <input type="date" style={{ ...st.input, width: "auto", display: "inline-block" }}
                   value={selectedCard.due || ""} onChange={(e) => updateCard(selectedCard.id, { due: e.target.value })} />
+              </div>
+
+              <div style={st.modalSection}>
+                <div style={st.modalLabel}>Теги</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
+                  {(selectedCard.tags || []).map((t) => { const h = tagHue(t); return (
+                    <span key={t} style={{ ...st.metaChip, color: `hsl(${h},62%,62%)`, borderColor: `hsla(${h},55%,50%,.4)`, background: `hsla(${h},60%,50%,.13)`, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                      #{t}
+                      <button onClick={() => removeTag(selectedCard.id, selectedCard.tags, t)} style={{ border: "none", background: "transparent", color: "inherit", cursor: "pointer", fontSize: 14, lineHeight: 1, padding: 0, opacity: 0.7 }}>×</button>
+                    </span>
+                  ); })}
+                  <input list="ys-all-tags" style={{ ...st.input, width: 160, padding: "6px 10px", fontSize: 12 }} placeholder="+ тег, Enter"
+                    value={tagInput} onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addTag(selectedCard.id, selectedCard.tags, tagInput); } }} />
+                  <datalist id="ys-all-tags">{allTags.map((t) => <option key={t} value={t} />)}</datalist>
+                </div>
+              </div>
+
+              <div style={st.modalSection}>
+                <div style={st.modalLabel}>Повтор</div>
+                <div style={st.priorityPicker}>
+                  {[["none", "Нет"], ["daily", "Каждый день"], ["weekly", "Каждую неделю"], ["monthly", "Каждый месяц"]].map(([key, label]) => {
+                    const active = (selectedCard.repeat || "none") === key;
+                    return (
+                      <button key={key} onClick={() => updateCard(selectedCard.id, { repeat: key })}
+                        style={{ ...st.prBtn, display: "inline-flex", alignItems: "center", gap: 6, background: active ? st.checkboxAccent + "1f" : "transparent", border: active ? `1px solid ${st.checkboxAccent}` : st.prBtn.border || "1px solid rgba(255,255,255,.15)", color: active ? st.checkboxAccent : "#8893a8" }}>
+                        {key !== "none" && <Icon name="repeat" />}{label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedCard.repeat && selectedCard.repeat !== "none" && <div style={{ fontSize: 11, color: st.cardDesc.color, marginTop: 8 }}>При переносе в «Готово» задача пересоздастся со сдвинутым дедлайном.</div>}
               </div>
 
               <div style={st.modalSection}>
@@ -2483,6 +2660,34 @@ export default function Yasnost() {
         );
       })()}
 
+      {/* ── Командная палитра (⌘K) ── */}
+      {paletteOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 4000, background: "rgba(0,0,0,.45)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: "12vh" }}
+          onClick={() => setPaletteOpen(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="ys-modal"
+            style={{ width: "min(560px, 92vw)", background: st.modal.background, border: st.modal.border, borderRadius: 16, boxShadow: st.modal.boxShadow, overflow: "hidden", backdropFilter: st.modal.backdropFilter, WebkitBackdropFilter: st.modal.WebkitBackdropFilter }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 11, padding: "14px 16px", borderBottom: "1px solid rgba(128,128,128,.15)" }}>
+              <Icon name="search" color={st.cardDesc.color} size={16} />
+              <input autoFocus value={palQ} onChange={(e) => { setPalQ(e.target.value); setPalIdx(0); }} onKeyDown={palKeyDown}
+                placeholder="Команда или задача…"
+                style={{ flex: 1, border: "none", outline: "none", background: "transparent", color: st.cardTitle.color, fontSize: 15, fontFamily: "inherit" }} />
+              <span style={{ fontSize: 10, color: st.cardDesc.color, border: "1px solid rgba(128,128,128,.3)", borderRadius: 5, padding: "2px 6px" }}>ESC</span>
+            </div>
+            <div style={{ maxHeight: 360, overflowY: "auto", padding: 6 }}>
+              {palItems.length === 0 && <div style={{ padding: 20, textAlign: "center", color: st.cardDesc.color, fontSize: 13 }}>Ничего не найдено</div>}
+              {palItems.map((it, i) => (
+                <div key={it.id} onClick={() => runPal(it)} onMouseEnter={() => setPalIdx(i)}
+                  style={{ display: "flex", alignItems: "center", gap: 11, padding: "10px 12px", borderRadius: 10, cursor: "pointer", background: i === palIdxClamped ? st.checkboxAccent + "22" : "transparent" }}>
+                  <Icon name={it.icon} color={i === palIdxClamped ? st.checkboxAccent : st.cardDesc.color} size={16} />
+                  <span style={{ flex: 1, color: st.cardTitle.color, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.label}</span>
+                  {it.sub && <span style={{ fontSize: 11, color: st.cardDesc.color, flexShrink: 0 }}>{it.sub}</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Тосты ── */}
       <div style={{ position: "fixed", right: 18, bottom: 18, zIndex: 3000, display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end", pointerEvents: "none", maxWidth: "min(360px, 90vw)" }}>
         {toasts.map((t) => {
@@ -2542,6 +2747,9 @@ function Icon({ name, color = "currentColor", size = 14 }) {
     search: <><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></>,
     clock:  <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
     today:  <><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></>,
+    sun:    <><circle cx="12" cy="12" r="4.2" /><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7" /></>,
+    tag:    <><path d="M3 11.5V4a1 1 0 0 1 1-1h7.5a1 1 0 0 1 .7.3l8 8a1 1 0 0 1 0 1.4l-7.5 7.5a1 1 0 0 1-1.4 0l-8-8a1 1 0 0 1-.3-.7z" /><circle cx="7.5" cy="7.5" r="1.3" fill={color} stroke="none" /></>,
+    repeat: <><path d="M17 2.5 20.5 6 17 9.5" /><path d="M3.5 11V9a3 3 0 0 1 3-3h14" /><path d="M7 21.5 3.5 18 7 14.5" /><path d="M20.5 13v2a3 3 0 0 1-3 3h-14" /></>,
     coins:  <><ellipse cx="12" cy="6.5" rx="7" ry="3" /><path d="M5 6.5v5c0 1.66 3.13 3 7 3s7-1.34 7-3v-5" /><path d="M5 11.5v5c0 1.66 3.13 3 7 3s7-1.34 7-3v-5" /></>,
     undo:   <><path d="M9 14 4 9l5-5" /><path d="M4 9h11a5 5 0 0 1 0 10h-4" /></>,
     download: <><path d="M12 3v13" /><path d="m7 12 5 5 5-5" /><path d="M5 21h14" /></>,
