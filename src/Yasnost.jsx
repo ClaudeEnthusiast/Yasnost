@@ -2273,7 +2273,7 @@ export default function Yasnost() {
                         const isMand = !!e.mandatory;
                         return (
                           <div key={e.idx} className={isMand ? "" : "ys-fin-row"}
-                            onClick={() => { if (isMand) return; setFinForm({ kind: "personal", id: e.id != null ? e.id : e.idx, date: e.date, amount: String(e.amount), category: categories.includes(e.category) ? e.category : "__custom__", customCategory: categories.includes(e.category) ? "" : e.category, note: e.note || "" }); setFinError(""); setFinModal("edit"); }}
+                            onClick={() => { if (isMand) { setFinForm({ kind: "personal", id: e.id != null ? e.id : e.idx, date: e.date, amount: String(e.amount), category: e.category || "Обязательные", customCategory: "", note: e.note || "", _mandOnly: true }); setFinError(""); setFinModal("edit"); return; } setFinForm({ kind: "personal", id: e.id != null ? e.id : e.idx, date: e.date, amount: String(e.amount), category: categories.includes(e.category) ? e.category : "__custom__", customCategory: categories.includes(e.category) ? "" : e.category, note: e.note || "" }); setFinError(""); setFinModal("edit"); }}
                             style={{ display: "flex", justifyContent: "space-between", padding: "8px 6px", borderBottom: "1px solid rgba(128,128,128,.12)", alignItems: "center", gap: 8, cursor: isMand ? "default" : "pointer" }}>
                             <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
@@ -2669,7 +2669,17 @@ export default function Yasnost() {
               <button style={st.modalClose} onClick={closeFin}>×</button>
             </div>
             <div style={{ ...st.modalBody, gap: 14 }}>
-              {isExpenseForm && (
+              {isExpenseForm && finForm._mandOnly && (
+                <>
+                  <div style={{ fontSize: 13, color: st.cardDesc.color }}>Обязательный платёж — можно изменить только дату записи.</div>
+                  <div>
+                    <div style={st.modalLabel}>Дата платежа</div>
+                    <input style={st.input} type="date" autoFocus value={finForm.date || ""}
+                      onChange={(e) => setFinForm({ ...finForm, date: e.target.value })} />
+                  </div>
+                </>
+              )}
+              {isExpenseForm && !finForm._mandOnly && (
                 <>
                   {isExpenseForm && (
                     <div>
