@@ -848,10 +848,15 @@ export default function Yasnost() {
     if (!(actual >= 0)) { setFinError("Введите реальный остаток на счёте"); return; }
     const expected = budgetData?.expected_on_hand || 0;
     const gap = Math.round((expected - actual) * 100) / 100; // >0 — потратил вне учёта; <0 — нашлись деньги
-    await budgetAction("/balance", { amount: actual });
-    if (gap >= 1) { await budgetAction("/expense", { amount: gap, category: "Корректировка", note: "Сверка: расход вне учёта" }); }
-    else if (gap <= -1) { await budgetAction("/income", { amount: -gap }); }
+    if (gap >= 1) { if (!await budgetAction("/expense", { amount: gap, category: "Корректировка", note: "Сверка: расход вне учёта" })) return; }
+    else if (gap <= -1) { if (!await budgetAction("/income", { amount: -gap })) return; }
+    else { await budgetAction("/balance", { amount: actual }); }
     toast("Сверено с реальным счётом", "success"); closeFin();
+  };
+  const submitEditMand = async () => {
+    const amount = parseMoney(finForm.amount);
+    if (!(amount >= 0)) { setFinError("Введите сумму"); return; }
+    if (await budgetAction("/mandatory/" + finModal.index, { name: finForm.name, amount, due: finForm.due || "" }, "PATCH")) { toast("Обязательный обновлён", "success"); closeFin(); }
   };
   const submitPay = async () => {
     const raw = finForm.actual;
@@ -2206,7 +2211,7 @@ export default function Yasnost() {
                   )}
 
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
-                    {stat("Доступно", available, available < 0 ? RED : GREEN)}
+                    {stat("Свободно", available, available < 0 ? RED : GREEN)}
                     {stat("Дневной лимит", availableDaily, availableDaily < 0 ? RED : accent)}
                     {stat("Потрачено сегодня", b.today_spent, txt)}
                     {stat("Осталось на сегодня", Math.round(availableDaily - (b.today_spent || 0)), (availableDaily - (b.today_spent || 0)) < 0 ? RED : GREEN)}
@@ -2324,6 +2329,7 @@ export default function Yasnost() {
                             {e.envelope
                               ? `в конверте: ${(e.spent || 0).toLocaleString("ru-RU")} / ${(e.amount || 0).toLocaleString("ru-RU")} ₽ · осталось ${Math.max(0, (e.amount || 0) - (e.spent || 0)).toLocaleString("ru-RU")} ₽`
                               : `план ${(e.amount || 0).toLocaleString("ru-RU")} ₽${e.paid ? ` · факт ${(e.paid_amount || 0).toLocaleString("ru-RU")} ₽` : ""}`}
+                            {e.due ? ` · до ${fmtRu(e.due)}` : ""}
                           </div>
                           {e.envelope && (
                             <div style={{ height: 4, background: "rgba(128,128,128,.18)", borderRadius: 999, overflow: "hidden", marginTop: 5 }}>
@@ -2332,6 +2338,7 @@ export default function Yasnost() {
                           )}
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                          <button onClick={() => { setFinForm({ name: e.name, amount: String(e.amount || ""), due: e.due || "" }); setFinError(""); setFinModal({ type: "editMand", index: i }); }} title="Редактировать" style={{ border: "none", background: "transparent", color: muted, cursor: "pointer", padding: "4px 5px", display: "inline-flex" }}>✎</button>
                           {e.envelope
                             ? <span style={{ fontSize: 10, color: muted, fontWeight: 700, border: `1px solid ${muted}44`, borderRadius: 999, padding: "2px 8px" }}>конверт</span>
                             : e.paid
@@ -2647,6 +2654,7 @@ export default function Yasnost() {
           : finModal && finModal.type === "day" ? ("Траты за " + fmtRu(finModal.date))
           : finModal === "income" ? "Приход в бюджет"
           : finModal === "reconcile" ? "Сверка с реальным счётом"
+          : finModal && finModal.type === "editMand" ? "Редактировать обязательный"
           : finModal === "compensate" ? "Компенсация"
           : finModal === "compensateAll" ? "Внести компенсацию"
           : finModal === "piggybank" ? "Копилка"
@@ -2752,6 +2760,16 @@ export default function Yasnost() {
                   </div>
                 </>
               )}
+              {finModal && finModal.type === "editMand" && (
+                <>
+                  <div><div style={st.modalLabel}>Название</div>
+                    <input style={st.input} type="text" value={finForm.name || ""} onChange={(e) => setFinForm({ ...finForm, name: e.target.value })} /></div>
+                  <div><div style={st.modalLabel}>Сумма (план)</div>
+                    <input style={st.input} type="text" inputMode="decimal" value={finForm.amount || ""} onChange={(e) => setFinForm({ ...finForm, amount: e.target.value })} /></div>
+                  <div><div style={st.modalLabel}>Дата платежа (необязательно)</div>
+                    <input style={st.input} type="date" value={finForm.due || ""} onChange={(e) => setFinForm({ ...finForm, due: e.target.value })} /></div>
+                </>
+              )}
               {finModal === "piggybank" && (
                 <>
                   <div style={{ fontSize: 13, color: st.cardDesc.color }}>Сейчас в копилке: <b style={{ color: st.cardTitle.color }}>{(budgetData?.piggybank || 0).toLocaleString("ru-RU")} ₽</b></div>
@@ -2798,8 +2816,8 @@ export default function Yasnost() {
               <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
                 {!(finModal && finModal.type === "day") && (
                 <button className="ys-btn-primary" style={{ ...st.btnPrimary, opacity: finBusy ? .6 : 1 }} disabled={finBusy}
-                  onClick={isExpenseForm ? onExpenseSubmit : finModal === "income" ? submitIncome : finModal === "reconcile" ? submitReconcile : finModal === "compensate" ? submitCompensate : finModal === "compensateAll" ? submitCompensateAll : finModal === "piggybank" ? submitPiggy : finModal === "mandatory" ? submitMandatory : submitPay}>
-                  {finBusy ? "…" : isAdd ? "Добавить" : isEdit ? "Сохранить" : finModal === "income" ? "Добавить приход" : finModal === "reconcile" ? "Сверить" : finModal === "compensate" ? "Компенсировать" : finModal === "compensateAll" ? "Внести" : finModal === "piggybank" ? "Применить" : finModal === "mandatory" ? "Добавить" : "Оплатить"}
+                  onClick={isExpenseForm ? onExpenseSubmit : finModal === "income" ? submitIncome : finModal === "reconcile" ? submitReconcile : (finModal && finModal.type === "editMand") ? submitEditMand : finModal === "compensate" ? submitCompensate : finModal === "compensateAll" ? submitCompensateAll : finModal === "piggybank" ? submitPiggy : finModal === "mandatory" ? submitMandatory : submitPay}>
+                  {finBusy ? "…" : isAdd ? "Добавить" : isEdit ? "Сохранить" : finModal === "income" ? "Добавить приход" : finModal === "reconcile" ? "Сверить" : (finModal && finModal.type === "editMand") ? "Сохранить" : finModal === "compensate" ? "Компенсировать" : finModal === "compensateAll" ? "Внести" : finModal === "piggybank" ? "Применить" : finModal === "mandatory" ? "Добавить" : "Оплатить"}
                 </button>
                 )}
                 {isEdit && (
