@@ -2323,7 +2323,7 @@ export default function Yasnost() {
                     {(b.mandatory_expenses || []).length === 0 && <div style={{ color: muted, fontSize: 13, marginTop: 8 }}>Список пуст — добавь регулярные платежи (аренда, подписки, кредит).</div>}
                     {(b.mandatory_expenses || []).map((e, i) => (
                       <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(128,128,128,.12)", gap: 8 }}>
-                        <div style={{ minWidth: 0 }}>
+                        <div style={{ minWidth: 0, flex: 1, cursor: "pointer" }} title="Редактировать обязательный" onClick={() => { setFinForm({ name: e.name, amount: String(e.amount || ""), due: e.due || "" }); setFinError(""); setFinModal({ type: "editMand", index: i }); }}>
                           <div style={{ fontSize: 13, color: txt, display: "flex", alignItems: "center", gap: 6 }}><Icon name={e.paid ? "checkSquare" : "square"} color={e.paid ? GREEN : muted} /><span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.name}</span></div>
                           <div style={{ fontSize: 11, color: muted }}>
                             {e.envelope
