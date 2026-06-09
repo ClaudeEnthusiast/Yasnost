@@ -71,7 +71,7 @@ const THEMES = {
       cardTop:      { display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "absolute", top: 0, left: 0, right: 0, zIndex: 2 },
       cardStripe:   { width: 26, height: 3, borderRadius: 3, margin: "13px 0 0 15px" },
       cardDel:      { border: "none", background: "transparent", color: "#5b6478", fontSize: 18, cursor: "pointer", padding: "6px 10px", lineHeight: 1 },
-      cardTitle:    { fontWeight: 600, fontSize: 15, color: "#e0e0e0", marginTop: 11, lineHeight: 1.38, cursor: "pointer", position: "relative", zIndex: 1 },
+      cardTitle:    { fontWeight: 600, fontSize: 15, color: "#e0e0e0", marginTop: 11, paddingRight: 24, lineHeight: 1.38, cursor: "pointer", position: "relative", zIndex: 1 },
       cardDesc:     { fontSize: 13, color: "#9aa4b6", marginTop: 5, lineHeight: 1.45, position: "relative", zIndex: 1 },
       cardMeta:     { display: "flex", gap: 6, marginTop: 12, flexWrap: "wrap", position: "relative", zIndex: 1 },
       metaChip:     { display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 600, color: "#9aa4b6", border: "1px solid rgba(255,255,255,.08)", borderRadius: 999, padding: "3px 9px", background: "rgba(255,255,255,.03)" },
@@ -207,9 +207,11 @@ const THEMES = {
         .ys-app    { flex-direction: column !important; height: auto !important; min-height: 100dvh; overflow: auto !important; }
         .ys-sidebar { width: 100% !important; flex-direction: row !important; flex-wrap: wrap; padding: 12px 16px !important; gap: 0; flex-shrink: 0 !important; border-right: none !important; border-bottom: 1px solid rgba(255,255,255,.06) !important; }
         .ys-brand  { margin-bottom: 0 !important; flex: 1; }
-        .ys-nav    { flex-direction: row !important; flex: none; gap: 4px !important; align-items: center; }
+        .ys-nav    { flex-direction: row !important; flex-wrap: wrap !important; flex: 1 1 100% !important; gap: 6px !important; align-items: center; margin-top: 8px; }
         .ys-nav-item { padding: 8px 11px !important; font-size: 12px !important; gap: 6px !important; }
         .ys-sidebar-foot { display: none !important; }
+        .ys-cal-add { display: none !important; }
+        .ys-checkbtn { padding: 8px !important; }
         .ys-main   { overflow: visible !important; flex: none !important; }
         .ys-header { padding: 16px !important; flex-wrap: wrap; gap: 10px; position: static !important; }
         .ys-h1     { font-size: 21px !important; }
@@ -268,7 +270,7 @@ const THEMES = {
       cardTop:      { display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "absolute", top: 0, left: 0, right: 0 },
       cardStripe:   { width: 26, height: 3, borderRadius: 3, margin: "13px 0 0 15px" },
       cardDel:      { border: "none", background: "transparent", color: "#5B616D", fontSize: 18, cursor: "pointer", padding: "6px 10px", lineHeight: 1 },
-      cardTitle:    { fontWeight: 600, fontSize: 14.5, color: "#F4F5F6", marginTop: 11, lineHeight: 1.38, cursor: "pointer", letterSpacing: "-0.01em" },
+      cardTitle:    { fontWeight: 600, fontSize: 14.5, color: "#F4F5F6", marginTop: 11, paddingRight: 24, lineHeight: 1.38, cursor: "pointer", letterSpacing: "-0.01em" },
       cardDesc:     { fontSize: 12.5, color: "#8A9099", marginTop: 5, lineHeight: 1.45 },
       cardMeta:     { display: "flex", gap: 6, marginTop: 12, flexWrap: "wrap" },
       metaChip:     { display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 600, color: "#A6ACB6", border: "1px solid rgba(255,255,255,.1)", borderRadius: 999, padding: "3px 9px", background: "rgba(255,255,255,.03)", fontFamily: "'Geist Mono', monospace" },
@@ -413,9 +415,11 @@ const THEMES = {
         .ys-app    { flex-direction: column !important; height: auto !important; min-height: 100dvh; overflow: auto !important; }
         .ys-sidebar { width: 100% !important; flex-direction: row !important; flex-wrap: wrap; padding: 12px 16px !important; gap: 0; flex-shrink: 0 !important; border-right: none !important; border-bottom: 1px solid rgba(255,255,255,.08) !important; }
         .ys-brand  { margin-bottom: 0 !important; flex: 1; }
-        .ys-nav    { flex-direction: row !important; flex: none; gap: 4px !important; align-items: center; }
+        .ys-nav    { flex-direction: row !important; flex-wrap: wrap !important; flex: 1 1 100% !important; gap: 6px !important; align-items: center; margin-top: 8px; }
         .ys-nav-item { padding: 8px 11px !important; font-size: 12px !important; gap: 6px !important; }
         .ys-sidebar-foot { display: none !important; }
+        .ys-cal-add { display: none !important; }
+        .ys-checkbtn { padding: 8px !important; }
         .ys-main   { overflow: visible !important; flex: none !important; }
         .ys-header { padding: 16px !important; flex-wrap: wrap; gap: 10px; position: static !important; }
         .ys-h1     { font-size: 19px !important; }
@@ -473,7 +477,7 @@ const THEMES = {
       cardTop:      { display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "absolute", top: 0, left: 0, right: 0 },
       cardStripe:   { width: 28, height: 3, borderRadius: 3, margin: "12px 0 0 14px" },
       cardDel:      { border: "none", background: "transparent", color: "#C4C0B6", fontSize: 18, cursor: "pointer", padding: "6px 10px", lineHeight: 1 },
-      cardTitle:    { fontWeight: 600, fontSize: 14, color: "#37352F", marginTop: 10, lineHeight: 1.35, cursor: "pointer" },
+      cardTitle:    { fontWeight: 600, fontSize: 14, color: "#37352F", marginTop: 10, paddingRight: 24, lineHeight: 1.35, cursor: "pointer" },
       cardDesc:     { fontSize: 12.5, color: "#787066", marginTop: 5, lineHeight: 1.45 },
       cardMeta:     { display: "flex", gap: 6, marginTop: 11, flexWrap: "wrap" },
       metaChip:     { display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11.5, fontWeight: 600, color: "#787066", border: "1px solid #E5E2DB", borderRadius: 6, padding: "3px 8px", background: "#FBFBFA" },
@@ -587,9 +591,11 @@ const THEMES = {
         .ys-app    { flex-direction: column !important; height: auto !important; min-height: 100dvh; overflow: auto !important; }
         .ys-sidebar { width: 100% !important; flex-direction: row !important; flex-wrap: wrap; padding: 12px 16px !important; gap: 0; flex-shrink: 0 !important; border-right: none !important; border-bottom: 1px solid #ECEAE4 !important; }
         .ys-brand  { margin-bottom: 0 !important; flex: 1; }
-        .ys-nav    { flex-direction: row !important; flex: none; gap: 4px !important; align-items: center; }
+        .ys-nav    { flex-direction: row !important; flex-wrap: wrap !important; flex: 1 1 100% !important; gap: 6px !important; align-items: center; margin-top: 8px; }
         .ys-nav-item { padding: 8px 10px !important; font-size: 12px !important; gap: 6px !important; }
         .ys-sidebar-foot { display: none !important; }
+        .ys-cal-add { display: none !important; }
+        .ys-checkbtn { padding: 8px !important; }
         .ys-main   { overflow: visible !important; flex: none !important; }
         .ys-header { padding: 16px !important; flex-wrap: wrap; gap: 10px; }
         .ys-h1     { font-size: 18px !important; }
@@ -1916,8 +1922,9 @@ export default function Yasnost() {
               const filterCat = finForm._filter || "__all__";
               const fsq = finSearch.trim().toLowerCase();
               const matchSearch = (e) => !fsq || (e.note || "").toLowerCase().includes(fsq) || (e.category || "").toLowerCase().includes(fsq);
-              const shownPersonal = personalAll.filter((e) => (filterCat === "__all__" || e.category === filterCat) && matchSearch(e)).slice().reverse();
-              const shownCorp = corpAll.filter(matchSearch).slice().reverse();
+              const byDateDesc = (a, b) => (b.date || "").localeCompare(a.date || "") || b.idx - a.idx;
+              const shownPersonal = personalAll.filter((e) => (filterCat === "__all__" || e.category === filterCat) && matchSearch(e)).slice().sort(byDateDesc);
+              const shownCorp = corpAll.filter(matchSearch).slice().sort(byDateDesc);
               const lbl = { fontSize: 10, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 };
               const scrollBox = { maxHeight: 360, overflowY: "auto", overflowX: "hidden", marginRight: -4, paddingRight: 4 };
 
@@ -2334,9 +2341,9 @@ export default function Yasnost() {
                         const comp = e.compensated || 0;
                         const left = (e.amount || 0) - comp;
                         return (
-                          <div key={e.idx} style={{ display: "flex", justifyContent: "space-between", padding: "9px 6px", borderBottom: "1px solid rgba(128,128,128,.12)", alignItems: "center", gap: 8 }}>
+                          <div key={e.idx} style={{ display: "flex", justifyContent: "space-between", padding: "9px 6px", borderBottom: "1px solid rgba(128,128,128,.12)", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                             <div className="ys-fin-row" onClick={() => { setFinForm({ kind: "corp", id: e.id != null ? e.id : e.idx, date: e.date, amount: String(e.amount), category: categories.includes(e.category) ? e.category : "__custom__", customCategory: categories.includes(e.category) ? "" : e.category, note: e.note || "" }); setFinError(""); setFinModal("edit"); }}
-                              style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 3, cursor: "pointer", flex: 1, padding: "2px 4px" }}>
+                              style={{ minWidth: 150, display: "flex", flexDirection: "column", gap: 3, cursor: "pointer", flex: 1, padding: "2px 4px" }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                 <span style={catChip}>{e.category}</span>
                                 {left <= 0
@@ -2711,7 +2718,7 @@ export default function Yasnost() {
                 </>
               )}
               {finError && <div style={{ color: "#E5575C", fontSize: 12 }}>{finErrText(finError)}</div>}
-              <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+              <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
                 <button className="ys-btn-primary" style={{ ...st.btnPrimary, opacity: finBusy ? .6 : 1 }} disabled={finBusy}
                   onClick={isExpenseForm ? onExpenseSubmit : finModal === "compensate" ? submitCompensate : finModal === "compensateAll" ? submitCompensateAll : finModal === "piggybank" ? submitPiggy : finModal === "mandatory" ? submitMandatory : submitPay}>
                   {finBusy ? "…" : isAdd ? "Добавить" : isEdit ? "Сохранить" : finModal === "compensate" ? "Компенсировать" : finModal === "compensateAll" ? "Внести" : finModal === "piggybank" ? "Применить" : finModal === "mandatory" ? "Добавить" : "Оплатить"}
