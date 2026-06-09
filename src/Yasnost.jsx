@@ -838,6 +838,11 @@ export default function Yasnost() {
     if (!(amount >= 0)) { setFinError("Введите сумму"); return; }
     if (await budgetAction("/piggybank", { action: finForm.action || "add", amount })) { toast(finForm.action === "withdraw" ? "Снято из копилки" : "Копилка пополнена", "success"); closeFin(); }
   };
+  const submitBalance = async () => {
+    const amount = parseMoney(finForm.amount);
+    if (!(amount >= 0)) { setFinError("Введите сумму"); return; }
+    if (await budgetAction("/balance", { amount })) { toast("Остаток обновлён", "success"); closeFin(); }
+  };
   const submitPay = async () => {
     const raw = finForm.actual;
     const actual = raw === "" || raw == null ? null : parseMoney(raw);
@@ -1912,6 +1917,10 @@ export default function Yasnost() {
               const isLight = themeName === "light";
               const panel = { ...st.card, cursor: "default", padding: "16px 18px" };
               const fmt = (n) => (n || 0).toLocaleString("ru-RU") + " ₽";
+              const balance = b.balance || 0;
+              const unpaidObligations = (b.mandatory_expenses || []).filter((e) => !e.envelope && !e.paid).reduce((s, e) => s + (Number(e.amount) || 0), 0);
+              const available = balance - unpaidObligations;
+              const availableDaily = b.days_left ? Math.round(available / b.days_left) : available;
               const pct = b.days_total ? Math.min(100, Math.max(0, Math.round((b.days_total - b.days_left) / b.days_total * 100))) : 0;
               const cats = (() => { const m = {}; (b.personal_expenses || []).forEach(e => { m[e.category] = (m[e.category] || 0) + e.amount; }); return Object.entries(m).sort((a, c) => c[1] - a[1]); })();
               const totalCats = cats.reduce((s, [, v]) => s + v, 0) || 1;
@@ -2141,8 +2150,9 @@ export default function Yasnost() {
                         const c = v > 0 ? heat(maxV > 0 ? v / maxV : 0) : null;
                         const dt = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
                         return (
-                          <div key={i} title={`${fmtRu(iso(dt))}: ${fmt(v)}`} className="ys-daybar"
-                            style={{ flex: 1, minWidth: 0, height: "100%", display: "flex", alignItems: "flex-end" }}>
+                          <div key={i} title={`${fmtRu(iso(dt))}: ${fmt(v)} — нажми для трат дня`} className="ys-daybar"
+                            onClick={() => { const ds = iso(dt); setFinForm({}); setFinError(""); setFinModal({ type: "day", date: ds, items: (b.personal_expenses || []).filter((x) => x.date === ds) }); }}
+                            style={{ flex: 1, minWidth: 0, height: "100%", display: "flex", alignItems: "flex-end", cursor: "pointer" }}>
                             <div className="ys-bar" style={{ width: "100%", height: h + "%", borderRadius: "4px 4px 1px 1px", animationDelay: Math.min(i * 12, 360) + "ms",
                               background: v > 0 ? `linear-gradient(180deg, ${c}, ${c}55)` : "rgba(128,128,128,.18)",
                               boxShadow: isToday ? `0 0 0 1.5px ${accent}, 0 0 10px ${accent}aa` : "none", transition: "height .3s, filter .15s" }} />
@@ -2185,9 +2195,14 @@ export default function Yasnost() {
                   )}
 
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
-                    {stat("Лимит сегодня", b.today_limit, accent)}
-                    {stat("Потрачено", b.today_spent, b.remaining < 0 ? RED : txt)}
-                    {stat("Остаток", b.remaining, b.remaining < 0 ? RED : GREEN)}
+                    <div style={{ ...panel, "--ys-accent": accent, cursor: "pointer" }} className="ys-stat" title="Нажми, чтобы ввести реальный остаток на руках" onClick={() => { setFinForm({ amount: balance ? String(balance) : "" }); setFinError(""); setFinModal("balance"); }}>
+                      <div style={{ fontSize: 10, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Остаток на руках ✎</div>
+                      <div className="ys-num" style={{ fontSize: 22, fontWeight: 800, color: txt, letterSpacing: "-0.02em" }}><CountUp value={balance} format={fmt} /></div>
+                    </div>
+                    {stat("Свободно", available, available < 0 ? RED : GREEN)}
+                    {stat("Дневной лимит", availableDaily, accent)}
+                    {stat("Потрачено сегодня", b.today_spent, txt)}
+                    {stat("Осталось на сегодня", Math.round(availableDaily - (b.today_spent || 0)), (availableDaily - (b.today_spent || 0)) < 0 ? RED : GREEN)}
                     {stat("Копилка", b.piggybank, AMBER)}
                     {stat("Средний / день", avgPerDay, accent)}
                     <div style={{ ...panel, "--ys-accent": forecast.over ? RED : GREEN }} className="ys-stat">
@@ -2294,17 +2309,26 @@ export default function Yasnost() {
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontSize: 13, color: txt, display: "flex", alignItems: "center", gap: 6 }}><Icon name={e.paid ? "checkSquare" : "square"} color={e.paid ? GREEN : muted} /><span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.name}</span></div>
                           <div style={{ fontSize: 11, color: muted }}>
-                            план {(e.amount || 0).toLocaleString("ru-RU")} ₽{e.paid ? ` · факт ${(e.paid_amount || 0).toLocaleString("ru-RU")} ₽` : ""}
+                            {e.envelope
+                              ? `в конверте: ${(e.spent || 0).toLocaleString("ru-RU")} / ${(e.amount || 0).toLocaleString("ru-RU")} ₽ · осталось ${Math.max(0, (e.amount || 0) - (e.spent || 0)).toLocaleString("ru-RU")} ₽`
+                              : `план ${(e.amount || 0).toLocaleString("ru-RU")} ₽${e.paid ? ` · факт ${(e.paid_amount || 0).toLocaleString("ru-RU")} ₽` : ""}`}
                           </div>
+                          {e.envelope && (
+                            <div style={{ height: 4, background: "rgba(128,128,128,.18)", borderRadius: 999, overflow: "hidden", marginTop: 5 }}>
+                              <div style={{ height: "100%", width: Math.min(100, Math.round(((e.spent || 0) / (e.amount || 1)) * 100)) + "%", background: (e.spent || 0) > (e.amount || 0) ? RED : `linear-gradient(90deg, ${accent}, ${accent}aa)`, borderRadius: 999 }} />
+                            </div>
+                          )}
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                          {e.paid
-                            ? <button onClick={() => unpayMandatory(i)} disabled={finBusy}
-                                style={{ ...st.btnGhost, padding: "6px 12px", fontSize: 12 }}>Откатить</button>
-                            : <button onClick={() => { setFinForm({ actual: "" }); setFinError(""); setFinModal({ type: "pay", index: i, name: e.name, budgeted: e.amount }); }} disabled={finBusy}
-                                style={{ ...st.btnGhost, padding: "6px 12px", fontSize: 12 }}>Оплатить</button>
+                          {e.envelope
+                            ? <span style={{ fontSize: 10, color: muted, fontWeight: 700, border: `1px solid ${muted}44`, borderRadius: 999, padding: "2px 8px" }}>конверт</span>
+                            : e.paid
+                              ? <button onClick={() => unpayMandatory(i)} disabled={finBusy}
+                                  style={{ ...st.btnGhost, padding: "6px 12px", fontSize: 12 }}>Откатить</button>
+                              : <button onClick={() => { setFinForm({ actual: "" }); setFinError(""); setFinModal({ type: "pay", index: i, name: e.name, budgeted: e.amount }); }} disabled={finBusy}
+                                  style={{ ...st.btnGhost, padding: "6px 12px", fontSize: 12 }}>Оплатить</button>
                           }
-                          {!e.paid && <button onClick={() => deleteMandatory(i, e.name)} disabled={finBusy} title="Удалить"
+                          {!e.paid && !e.envelope && <button onClick={() => deleteMandatory(i, e.name)} disabled={finBusy} title="Удалить"
                             style={{ border: "none", background: "transparent", color: muted, fontSize: 16, cursor: "pointer", padding: "4px 6px", lineHeight: 1 }}>✕</button>}
                         </div>
                       </div>
@@ -2608,6 +2632,8 @@ export default function Yasnost() {
         const isCorp = finForm.kind === "corp";
         const title = isAdd ? (isCorp ? "Корпоративная трата" : "Личная трата")
           : isEdit ? (isCorp ? "Редактировать корпоративную" : "Редактировать расход")
+          : finModal && finModal.type === "day" ? ("Траты за " + fmtRu(finModal.date))
+          : finModal === "balance" ? "Остаток на руках"
           : finModal === "compensate" ? "Компенсация"
           : finModal === "compensateAll" ? "Внести компенсацию"
           : finModal === "piggybank" ? "Копилка"
@@ -2675,6 +2701,31 @@ export default function Yasnost() {
                     onKeyDown={(e) => e.key === "Enter" && submitCompensateAll()} />
                 </>
               )}
+              {finModal === "balance" && (
+                <>
+                  <div style={{ fontSize: 13, color: st.cardDesc.color }}>Реальные деньги на руках. «Свободно» = остаток − невыплаченные обязательные (Кредитка, Айфон). Дневной лимит считается от свободного.</div>
+                  <input style={st.input} type="text" inputMode="decimal" placeholder="Остаток на руках, ₽" autoFocus
+                    value={finForm.amount || ""} onChange={(e) => setFinForm({ ...finForm, amount: e.target.value })}
+                    onKeyDown={(e) => e.key === "Enter" && submitBalance()} />
+                </>
+              )}
+              {finModal && finModal.type === "day" && (
+                <>
+                  <div style={{ fontSize: 13, color: st.cardDesc.color }}>{finModal.items.length} трат на {(finModal.items.reduce((s, e) => s + (e.amount || 0), 0)).toLocaleString("ru-RU")} ₽</div>
+                  <div style={{ maxHeight: 340, overflowY: "auto", display: "flex", flexDirection: "column", gap: 2 }}>
+                    {finModal.items.length === 0 && <div style={{ color: st.cardDesc.color, fontSize: 13 }}>В этот день трат не было.</div>}
+                    {finModal.items.slice().sort((a, b2) => (b2.amount || 0) - (a.amount || 0)).map((e, k) => (
+                      <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "7px 4px", borderBottom: "1px solid rgba(128,128,128,.1)", alignItems: "center" }}>
+                        <div style={{ minWidth: 0, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                          <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 999, background: st.checkboxAccent + "18", color: st.checkboxAccent, border: `1px solid ${st.checkboxAccent}33` }}>{e.category}</span>
+                          {e.note && <span style={{ fontSize: 12, color: st.cardDesc.color }}>{e.note}</span>}
+                        </div>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: e.mandatory ? st.cardDesc.color : st.cardTitle.color, flexShrink: 0 }}>−{(e.amount || 0).toLocaleString("ru-RU")} ₽</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
               {finModal === "piggybank" && (
                 <>
                   <div style={{ fontSize: 13, color: st.cardDesc.color }}>Сейчас в копилке: <b style={{ color: st.cardTitle.color }}>{(budgetData?.piggybank || 0).toLocaleString("ru-RU")} ₽</b></div>
@@ -2719,10 +2770,12 @@ export default function Yasnost() {
               )}
               {finError && <div style={{ color: "#E5575C", fontSize: 12 }}>{finErrText(finError)}</div>}
               <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+                {!(finModal && finModal.type === "day") && (
                 <button className="ys-btn-primary" style={{ ...st.btnPrimary, opacity: finBusy ? .6 : 1 }} disabled={finBusy}
-                  onClick={isExpenseForm ? onExpenseSubmit : finModal === "compensate" ? submitCompensate : finModal === "compensateAll" ? submitCompensateAll : finModal === "piggybank" ? submitPiggy : finModal === "mandatory" ? submitMandatory : submitPay}>
-                  {finBusy ? "…" : isAdd ? "Добавить" : isEdit ? "Сохранить" : finModal === "compensate" ? "Компенсировать" : finModal === "compensateAll" ? "Внести" : finModal === "piggybank" ? "Применить" : finModal === "mandatory" ? "Добавить" : "Оплатить"}
+                  onClick={isExpenseForm ? onExpenseSubmit : finModal === "balance" ? submitBalance : finModal === "compensate" ? submitCompensate : finModal === "compensateAll" ? submitCompensateAll : finModal === "piggybank" ? submitPiggy : finModal === "mandatory" ? submitMandatory : submitPay}>
+                  {finBusy ? "…" : isAdd ? "Добавить" : isEdit ? "Сохранить" : finModal === "balance" ? "Сохранить" : finModal === "compensate" ? "Компенсировать" : finModal === "compensateAll" ? "Внести" : finModal === "piggybank" ? "Применить" : finModal === "mandatory" ? "Добавить" : "Оплатить"}
                 </button>
+                )}
                 {isEdit && (
                   <button className="ys-btn-ghost" style={{ ...st.btnGhost, color: "#E5575C", borderColor: "#E5575C55" }} disabled={finBusy} onClick={deleteExpense}>Удалить</button>
                 )}
