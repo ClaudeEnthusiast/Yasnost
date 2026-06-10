@@ -1513,7 +1513,7 @@ export default function Yasnost() {
   // canvases рендерим всегда чтобы refs были готовы до загрузки данных
 
   return (
-    <div style={st.app} className="ys-app">
+    <div style={st.app} className={"ys-app" + (IS_TMA ? " ys-tma" : "")}>
       <style>{css}</style>
       <canvas ref={starsCanvas} className="ys-stars" style={{ display: themeName === "cosmos" ? "block" : "none" }} aria-hidden="true" />
       <canvas ref={trailCanvas} style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 999, display: themeName === "cosmos" ? "block" : "none" }} aria-hidden="true" />
@@ -1601,7 +1601,7 @@ export default function Yasnost() {
             <button onClick={() => { setView("board"); setAdding(COLUMNS[0].id); setDraft({ title: "", desc: "", due: "", priority: "normal" }); }}
               className="ys-btn-primary ys-header-new" style={{ ...st.btnPrimary, flex: "none", padding: "9px 15px", display: "inline-flex", alignItems: "center", gap: 7 }}>
               <Icon name="plus" /> Задача</button>
-            <div style={st.avatar}>И</div>
+            <div style={st.avatar} className="ys-avatar">И</div>
           </div>
         </header>
 
@@ -1855,7 +1855,7 @@ export default function Yasnost() {
           };
 
           return (
-            <div style={st.todayView} className="ys-fade-in">
+            <div style={st.todayView} className="ys-fade-in ys-view-wrap">
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
                 <div style={{ fontSize: 20, fontWeight: 800, color: txt, letterSpacing: "-0.02em", minWidth: 170 }}>{periodLabel}</div>
                 <button className="ys-btn-ghost" style={navBtn} onClick={() => shiftPeriod(-1)}>‹</button>
@@ -1916,7 +1916,7 @@ export default function Yasnost() {
 
         {/* Finance */}
         {view === "finance" && (
-          <div style={st.todayView} className="ys-fade-in">
+          <div style={st.todayView} className="ys-fade-in ys-view-wrap">
             {budgetLoading && (
               <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
@@ -2225,7 +2225,7 @@ export default function Yasnost() {
                     {tbtn(<span style={ic}><Icon name="download" /> CSV</span>, exportCsv)}
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 10 }}>
+                  <div className="ys-fin-heroes" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 10 }}>
                     {hero("Свободно", available, available < 0 ? RED : GREEN, `до ${fmtRu(b.end_date)} · обязательств не оплачено ${fmt(unpaidObligations)}`)}
                     {hero("На сегодня", Math.round(availableDaily - (b.today_spent || 0)), (availableDaily - (b.today_spent || 0)) < 0 ? RED : accent, `лимит ${fmt(availableDaily)} · потрачено ${fmt(b.today_spent)}`)}
                     {hero("На руках ⟳", expectedOnHand, txt, "по расчёту · нажмите для сверки", () => { setFinForm({ amount: "" }); setFinError(""); setFinModal("reconcile"); })}
@@ -2458,7 +2458,7 @@ export default function Yasnost() {
             );
           };
           return (
-            <div style={{ flex: 1, overflowY: "auto", padding: 26, position: "relative", zIndex: 1 }} className="ys-fade-in">
+            <div style={{ flex: 1, overflowY: "auto", padding: 26, position: "relative", zIndex: 1 }} className="ys-fade-in ys-view-wrap">
               <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
                 <div style={panel}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
@@ -2534,8 +2534,43 @@ export default function Yasnost() {
       )}
       {IS_TMA && (
         <style>{`
-          .ys-main { padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important; }
+          /* ── Viewport lock: TMA живёт в 100dvh, скролл внутри .ys-main ── */
+          html, body { height: 100% !important; overflow: hidden !important; }
+          .ys-tma { height: 100dvh !important; overflow: hidden !important; flex-direction: column !important; }
+          .ys-tma .ys-main {
+            flex: 1 !important; min-height: 0 !important;
+            overflow-y: auto !important; overflow-x: hidden !important;
+            -webkit-overflow-scrolling: touch !important;
+            padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
+          }
+
+          /* ── Compact header ── */
+          .ys-tma .ys-header { padding: 10px 14px !important; flex-wrap: nowrap !important; gap: 8px !important; min-height: 0 !important; }
+          .ys-tma .ys-h1 { font-size: 19px !important; margin: 0 !important; }
+          .ys-tma .ys-header p { font-size: 11px !important; margin: 1px 0 0 !important; }
+          .ys-tma .ys-header-new { padding: 7px 10px !important; font-size: 12px !important; }
+          .ys-tma .ys-avatar { width: 28px !important; height: 28px !important; font-size: 11px !important; }
           .ys-kbd, .ys-search { display: none !important; }
+
+          /* ── Контентные вьюшки: убираем лишние поля ── */
+          .ys-tma .ys-view-wrap { padding: 10px 12px !important; }
+
+          /* ── Board: 1 колонка, читабельные карточки ── */
+          .ys-tma .ys-board { padding: 10px 12px 0 !important; }
+          .ys-tma .ys-column { border-radius: 12px !important; }
+
+          /* ── Finance heroes: 2 в ряд на мобиле ── */
+          .ys-tma .ys-fin-heroes { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important; gap: 8px !important; }
+
+          /* ── Calendar: показываем только точки, текст скрыт ── */
+          .ys-tma .ys-calcell .ys-calchip span:last-child { display: none !important; }
+          .ys-tma .ys-calcell .ys-calchip { padding: 1px 2px !important; gap: 0 !important; min-width: 0 !important; }
+          .ys-tma .ys-cal-add { opacity: 0.45 !important; display: block !important; }
+
+          /* ── Модалки поверх таббара ── */
+          .ys-tma .ys-overlay { z-index: 2000 !important; }
+          .ys-tma .ys-modal { z-index: 2001 !important; border-radius: 20px 20px 0 0 !important; width: 100vw !important; max-height: 92dvh !important; position: fixed !important; bottom: 0 !important; left: 0 !important; }
+
         `}</style>
       )}
 
