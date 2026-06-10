@@ -1,27 +1,26 @@
 const cron = require('node-cron');
 const config = require('../config');
 const { loadKey } = require('../db');
+const c = require('../services/budgetCore');
 const { generateWeeklyReport } = require('../services/claude');
 const { escMd, todayStr } = require('../utils');
 
 async function sendWeeklyReport(bot) {
-  const [cardsRaw, txRaw] = await Promise.all([
-    loadKey('cards'),
-    loadKey('transactions'),
-  ]);
-
+  const cardsRaw = await loadKey('cards');
   const cards = Array.isArray(cardsRaw) ? cardsRaw : [];
-  const transactions = Array.isArray(txRaw) ? txRaw : [];
+  const budget = c.normalize(await loadKey('budget'));
 
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);
   const weekAgoStr = weekAgo.toISOString().slice(0, 10);
   const today = todayStr();
 
-  const weekTx = transactions.filter((t) => t.date >= weekAgoStr);
-  const totalSpent = weekTx.reduce((s, t) => s + t.amount, 0);
-  const byCategory = weekTx.reduce((acc, t) => {
-    acc[t.category] = (acc[t.category] || 0) + t.amount;
+  const personalWeek = (budget.personal_expenses || []).filter((t) => t.date && t.date >= weekAgoStr);
+  const corpWeek = (budget.corporate_expenses || []).filter((t) => t.date && t.date >= weekAgoStr);
+  const personalTotal = personalWeek.reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const corpTotal = corpWeek.reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const byCategory = personalWeek.reduce((acc, t) => {
+    acc[t.category] = (acc[t.category] || 0) + (Number(t.amount) || 0);
     return acc;
   }, {});
 
@@ -29,14 +28,16 @@ async function sendWeeklyReport(bot) {
     period: `${weekAgoStr} — ${today}`,
     tasks: {
       total: cards.length,
-      todo: cards.filter((c) => c.status === 'todo').length,
-      in_progress: cards.filter((c) => c.status === 'in_progress').length,
-      done: cards.filter((c) => c.status === 'done').length,
-      overdue: cards.filter((c) => c.status !== 'done' && c.due && c.due < today).length,
+      todo: cards.filter((x) => x.status === 'todo').length,
+      in_progress: cards.filter((x) => x.status === 'in_progress').length,
+      done: cards.filter((x) => x.status === 'done').length,
+      overdue: cards.filter((x) => x.status !== 'done' && x.due && x.due < today).length,
     },
-    expenses: {
-      total: totalSpent,
-      transactions: weekTx.length,
+    budget: {
+      daily_limit: budget.daily_limit || 0,
+      piggybank: budget.piggybank || 0,
+      personal_week: personalTotal,
+      corporate_week: corpTotal,
       by_category: byCategory,
     },
   };
@@ -45,11 +46,17 @@ async function sendWeeklyReport(bot) {
   if (config.ANTHROPIC_API_KEY) {
     reportText = await generateWeeklyReport(reportData);
   } else {
+    const catStr = Object.entries(byCategory)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([k, v]) => `  • ${k}: ${c.money(v)}`)
+      .join('\n') || '  нет трат';
     reportText =
       `Период: ${reportData.period}\n\n` +
       `Задачи: ${reportData.tasks.todo} в очереди, ${reportData.tasks.in_progress} в работе, ` +
       `${reportData.tasks.done} выполнено, ${reportData.tasks.overdue} просрочено\n\n` +
-      `Расходы: ${totalSpent.toLocaleString('ru-RU')} ₽ (${weekTx.length} транзакций)`;
+      `Личные траты за неделю: ${c.money(personalTotal)}\n${catStr}\n\n` +
+      `Корпоративные: ${c.money(corpTotal)}\n🐷 Копилка: ${c.money(budget.piggybank || 0)}`;
   }
 
   await bot.sendMessage(
@@ -80,4 +87,4 @@ function init(bot) {
   console.log(`📅 Недельный отчёт: каждое ${dayNames[day] || day} в ${hour}:00 (${config.TIMEZONE})`);
 }
 
-module.exports = { init };
+module.exports = { init, sendWeeklyReport };

@@ -8,68 +8,62 @@ const budget = require('./handlers/budget');
 const documents = require('./handlers/documents');
 const voice = require('./handlers/voice');
 const brief = require('./handlers/brief');
+const tinkoffImport = require('./handlers/tinkoffImport');
 const dailyBrief = require('./jobs/dailyBrief');
 const weeklyReport = require('./jobs/weeklyReport');
 
-if (!config.BOT_TOKEN) { console.error('BOT_TOKEN не задан'); process.exit(1); }
-if (!config.TELEGRAM_USER_ID) { console.error('TELEGRAM_USER_ID не задан'); process.exit(1); }
+if (!config.BOT_TOKEN) { console.error('BOT_TOKEN'); process.exit(1); }
+if (!config.TELEGRAM_USER_ID) { console.error('TELEGRAM_USER_ID'); process.exit(1); }
 
 const bot = new TelegramBot(config.BOT_TOKEN, { polling: true });
 
 function isAllowed(msg) {
   return msg.from && msg.from.id === config.TELEGRAM_USER_ID;
 }
-
 function deny(chatId) {
-  bot.sendMessage(chatId, '⛔ Нет доступа.');
+  bot.sendMessage(chatId, 'Нет доступа.');
 }
 
-// /start
 bot.onText(/\/start/, (msg) => {
   if (!isAllowed(msg)) return deny(msg.chat.id);
-  bot.sendMessage(
-    msg.chat.id,
-    `👋 *Привет\\! Я твой личный ассистент\\.*\n\n` +
-    `*📋 Задачи*\n` +
-    `/задача \\[текст\\] — добавить\n` +
-    `/задачи — активные задачи\n` +
-    `/готово \\[id\\] — выполнена\n\n` +
-    `*💸 Бюджет*\n` +
-    `/расход \\[сумма\\] \\[комментарий\\]\n` +
-    `/бюджет — расходы за месяц\n\n` +
-    `*📄 Документы*\n` +
-    `/кп \\[описание\\] — коммерческое предложение\n` +
-    `/нда \\[описание\\] — NDA\n` +
-    `/договор \\[описание\\] — договор\n\n` +
-    `*📊 Сводки*\n` +
-    `/бриф — сводка прямо сейчас\n\n` +
-    `🎤 _Голосовое — автоматически пойму что нужно_`,
-    { parse_mode: 'MarkdownV2' }
-  );
+  const text = [
+    '<b>Личный Ассистент</b>',
+    '',
+    '<b>Задачи</b>',
+    '/задача Текст [срочно|важно] [до 15.06]',
+    '/задачи — активные',
+    '/готово [id] — закрыть',
+    '',
+    '<b>Бюджет</b>',
+    '/бюджет — статус и меню',
+    '/расход 500 такси · /корп 2500 бензин',
+    '/расходы · /отчёт · /копилка · /обязательные',
+    '',
+    '<b>Документы</b>',
+    '/кп /нда /договор [описание]',
+    '',
+    '/бриф — сводка прямо сейчас',
+  ].join('\n');
+  bot.sendMessage(msg.chat.id, text, { parse_mode: 'HTML' });
 });
 
-// Регистрация хендлеров
 tasks.register(bot, isAllowed, deny);
 budget.register(bot, isAllowed, deny);
 documents.register(bot, isAllowed, deny);
 brief.register(bot, isAllowed, deny);
-voice.register(bot, isAllowed, deny);  // голос — последним (слушает все message)
+tinkoffImport.register(bot, isAllowed, deny);
+voice.register(bot, isAllowed, deny);
 
-// Крон-задачи
 dailyBrief.init(bot);
 weeklyReport.init(bot);
 
-// Старт
 pool.connect()
   .then((client) => {
     client.release();
-    console.log('✅ PostgreSQL подключён');
-    console.log(`✅ Разрешённый пользователь: ${config.TELEGRAM_USER_ID}`);
-    console.log(`✅ Claude API: ${config.ANTHROPIC_API_KEY ? 'подключён' : '⚠️  не задан'}`);
-    console.log(`✅ Whisper: ${config.OPENAI_API_KEY ? 'подключён' : '⚠️  не задан'}`);
-    console.log('🤖 Бот запущен. Ожидаю сообщений...');
+    console.log('PostgreSQL ok');
+    console.log('User: ' + config.TELEGRAM_USER_ID);
+    console.log('Claude: ' + (config.ANTHROPIC_API_KEY ? 'ok' : 'not set'));
+    console.log('Whisper: self-hosted ' + (process.env.WHISPER_URL || 'http://127.0.0.1:8001'));
+    console.log('Bot started.');
   })
-  .catch((err) => {
-    console.error('❌ Ошибка подключения к PostgreSQL:', err.message);
-    process.exit(1);
-  });
+  .catch((err) => { console.error('DB error:', err.message); process.exit(1); });

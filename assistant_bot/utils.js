@@ -24,4 +24,9 @@ function todayStr() {
   return new Date().toISOString().slice(0, 10);
 }
 
-module.exports = { escMd, dueIn7Days, nextId, formatDate, todayStr };
+function escHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+module.exports = { escMd, escHtml, dueIn7Days, nextId, formatDate, todayStr };

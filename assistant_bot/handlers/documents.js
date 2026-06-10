@@ -54,7 +54,7 @@ function register(bot, isAllowed, deny) {
 
   bot.onText(/^\/нда$/, (msg) => {
     if (!isAllowed(msg)) return deny(msg.chat.id);
-    bot.sendMessage(msg.chat.id, 'Опиши стороны и предмет соглашения:\n/нда М.К ИНВЕСТ и ООО Партнёр, проект по реновации');
+    bot.sendMessage(msg.chat.id, 'Опиши стороны и предмет соглашения:\n/нда ООО Ромашка и ООО Партнёр, проект по реновации');
   });
 
   bot.onText(/\/договор (.+)/, async (msg, match) => {

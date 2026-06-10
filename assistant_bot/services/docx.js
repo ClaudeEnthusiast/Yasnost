@@ -90,7 +90,7 @@ async function buildDocument(docData) {
   }
 
   const doc = new Document({
-    creator: 'М.К ИНВЕСТ Ассистент',
+    creator: 'Ясность',
     title: docData.title || 'Документ',
     sections: [{ properties: {}, children }],
   });

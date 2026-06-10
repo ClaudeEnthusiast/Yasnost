@@ -1,14 +1,10 @@
-const { loadKey } = require('../db');
+const { loadKey, saveKey } = require('../db');
+const c = require('../services/budgetCore');
 const { escMd, formatDate, todayStr } = require('../utils');
 
 async function sendBrief(bot, chatId) {
-  const [cardsRaw, txRaw] = await Promise.all([
-    loadKey('cards'),
-    loadKey('transactions'),
-  ]);
-
+  const cardsRaw = await loadKey('cards');
   const cards = Array.isArray(cardsRaw) ? cardsRaw : [];
-  const transactions = Array.isArray(txRaw) ? txRaw : [];
 
   const today = todayStr();
   const yesterday = new Date();
@@ -16,7 +12,7 @@ async function sendBrief(bot, chatId) {
   const yesterdayStr = yesterday.toISOString().slice(0, 10);
 
   const active = cards
-    .filter((c) => c.status === 'todo' || c.status === 'in_progress')
+    .filter((x) => x.status === 'todo' || x.status === 'in_progress')
     .sort((a, b) => {
       if (!a.due && !b.due) return 0;
       if (!a.due) return 1;
@@ -24,56 +20,60 @@ async function sendBrief(bot, chatId) {
       return a.due.localeCompare(b.due);
     });
 
-  const overdue = active.filter((c) => c.due && c.due < today);
-  const dueToday = active.filter((c) => c.due === today);
-  const upcoming = active.filter((c) => !c.due || c.due > today);
-  const doneCount = cards.filter((c) => c.status === 'done').length;
-  const yesterdayTx = transactions.filter((t) => t.date === yesterdayStr);
-  const yesterdayTotal = yesterdayTx.reduce((s, t) => s + t.amount, 0);
+  const overdue = active.filter((x) => x.due && x.due < today);
+  const dueToday = active.filter((x) => x.due === today);
+  const upcoming = active.filter((x) => !x.due || x.due > today);
+  const doneCount = cards.filter((x) => x.status === 'done').length;
 
   let text = `☀️ *Доброе утро\\!*\n_${escMd(formatDate(today))}_\n\n`;
 
   if (overdue.length > 0) {
     text += `🔴 *Просрочено \\(${overdue.length}\\):*\n`;
-    overdue.forEach((c) => {
-      const days = Math.floor((new Date(today) - new Date(c.due)) / 86400000);
-      text += `  \\[${c.id}\\] ${escMd(c.title)} \\(${days}д\\)\n`;
+    overdue.forEach((x) => {
+      const days = Math.floor((new Date(today) - new Date(x.due)) / 86400000);
+      text += `  \\[${x.id}\\] ${escMd(x.title)} \\(${days}д\\)\n`;
     });
     text += '\n';
   }
-
   if (dueToday.length > 0) {
     text += `🟡 *Сегодня \\(${dueToday.length}\\):*\n`;
-    dueToday.forEach((c) => {
-      text += `  \\[${c.id}\\] ${escMd(c.title)}\n`;
-    });
+    dueToday.forEach((x) => { text += `  \\[${x.id}\\] ${escMd(x.title)}\n`; });
     text += '\n';
   }
-
   if (upcoming.length > 0) {
     text += `📋 *Предстоит \\(${upcoming.length}\\):*\n`;
-    upcoming.slice(0, 5).forEach((c) => {
-      const due = c.due ? ` — ${escMd(formatDate(c.due))}` : '';
-      text += `  \\[${c.id}\\] ${escMd(c.title)}${due}\n`;
+    upcoming.slice(0, 5).forEach((x) => {
+      const due = x.due ? ` — ${escMd(formatDate(x.due))}` : '';
+      text += `  \\[${x.id}\\] ${escMd(x.title)}${due}\n`;
     });
     if (upcoming.length > 5) text += `  _\\.\\.\\. и ещё ${upcoming.length - 5}_\n`;
     text += '\n';
   }
+  if (active.length === 0) text += `✅ Активных задач нет\\!\n\n`;
 
-  if (active.length === 0) {
-    text += `✅ Активных задач нет\\!\n\n`;
-  }
+  // ---- Бюджет ----
+  const budget = c.normalize(await loadKey('budget'));
+  if (c.isConfigured(budget)) {
+    const before = budget.today_date;
+    c.applyDayTransition(budget);
+    if (budget.today_date !== before) await saveKey('budget', budget); // фиксируем закрытие дня
+    const limit = budget.today_limit_adjusted || 0;
+    const spent = budget.today_spent || 0;
+    const rem = limit - spent;
+    text += `💰 *Бюджет на сегодня*\n`;
+    text += `Лимит ${escMd(c.money(limit))} · потрачено ${escMd(c.money(spent))}\n`;
+    text += `${rem >= 0 ? '✅' : '⚠️'} Осталось ${escMd(c.money(Math.max(0, rem)))} · 🐷 ${escMd(c.money(budget.piggybank || 0))}\n`;
 
-  if (yesterdayTx.length > 0) {
-    text += `💸 *Вчера потрачено: ${escMd(yesterdayTotal.toLocaleString('ru-RU'))} ₽*\n`;
-    yesterdayTx.slice(0, 4).forEach((t) => {
-      text += `  ${escMd(t.comment || t.category)} — ${escMd(t.amount.toLocaleString('ru-RU'))} ₽\n`;
-    });
+    const yTx = (budget.personal_expenses || []).filter((t) => t.date === yesterdayStr);
+    if (yTx.length > 0) {
+      const yTotal = yTx.reduce((s, t) => s + (Number(t.amount) || 0), 0);
+      text += `\n💸 *Вчера потрачено: ${escMd(c.money(yTotal))}*\n`;
+      yTx.slice(0, 4).forEach((t) => { text += `  ${escMd(t.category)} — ${escMd(c.money(t.amount))}\n`; });
+    }
     text += '\n';
   }
 
   text += `_Выполнено всего: ${doneCount} задач_`;
-
   await bot.sendMessage(chatId, text, { parse_mode: 'MarkdownV2' });
 }
 

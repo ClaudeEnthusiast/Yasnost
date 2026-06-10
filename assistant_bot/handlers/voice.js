@@ -1,9 +1,13 @@
-const whisper = require('../services/whisper');
+// handlers/voice.js
+// Голос → транскрипция (локальный faster-whisper) → разбор намерения (Claude) → действие.
+// Транскрипция self-hosted (без внешних ключей). Для разбора намерения нужен ANTHROPIC_API_KEY.
+
 const { detectIntent, answerQuestion } = require('../services/claude');
+const { downloadVoice, transcribe, whisperHealthy, cleanup } = require('../services/whisper');
 const { createTask } = require('./tasks');
-const { addExpense, autoCategory } = require('./budget');
+const { recordVoiceExpense } = require('./budget');
 const { generateAndSend } = require('./documents');
-const { escMd } = require('../utils');
+const { escHtml } = require('../utils');
 const config = require('../config');
 
 function register(bot, isAllowed, deny) {
@@ -11,82 +15,59 @@ function register(bot, isAllowed, deny) {
     if (!msg.voice) return;
     if (!isAllowed(msg)) return deny(msg.chat.id);
 
-    if (!config.OPENAI_API_KEY) {
-      return bot.sendMessage(
-        msg.chat.id,
-        '⚠️ Голосовой ввод недоступен. Задай OPENAI_API_KEY в .env'
-      );
+    if (!config.ANTHROPIC_API_KEY) {
+      return bot.sendMessage(msg.chat.id, '🎤 Нужен ANTHROPIC_API_KEY для разбора голосовой команды.');
+    }
+    if (!(await whisperHealthy())) {
+      return bot.sendMessage(msg.chat.id, '🎤 Сервис распознавания недоступен (whisper-api). Попробуй позже.');
     }
 
-    const status = await bot.sendMessage(msg.chat.id, '🎤 Распознаю речь...');
-    let oggPath, mp3Path;
-
+    const status = await bot.sendMessage(msg.chat.id, '🎤 Обрабатываю...');
+    let ogg;
     try {
-      oggPath = await whisper.downloadVoice(bot, msg.voice.file_id);
-      mp3Path = await whisper.convertToMp3(oggPath);
-      const text = await whisper.transcribe(mp3Path);
-
-      await bot.editMessageText(
-        `🎤 _${escMd(text)}_`,
-        { chat_id: msg.chat.id, message_id: status.message_id, parse_mode: 'MarkdownV2' }
-      );
-
-      // Without Claude — fallback to task creation
-      if (!config.ANTHROPIC_API_KEY) {
-        const card = await createTask(text);
-        return bot.sendMessage(
-          msg.chat.id,
-          `✅ Создал задачу: *${escMd(card.title)}*`,
-          { parse_mode: 'MarkdownV2' }
-        );
+      ogg = await downloadVoice(bot, msg.voice.file_id);
+      const text = await transcribe(ogg);
+      if (!text) {
+        return bot.editMessageText('🎤 Не расслышал. Попробуй ещё раз.', { chat_id: msg.chat.id, message_id: status.message_id }).catch(() => {});
       }
 
+      await bot.editMessageText('🎤 <i>' + escHtml(text) + '</i>', {
+        chat_id: msg.chat.id, message_id: status.message_id, parse_mode: 'HTML',
+      }).catch(() => {});
+
       const result = await detectIntent(text);
+      const ex = result.extracted || {};
 
       switch (result.intent) {
         case 'task': {
-          const { title, due } = result.extracted || {};
-          const card = await createTask(title || text, due || null);
-          bot.sendMessage(
-            msg.chat.id,
-            `✅ Задача: *${escMd(card.title)}*\n📅 Срок: ${escMd(card.due)}`,
-            { parse_mode: 'MarkdownV2' }
-          );
+          const card = await createTask(ex.title || text, ex.due || null);
+          await bot.sendMessage(msg.chat.id, '✅ <b>' + escHtml(card.title) + '</b>', { parse_mode: 'HTML' });
           break;
         }
-
         case 'expense': {
-          const { amount, category, comment } = result.extracted || {};
-          if (!amount) {
-            bot.sendMessage(msg.chat.id, '❓ Не понял сумму. Попробуй: /расход 500 такси');
-            break;
+          if (!ex.amount) { await bot.sendMessage(msg.chat.id, 'Не понял сумму. Например: «расход 500 такси».'); break; }
+          try {
+            const { tx } = await recordVoiceExpense(ex.amount, ex.category || ex.comment || 'Без категории', 'personal');
+            await bot.sendMessage(msg.chat.id, '💸 <b>' + escHtml(String(tx.amount)) + ' ₽</b> — ' + escHtml(tx.category) + ' записано', { parse_mode: 'HTML' });
+          } catch (e) {
+            await bot.sendMessage(msg.chat.id, '⚠️ ' + e.message);
           }
-          const tx = await addExpense(amount, category || autoCategory(comment), comment, 'voice');
-          bot.sendMessage(
-            msg.chat.id,
-            `💸 *${escMd(String(tx.amount))} ₽* — ${escMd(tx.category)}`,
-            { parse_mode: 'MarkdownV2' }
-          );
           break;
         }
-
         case 'document': {
-          const { type, description } = result.extracted || {};
-          await generateAndSend(bot, msg.chat.id, type || 'contract', description || text);
+          await generateAndSend(bot, msg.chat.id, ex.type || 'contract', ex.description || text);
           break;
         }
-
         default: {
           const answer = await answerQuestion(text);
-          bot.sendMessage(msg.chat.id, answer);
-          break;
+          await bot.sendMessage(msg.chat.id, answer);
         }
       }
     } catch (err) {
-      console.error('Voice handler error:', err);
-      bot.sendMessage(msg.chat.id, `❌ Ошибка: ${err.message}`);
+      console.error('Voice error:', err.message);
+      await bot.sendMessage(msg.chat.id, '❌ Ошибка обработки голоса: ' + err.message);
     } finally {
-      whisper.cleanup(oggPath, mp3Path);
+      cleanup(ogg);
     }
   });
 }
