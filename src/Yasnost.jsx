@@ -6,8 +6,9 @@ const IS_TMA = typeof window !== "undefined" &&
    window.location.search.includes("tma") ||
    !!(window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData));
 
-const TODAY = new Date().toISOString().slice(0, 10);
 const iso = (dt) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+// локальная дата, а не toISOString(): UTC до 3:00 мск отдаёт вчерашний день
+const TODAY = iso(new Date());
 
 const COLUMNS = [
   { id: "todo",        title: "Нужно сделать", accent: "#6B7280" },
@@ -16,6 +17,7 @@ const COLUMNS = [
 ];
 
 const MONTHS_RU = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
+const MONTHS_RU_GEN = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
 const tagHue = (s) => { let h = 0; const str = String(s); for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 360; return h; };
 const WEEKDAYS_RU = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
@@ -456,6 +458,19 @@ const THEMES = {
         .ys-nav-item.ys-nav-active { position: relative; }
         .ys-nav-item.ys-nav-active::after { content: ""; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 6px; height: 6px; border-radius: 50%; background: #D4FF5E; box-shadow: 0 0 10px rgba(198,242,77,.9); animation: ys-ping 1.8s ease-in-out infinite; }
         @keyframes ys-ping { 0%,100% { transform: translateY(-50%) scale(1); opacity: 1; } 50% { transform: translateY(-50%) scale(1.6); opacity: 0.4; } }
+        /* Шумовая плёнка — аналоговое зерно поверх фона */
+        .ys-signal::after {
+          content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+          opacity: .045; mix-blend-mode: overlay;
+          background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2"/></filter><rect width="180" height="180" filter="url(%23n)" opacity="0.7"/></svg>');
+        }
+        /* Терминальная каретка после подзаголовка */
+        .ys-signal .ys-header p::after { content: "▍"; margin-left: 4px; color: #D4FF5E; animation: ys-caret 1.1s steps(1) infinite; }
+        @keyframes ys-caret { 50% { opacity: 0; } }
+        /* Бейджи и счётчики слегка "дышат" свечением */
+        .ys-signal .ys-num { text-shadow: 0 0 14px rgba(198,242,77,.12); }
+        /* Активная вкладка таббара: засветка снизу */
+        .ys-signal .ys-tabbar button { transition: text-shadow .2s; }
       }
       .ys-modal input[type="checkbox"] + span { color: #E7E9EC !important; }
       .ys-modal input[type="checkbox"]:checked + span { color: #6B7280 !important; }
@@ -714,6 +729,9 @@ export default function Yasnost() {
   const [newsData,       setNewsData]       = useState(null);     // {items:[], fetched_at}
   const [newsLoading,    setNewsLoading]    = useState(false);
   const [newsError,      setNewsError]      = useState("");
+  const [newsPreview,    setNewsPreview]    = useState(null);     // {title, link, ts, pub, source}
+  const [previewData,    setPreviewData]    = useState(null);     // ответ /api/news/preview
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [toasts,         setToasts]         = useState([]);       // {id,msg,type,action?}
   const toastTimers   = useRef({});
   const searchRef     = useRef(null);
@@ -724,6 +742,7 @@ export default function Yasnost() {
   const touchState    = useRef({ id: null, moved: false, ghost: null, el: null, offset: { x: 0, y: 0 }, startX: 0, startY: 0, rect: null });
   const mainRef       = useRef(null);
   const cursorDot     = useRef(null);  const starsCanvas      = useRef(null);
+  const signalCanvas  = useRef(null);
   const trailCanvas      = useRef(null);  const constellationRef = useRef(null);
   const draggingRef      = useRef(false);
   const portalBurstRef   = useRef(null);
@@ -942,7 +961,7 @@ export default function Yasnost() {
   useEffect(() => {
     const h = (e) => {
       if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")) { e.preventDefault(); setPaletteOpen((o) => { if (!o) { setPalQ(""); setPalIdx(0); } return !o; }); return; }
-      if (e.key === "Escape") { setPaletteOpen(false); setSelectedCardId(null); setFinModal(null); return; }
+      if (e.key === "Escape") { setPaletteOpen(false); setSelectedCardId(null); setFinModal(null); setNewsPreview(null); setPreviewData(null); return; }
       const tag = (e.target && e.target.tagName) || "";
       const typing = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (e.target && e.target.isContentEditable);
       if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -1363,6 +1382,97 @@ export default function Yasnost() {
     };
   }, [themeName]);
 
+  // Signal: осциллограф у нижней кромки + радар-пинги по клику
+  useEffect(() => {
+    if (themeName !== "signal") return;
+    const canvas = signalCanvas.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const fine = window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) return;
+    const ACID = "212,255,94";
+    const pings = [];
+    let raf, t = 0;
+    let amp = 6, targetAmp = 6, lastX = 0, lastY = 0, lastT = 0;
+    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+    const onMove = (e) => {
+      const now = performance.now();
+      const dt = Math.max(16, now - lastT);
+      const v = Math.hypot(e.clientX - lastX, e.clientY - lastY) / dt;
+      targetAmp = Math.min(26, 6 + v * 26);
+      lastX = e.clientX; lastY = e.clientY; lastT = now;
+    };
+    const ping = (x, y) => {
+      pings.push({ x, y, r: 0, max: 88, o: .9, v: 3.1 });
+      pings.push({ x, y, r: 0, max: 150, o: .5, v: 2.2, delay: 7 });
+    };
+    const onClick = (e) => ping(e.clientX, e.clientY);
+    const onTouch = (e) => { const tc = e.touches[0]; if (tc) ping(tc.clientX, tc.clientY); };
+    const draw = () => {
+      t += 0.02;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // осциллограф (только desktop с мышью — на тач не тратим батарею зря)
+      if (fine && !IS_TMA) {
+        amp += (targetAmp - amp) * 0.06;
+        targetAmp += (6 - targetAmp) * 0.02;
+        const baseY = canvas.height - 30;
+        ctx.beginPath();
+        for (let x = 0; x <= canvas.width; x += 3) {
+          const k = x / canvas.width;
+          const env = Math.sin(k * Math.PI);
+          const yy = baseY
+            + Math.sin(k * 18 + t * 2.4) * amp * env
+            + Math.sin(k * 47 - t * 5.1) * amp * 0.35 * env;
+          if (x === 0) ctx.moveTo(x, yy); else ctx.lineTo(x, yy);
+        }
+        ctx.strokeStyle = `rgba(${ACID},.28)`;
+        ctx.lineWidth = 1.4;
+        ctx.shadowColor = `rgba(${ACID},.8)`;
+        ctx.shadowBlur = 8;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+      // пинги: кольцо + скобки прицела
+      for (let i = pings.length - 1; i >= 0; i--) {
+        const p = pings[i];
+        if (p.delay) { p.delay--; continue; }
+        p.r += p.v; p.o -= 0.018;
+        if (p.o <= 0 || p.r > p.max) { pings.splice(i, 1); continue; }
+        ctx.save();
+        ctx.globalAlpha = p.o;
+        ctx.strokeStyle = `rgba(${ACID},1)`;
+        ctx.lineWidth = 1.3;
+        ctx.shadowColor = `rgba(${ACID},.9)`;
+        ctx.shadowBlur = 10;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.stroke();
+        const s = p.r * 0.55 + 9, c = 6;
+        [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sy]) => {
+          ctx.beginPath();
+          ctx.moveTo(p.x + sx * s, p.y + sy * (s - c));
+          ctx.lineTo(p.x + sx * s, p.y + sy * s);
+          ctx.lineTo(p.x + sx * (s - c), p.y + sy * s);
+          ctx.stroke();
+        });
+        ctx.restore();
+      }
+      raf = requestAnimationFrame(draw);
+    };
+    resize();
+    window.addEventListener("resize", resize);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("click", onClick);
+    window.addEventListener("touchstart", onTouch, { passive: true });
+    draw();
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", resize);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("click", onClick);
+      window.removeEventListener("touchstart", onTouch);
+    };
+  }, [themeName]);
+
   // 3D-наклон — только Cosmos
   const onCardTilt = themeName === "cosmos" ? (e) => {
     const el = e.currentTarget;
@@ -1453,6 +1563,24 @@ export default function Yasnost() {
     finally { setNewsLoading(false); }
   };
   useEffect(() => { if (view === "news" && !newsData) loadNews(); }, [view]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Открыть ссылку наружу: в TMA через Telegram (иначе webview может проглотить _blank)
+  const openExternal = (url) => {
+    const wa = window.Telegram && window.Telegram.WebApp;
+    if (IS_TMA && wa && wa.openLink) { try { wa.openLink(url); return; } catch {} }
+    window.open(url, "_blank", "noopener");
+  };
+  // Предпросмотр новости внутри приложения (reader-mode через /api/news/preview)
+  const openPreview = async (it) => {
+    setNewsPreview(it); setPreviewData(null); setPreviewLoading(true);
+    try {
+      const r = await fetch("/api/news/preview?url=" + encodeURIComponent(it.link));
+      if (!r.ok) throw new Error();
+      setPreviewData(await r.json());
+    } catch { setPreviewData({ error: true }); }
+    finally { setPreviewLoading(false); }
+  };
+  const closePreview = () => { setNewsPreview(null); setPreviewData(null); };
 
   const q            = searchQuery.toLowerCase();
   const visibleCards = cards
@@ -1584,6 +1712,7 @@ export default function Yasnost() {
       <style>{css}</style>
       <canvas ref={starsCanvas} className="ys-stars" style={{ display: themeName === "cosmos" ? "block" : "none" }} aria-hidden="true" />
       <canvas ref={trailCanvas} style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 999, display: themeName === "cosmos" ? "block" : "none" }} aria-hidden="true" />
+      <canvas ref={signalCanvas} style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 998, display: themeName === "signal" ? "block" : "none" }} aria-hidden="true" />
       <div ref={cursorDot}  style={st.cursorDot}  className="ys-cursor-dot"  aria-hidden="true">{themeName === "cosmos" ? "✦" : ""}</div>      {loading && (
         <div style={{ position: "fixed", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 2000, fontFamily: st.app.fontFamily, background: st.app.background, gap: 14, color: "#9aa4b6" }}>
           <div style={{ ...st.logo }}>Я</div>
@@ -1672,10 +1801,10 @@ export default function Yasnost() {
             <div style={st.avatar} className="ys-avatar">И</div>
             {IS_TMA && (
               <div style={{ display: "flex", gap: 5, marginLeft: 2 }}>
-                {THEME_DOTS.map(({ key, color }) => {
+                {THEME_DOTS.map(({ key, color, label }) => {
                   const active = themeName === key;
                   return (
-                    <button key={key} onClick={() => switchTheme(key)} title={key}
+                    <button key={key} onClick={() => switchTheme(key)} title={label}
                       style={{ width: 18, height: 18, borderRadius: "50%", background: color, border: active ? "2.5px solid rgba(255,255,255,.9)" : "2px solid transparent", cursor: "pointer", padding: 0, opacity: active ? 1 : 0.38, transition: "all .15s", outline: "none", flexShrink: 0 }} />
                   );
                 })}
@@ -1913,6 +2042,78 @@ export default function Yasnost() {
                   background: active ? accent : "transparent", transition: "all .14s" }}>{label}</button>
             );
           };
+
+          // ── TMA: агенда-список вместо сетки (сетка на телефоне нечитаема) ──
+          if (IS_TMA) {
+            const days = [];
+            if (isWeek) {
+              const ws = new Date(calWeekStart + "T00:00:00");
+              for (let i = 0; i < 7; i++) days.push(new Date(ws.getFullYear(), ws.getMonth(), ws.getDate() + i));
+            } else {
+              const dim = new Date(y, m + 1, 0).getDate();
+              for (let i = 1; i <= dim; i++) days.push(new Date(y, m, i));
+            }
+            const fmtDayLabel = (dt) => `${WEEKDAYS_RU[(dt.getDay() + 6) % 7]}, ${dt.getDate()} ${MONTHS_RU_GEN[dt.getMonth()]}`;
+            const shown = days.filter((dt) => (byDate[iso(dt)] || []).length > 0 || iso(dt) === TODAY);
+            const taskLine = (c, showDate) => {
+              const pr = priorities[c.priority] || priorities.normal;
+              const done = c.status === "done";
+              const over = c.due && c.due < TODAY && !done;
+              return (
+                <div key={c.id} onClick={() => setSelectedCardId(c.id)} className="ys-fin-row" role="button" tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === "Enter") setSelectedCardId(c.id); }}
+                  style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 4px", borderBottom: "1px solid rgba(128,128,128,.1)", cursor: "pointer" }}>
+                  <span style={{ width: 8, height: 8, borderRadius: 999, background: done ? muted : (over ? RED : pr.color), flexShrink: 0, opacity: done ? 0.5 : 1 }} />
+                  <span style={{ flex: 1, minWidth: 0, fontSize: 13.5, color: done ? muted : (over ? RED : txt), fontWeight: 500, textDecoration: done ? "line-through" : "none", opacity: done ? 0.6 : 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.title}</span>
+                  {showDate && c.due && <span style={{ fontSize: 11, color: over ? RED : muted, flexShrink: 0 }}>{fmtRu(c.due)}</span>}
+                  {!done && (
+                    <button className="ys-checkbtn" title="Выполнено" onClick={(ev) => { ev.stopPropagation(); setStatus(c.id, "done"); toast("Задача выполнена", "success"); }}
+                      style={{ border: "none", background: "transparent", color: muted, cursor: "pointer", padding: 4, display: "inline-flex", flexShrink: 0 }}><Icon name="square" size={17} /></button>
+                  )}
+                </div>
+              );
+            };
+            return (
+              <div style={st.todayView} className="ys-fade-in ys-view-wrap">
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+                  <div style={{ fontSize: 17, fontWeight: 800, color: txt, letterSpacing: "-0.02em", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{periodLabel}</div>
+                  <button className="ys-btn-ghost" style={{ ...navBtn, padding: "6px 11px" }} onClick={() => shiftPeriod(-1)}>‹</button>
+                  <button className="ys-btn-ghost" style={{ ...st.btnGhost, padding: "6px 10px", fontSize: 11.5 }} onClick={goToday}>Сегодня</button>
+                  <button className="ys-btn-ghost" style={{ ...navBtn, padding: "6px 11px" }} onClick={() => shiftPeriod(1)}>›</button>
+                </div>
+                <div style={{ display: "flex", gap: 3, marginBottom: 14, background: "rgba(128,128,128,.1)", borderRadius: 9, padding: 3, width: "fit-content" }}>
+                  {seg("week", "Неделя")}
+                  {seg("month", "Месяц")}
+                </div>
+                {shown.length === 0 && <div style={st.empty}>В этом периоде задач нет</div>}
+                {shown.map((dt) => {
+                  const dIso = iso(dt);
+                  const isToday = dIso === TODAY;
+                  const list = byDate[dIso] || [];
+                  return (
+                    <div key={dIso} style={{ ...panel, padding: "12px 14px", marginBottom: 10, ...(isToday ? { border: `1.5px solid ${accent}`, boxShadow: `0 0 16px -6px ${accent}` } : {}) }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: list.length ? 6 : 0 }}>
+                        <span style={{ fontSize: 12.5, fontWeight: 800, color: isToday ? accent : txt }}>{fmtDayLabel(dt)}</span>
+                        {isToday && <span style={{ fontSize: 9.5, fontWeight: 800, color: accent, border: `1px solid ${accent}66`, borderRadius: 999, padding: "1px 7px", letterSpacing: ".06em", textTransform: "uppercase" }}>сегодня</span>}
+                        <button title="Новая задача" onClick={() => { const id = addQuickCard(dIso); setSelectedCardId(id); }}
+                          style={{ marginLeft: "auto", border: "none", background: "transparent", color: accent, fontSize: 19, cursor: "pointer", padding: "0 4px", lineHeight: 1, flexShrink: 0 }}>+</button>
+                      </div>
+                      {list.length === 0 && <div style={{ fontSize: 12, color: muted }}>Свободный день</div>}
+                      {list.map((c) => taskLine(c, false))}
+                    </div>
+                  );
+                })}
+                {backlogCards.length > 0 && (
+                  <div style={{ ...panel, padding: "12px 14px", marginTop: 4 }}>
+                    <div style={{ fontSize: 10.5, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}>
+                      Без даты <span style={st.colCount}>{backlogCards.length}</span>
+                    </div>
+                    {backlogCards.map((c) => taskLine(c, false))}
+                  </div>
+                )}
+              </div>
+            );
+          }
 
           const renderCell = (dt) => {
             const dIso = iso(dt);
@@ -2580,36 +2781,50 @@ export default function Yasnost() {
                     : todayTasks.map(taskRow)}
                 </div>
 
-                {b && b.configured && (
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
-                    {[["Лимит сегодня", b.today_limit, accent], ["Потрачено", b.today_spent, b.remaining < 0 ? "#E5575C" : txt], ["Остаток", b.remaining, b.remaining < 0 ? "#E5575C" : "#3FB27F"]].map(([l, v, col]) => (
-                      <div key={l} style={{ ...panel, "--ys-accent": col }} className="ys-stat">
-                        <div style={{ fontSize: 10, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>{l}</div>
-                        <div className="ys-num" style={{ fontSize: 22, fontWeight: 800, color: col, letterSpacing: "-0.02em" }}><CountUp value={v || 0} format={fmt} /></div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                {b && b.configured && (() => {
+                  // те же поля, что в Финансах («На сегодня»): лимит = available_daily
+                  const limit = Math.round(b.available_daily || 0);
+                  const spent = b.today_spent || 0;
+                  const left = Math.round(limit - spent);
+                  return (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
+                      {[["Лимит сегодня", limit, accent], ["Потрачено", spent, spent > limit ? "#E5575C" : txt], ["Остаток", left, left < 0 ? "#E5575C" : "#3FB27F"]].map(([l, v, col]) => (
+                        <div key={l} style={{ ...panel, "--ys-accent": col }} className="ys-stat">
+                          <div style={{ fontSize: 10, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>{l}</div>
+                          <div className="ys-num" style={{ fontSize: 22, fontWeight: 800, color: col, letterSpacing: "-0.02em" }}><CountUp value={v || 0} format={fmt} /></div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
 
                 {b && b.configured && (() => {
                   const todayExp = (b.personal_expenses || []).filter(e => e.date === TODAY);
-                  if (!todayExp.length) return null;
+                  // в «Потрачено» (дневной лимит) идут только обычные траты — обязательные показываем отдельно
+                  const total = todayExp.filter(e => !e.mandatory).reduce((s, e) => s + (e.amount || 0), 0);
+                  const hasMand = todayExp.some(e => e.mandatory);
                   return (
                     <div style={panel}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                        <div style={lbl}>Расходы за сегодня</div>
-                        <span style={{ fontSize: 12, color: muted }}>{fmt(todayExp.reduce((s, e) => s + (e.amount || 0), 0))}</span>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                        <div style={{ ...lbl, marginBottom: 0 }}>Расходы за сегодня{hasMand ? " · без обязательных" : ""}</div>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: total > 0 ? "#E5575C" : muted }}>{total > 0 ? "−" + fmt(total) : fmt(0)}</span>
                       </div>
+                      {todayExp.length === 0 && <div style={{ color: muted, fontSize: 13, padding: "10px 0" }}>Сегодня трат ещё нет.</div>}
                       {todayExp.slice().reverse().map((e, i) => (
-                        <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(128,128,128,.1)", fontSize: 13 }}>
-                          <div style={{ minWidth: 0, flex: 1 }}>
-                            <span style={{ color: txt }}>{e.note || e.category}</span>
-                            {e.note && e.category && <span style={{ color: muted, fontSize: 11, marginLeft: 6 }}>{e.category}</span>}
+                        <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "8px 0", borderBottom: "1px solid rgba(128,128,128,.1)", fontSize: 13 }}>
+                          <div style={{ minWidth: 0, flex: 1, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                            <span style={{ color: txt, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.note || e.category}</span>
+                            {e.note && e.category && <span style={{ color: muted, fontSize: 11 }}>{e.category}</span>}
+                            {e.mandatory && <span style={{ fontSize: 10, color: "#E8A13A", fontWeight: 700, border: "1px solid #E8A13A55", borderRadius: 999, padding: "1px 6px", flexShrink: 0 }}>обяз.</span>}
                           </div>
-                          <span style={{ color: txt, fontWeight: 600, flexShrink: 0 }}>{fmt(e.amount)}</span>
+                          <span style={{ color: e.mandatory ? muted : "#E5575C", fontWeight: 600, flexShrink: 0 }}>−{(e.amount || 0).toLocaleString("ru-RU")} ₽</span>
                         </div>
                       ))}
-                      <button onClick={() => setView("finance")} style={{ ...st.btnGhost, marginTop: 10, padding: "7px 12px", fontSize: 12 }}>Все расходы →</button>
+                      <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+                        <button className="ys-btn-primary" onClick={() => { setFinForm({ kind: "personal", amount: "", category: "", note: "", date: TODAY }); setFinError(""); setFinModal("add"); }}
+                          style={{ ...st.btnPrimary, flex: "none", padding: "7px 14px", fontSize: 12 }}>+ Расход</button>
+                        <button onClick={() => setView("finance")} style={{ ...st.btnGhost, padding: "7px 12px", fontSize: 12 }}>Все расходы →</button>
+                      </div>
                     </div>
                   );
                 })()}
@@ -2637,15 +2852,13 @@ export default function Yasnost() {
             </div>
           );
         })()}
-      </main>
-
       {/* News */}
       {view === "news" && (() => {
         const txt = st.cardTitle.color;
         const muted = st.cardDesc.color;
         const accent = st.checkboxAccent;
         const panel = { ...st.card, cursor: "default", padding: "16px 18px" };
-        const SOURCE_ORDER = ["🔵 Claude · Anthropic", "OpenAI · ChatGPT", "Gemini · Google · DeepMind", "ИИ — главное", "Хабр · ИИ"];
+        const SOURCE_ORDER = ["🔵 Claude · Anthropic", "OpenAI · ChatGPT", "Gemini · Google · DeepMind", "ИИ — главное", "Хабр · ИИ", "vc.ru · ИИ"];
 
         const grouped = {};
         if (newsData) {
@@ -2685,16 +2898,21 @@ export default function Yasnost() {
                 <div key={source} style={panel}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: accent, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 12 }}>{source}</div>
                   {grouped[source].map((it, i) => (
-                    <div key={i} style={{ padding: "9px 0", borderBottom: i < grouped[source].length - 1 ? "1px solid rgba(128,128,128,.1)" : "none" }}>
-                      <a href={it.link} target="_blank" rel="noreferrer"
-                        style={{ color: txt, fontSize: 13.5, fontWeight: 500, textDecoration: "none", lineHeight: 1.4, display: "block" }}
-                        className="ys-news-link">{it.title}</a>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
-                        {it.pub && <span style={{ fontSize: 11, color: muted }}>{it.pub}</span>}
-                        {it.ts > 0 && <span style={{ fontSize: 11, color: muted, opacity: 0.7 }}>
-                          {new Date(it.ts).toLocaleDateString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                        </span>}
+                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "9px 0", borderBottom: i < grouped[source].length - 1 ? "1px solid rgba(128,128,128,.1)" : "none" }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div onClick={() => openPreview(it)} role="button" tabIndex={0}
+                          onKeyDown={(e) => { if (e.key === "Enter") openPreview(it); }}
+                          style={{ color: txt, fontSize: 13.5, fontWeight: 500, lineHeight: 1.4, cursor: "pointer" }}
+                          className="ys-news-link" title="Предпросмотр">{it.title}</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+                          {it.pub && <span style={{ fontSize: 11, color: muted }}>{it.pub}</span>}
+                          {it.ts > 0 && <span style={{ fontSize: 11, color: muted, opacity: 0.7 }}>
+                            {new Date(it.ts).toLocaleDateString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                          </span>}
+                        </div>
                       </div>
+                      <button onClick={() => openExternal(it.link)} title="Открыть в браузере"
+                        style={{ border: "none", background: "transparent", color: muted, cursor: "pointer", fontSize: 14, padding: "2px 4px", flexShrink: 0, lineHeight: 1 }}>↗</button>
                     </div>
                   ))}
                 </div>
@@ -2703,6 +2921,7 @@ export default function Yasnost() {
           </div>
         );
       })()}
+      </main>
 
       {/* ── TMA: нижний таббар ── */}
       {IS_TMA && (
@@ -2713,7 +2932,7 @@ export default function Yasnost() {
           paddingBottom: "env(safe-area-inset-bottom, 0px)",
           background: st.header.background, borderTop: st.header.borderBottom,
         }}>
-          {[["finance", "wallet", "Финансы", 0], ["today", "sun", "Сегодня", overdueCount], ["board", "board", "Задачи", 0], ["calendar", "today", "Кал.", todayCards.length], ["news", "bell", "Новости", 0]].map(([key, icon, label, badge]) => {
+          {[["finance", "wallet", "Финансы", 0], ["today", "sun", "Сегодня", overdueCount], ["board", "board", "Задачи", 0], ["calendar", "today", "План", todayCards.length], ["news", "bell", "Новости", 0]].map(([key, icon, label, badge]) => {
             const active = view === key;
             const color = active ? (st.navActive.color || st.cardTitle.color) : st.navItem.color;
             return (
@@ -2759,11 +2978,6 @@ export default function Yasnost() {
 
           /* ── Finance heroes: 2 в ряд на мобиле ── */
           .ys-tma .ys-fin-heroes { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important; gap: 8px !important; }
-
-          /* ── Calendar: показываем только точки, текст скрыт ── */
-          .ys-tma .ys-calcell .ys-calchip span:last-child { display: none !important; }
-          .ys-tma .ys-calcell .ys-calchip { padding: 1px 2px !important; gap: 0 !important; min-width: 0 !important; }
-          .ys-tma .ys-cal-add { opacity: 0.45 !important; display: block !important; }
 
           /* ── Модалки поверх таббара ── */
           .ys-tma .ys-overlay { z-index: 2000 !important; }
@@ -3118,6 +3332,54 @@ export default function Yasnost() {
         </div>
         );
       })()}
+
+      {/* ── Предпросмотр новости ── */}
+      {newsPreview && (
+        <div style={st.overlay} className="ys-overlay" onClick={closePreview}>
+          <div style={{ ...st.modal, width: "min(640px, 94vw)" }} className="ys-modal" onClick={(e) => e.stopPropagation()}>
+            <div style={st.modalHeader}>
+              <span style={{ ...st.modalTitle, fontSize: 15.5, lineHeight: 1.35, whiteSpace: "normal" }}>{(previewData && previewData.title) || newsPreview.title}</span>
+              <button style={st.modalClose} onClick={closePreview}>×</button>
+            </div>
+            <div style={{ ...st.modalBody, gap: 12 }}>
+              {previewLoading && (
+                <>
+                  <div className="ys-skel" style={{ height: 160 }} />
+                  <div className="ys-skel" style={{ height: 12, width: "40%" }} />
+                  <div className="ys-skel" style={{ height: 12 }} />
+                  <div className="ys-skel" style={{ height: 12, width: "85%" }} />
+                  <div className="ys-skel" style={{ height: 12, width: "70%" }} />
+                </>
+              )}
+              {!previewLoading && previewData && previewData.limited && (
+                <div style={{ fontSize: 13, color: st.cardDesc.color, lineHeight: 1.55 }}>
+                  Это ссылка через Google News — текст статьи доступен только в браузере. Жми «Читать полностью».
+                </div>
+              )}
+              {!previewLoading && previewData && !previewData.error && !previewData.limited && (
+                <>
+                  {previewData.image && <img src={previewData.image} alt="" style={{ width: "100%", borderRadius: 12, maxHeight: 240, objectFit: "cover" }}
+                    onError={(e) => { e.currentTarget.style.display = "none"; }} />}
+                  <div style={{ fontSize: 12, color: st.cardDesc.color, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {previewData.site && <span style={{ fontWeight: 700 }}>{previewData.site}</span>}
+                    {newsPreview.ts > 0 && <span>{new Date(newsPreview.ts).toLocaleDateString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}</span>}
+                  </div>
+                  {previewData.description && <div style={{ fontSize: 14, color: st.cardTitle.color, lineHeight: 1.55, fontWeight: 500 }}>{previewData.description}</div>}
+                  {previewData.text && <div style={{ fontSize: 13, color: st.cardDesc.color, lineHeight: 1.65, whiteSpace: "pre-wrap" }}>{previewData.text}</div>}
+                  {!previewData.description && !previewData.text && (
+                    <div style={{ fontSize: 13, color: st.cardDesc.color }}>Сайт не отдаёт текст для предпросмотра — открой статью целиком.</div>
+                  )}
+                </>
+              )}
+              {!previewLoading && previewData && previewData.error && (
+                <div style={{ fontSize: 13, color: st.cardDesc.color }}>Не удалось загрузить предпросмотр — открой статью в браузере.</div>
+              )}
+              <button className="ys-btn-primary" style={{ ...st.btnPrimary, marginTop: 4 }}
+                onClick={() => openExternal((previewData && previewData.url) || newsPreview.link)}>Читать полностью ↗</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Командная палитра (⌘K) ── */}
       {paletteOpen && (
