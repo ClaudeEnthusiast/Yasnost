@@ -2,8 +2,12 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Ясность</title>
+    <script>
+      // Мини-апп (порт 8443): подключаем Telegram WebApp SDK до загрузки приложения
+      if (location.port === '8443') document.write('<script src="https://telegram.org/js/telegram-web-app.js"><\/script>');
+    </script>
   </head>
   <body>
     <div id="root"></div>

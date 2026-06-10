@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 
+// Telegram-мини-апп: тот же код, но раздаётся на :8443 и живёт внутри Telegram WebView.
+const IS_TMA = typeof window !== "undefined" &&
+  (window.location.port === "8443" ||
+   window.location.search.includes("tma") ||
+   !!(window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData));
+
 const TODAY = new Date().toISOString().slice(0, 10);
 const iso = (dt) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
 
@@ -632,7 +638,7 @@ export default function Yasnost() {
   const [adding,         setAdding]         = useState(null);
   const [draft,          setDraft]          = useState({ title: "", desc: "", due: "", priority: "normal" });
   const [searchQuery,    setSearchQuery]    = useState("");
-  const [view,           setView]           = useState("board");
+  const [view,           setView]           = useState(IS_TMA ? "finance" : "board");
   const [selectedCardId, setSelectedCardId] = useState(null);
   const [tagInput,       setTagInput]       = useState("");
   const [paletteOpen,    setPaletteOpen]    = useState(false);
@@ -753,6 +759,15 @@ export default function Yasnost() {
       .catch(() => setBudgetLoading(false));
   };
   useEffect(() => { if (view === "finance" || view === "today") loadBudget(); }, [view]);
+
+  // Инициализация Telegram WebApp (только в мини-аппе)
+  useEffect(() => {
+    if (!IS_TMA) return;
+    const wa = window.Telegram && window.Telegram.WebApp;
+    if (!wa) return;
+    try { wa.ready(); wa.expand(); } catch {}
+    try { wa.disableVerticalSwipes && wa.disableVerticalSwipes(); } catch {}
+  }, []);
 
   const budgetAction = async (path, body, method = "POST") => {
     setFinBusy(true); setFinError("");
@@ -1509,7 +1524,8 @@ export default function Yasnost() {
         </div>
       )}
 
-      {/* ── Sidebar ── */}
+      {/* ── Sidebar (в мини-аппе заменён нижним таббаром) ── */}
+      {!IS_TMA && (
       <aside style={st.sidebar} className="ys-sidebar">
         <div style={st.brand} className="ys-brand">
           <div style={st.logo}>Я</div>
@@ -1560,6 +1576,7 @@ export default function Yasnost() {
           </div>
         </div>
       </aside>
+      )}
 
       {/* ── Main ── */}
       <main style={st.main} className="ys-main" ref={mainRef}>
@@ -2488,6 +2505,39 @@ export default function Yasnost() {
           );
         })()}
       </main>
+
+      {/* ── TMA: нижний таббар ── */}
+      {IS_TMA && (
+        <nav className="ys-tabbar" style={{
+          position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 50, /* ниже модалок (z100) — кнопки в них должны быть кликабельны */
+          display: "flex", alignItems: "stretch", justifyContent: "space-around",
+          height: "calc(60px + env(safe-area-inset-bottom, 0px))",
+          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+          background: st.header.background, borderTop: st.header.borderBottom,
+        }}>
+          {[["finance", "wallet", "Финансы", 0], ["today", "sun", "Сегодня", overdueCount], ["board", "board", "Задачи", 0], ["calendar", "today", "Календарь", todayCards.length]].map(([key, icon, label, badge]) => {
+            const active = view === key;
+            const color = active ? (st.navActive.color || st.cardTitle.color) : st.navItem.color;
+            return (
+              <button key={key} onClick={() => setView(key)} style={{
+                flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3,
+                background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit",
+                color, fontSize: 10.5, fontWeight: active ? 800 : 600, position: "relative",
+              }}>
+                <Icon name={icon} color={color} />
+                <span>{label}</span>
+                {badge > 0 && <span style={{ ...st.navBadge, position: "absolute", top: 6, right: "50%", marginRight: -22, marginLeft: 0, padding: "0 5px", fontSize: 9.5 }}>{badge}</span>}
+              </button>
+            );
+          })}
+        </nav>
+      )}
+      {IS_TMA && (
+        <style>{`
+          .ys-main { padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important; }
+          .ys-kbd, .ys-search { display: none !important; }
+        `}</style>
+      )}
 
       {/* ── Modal ── */}
       {selectedCard && (

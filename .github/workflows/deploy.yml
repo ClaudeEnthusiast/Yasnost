@@ -34,6 +34,17 @@ jobs:
           target: /var/www/yasnost
           strip_components: 1
 
+      # Тот же билд → Telegram-мини-апп (:8443). TMA-режим включается по порту.
+      - name: Deploy to VPS (mini-app)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: dist/
+          target: /var/www/yasnost/app
+          strip_components: 1
+
       - name: Reload nginx
         uses: appleboy/ssh-action@v1.0.3
         with:
