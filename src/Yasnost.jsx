@@ -197,6 +197,7 @@ const THEMES = {
       .ys-calcell:hover { background: rgba(128,128,128,.09) !important; }
       .ys-calcell:hover .ys-cal-add { opacity: 1 !important; }
       .ys-cal-add:hover { transform: scale(1.25); }
+      .ys-news-link:hover { text-decoration: underline !important; opacity: 0.85; }
       .ys-fin-tab { transition: all .15s; }
       .ys-fin-row { transition: background .12s; border-radius: 8px; }
       .ys-fin-row:hover { background: rgba(128,128,128,.08); }
@@ -379,6 +380,7 @@ const THEMES = {
       .ys-calcell:hover { background: rgba(128,128,128,.09) !important; }
       .ys-calcell:hover .ys-cal-add { opacity: 1 !important; }
       .ys-cal-add:hover { transform: scale(1.25); }
+      .ys-news-link:hover { text-decoration: underline !important; opacity: 0.85; }
       .ys-fin-tab { transition: all .15s; }
       .ys-fin-row { transition: background .12s; border-radius: 8px; }
       .ys-fin-row:hover { background: rgba(128,128,128,.08); }
@@ -391,6 +393,7 @@ const THEMES = {
       select { color-scheme: dark; }
       .ys-board { isolation: isolate; }
       @media (prefers-reduced-motion: no-preference) {
+        /* Aurora backgrounds */
         .ys-main::before {
           content: ""; position: absolute; left: -8%; right: -8%; top: -18%; height: 72%;
           z-index: 0; pointer-events: none;
@@ -405,6 +408,42 @@ const THEMES = {
           animation: ys-aurora2 34s ease-in-out infinite alternate;
         }
         @keyframes ys-aurora2 { 0% { transform: translate3d(4%,2%,0) scale(1.05); } 50% { transform: translate3d(-5%,-3%,0) scale(1.20); } 100% { transform: translate3d(2%,1%,0) scale(1.08); } }
+        /* Radar sweep: вращающийся конусный луч */
+        .ys-signal::before {
+          content: ""; pointer-events: none; z-index: 0;
+          position: fixed; top: 50%; left: 50%;
+          width: max(200vw, 200vh); height: max(200vw, 200vh);
+          margin: calc(-1 * max(100vw, 100vh));
+          background: conic-gradient(
+            from 0deg at 50% 50%,
+            transparent 0deg,
+            rgba(198,242,77,.035) 5deg,
+            rgba(198,242,77,.095) 14deg,
+            rgba(198,242,77,.035) 24deg,
+            transparent 25deg
+          );
+          animation: ys-radar 6s linear infinite;
+          transform-origin: center;
+        }
+        @keyframes ys-radar { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        /* Acid scanlines на картах */
+        .ys-card::after {
+          content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+          background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(198,242,77,.022) 3px, rgba(198,242,77,.022) 4px);
+          opacity: 0; transition: opacity .2s;
+        }
+        .ys-card:hover::after { opacity: 1; }
+        /* Pulse cursor-dot */
+        .ys-cursor-dot { display: block !important; width: 10px !important; height: 10px !important; border-radius: 50% !important; background: #D4FF5E !important; box-shadow: 0 0 8px rgba(198,242,77,.9), 0 0 20px rgba(198,242,77,.4) !important; font-size: 0 !important; animation: ys-dot-pulse 2s ease-in-out infinite !important; }
+        @keyframes ys-dot-pulse { 0%,100% { box-shadow: 0 0 6px rgba(198,242,77,.7), 0 0 16px rgba(198,242,77,.3); } 50% { box-shadow: 0 0 12px rgba(198,242,77,1), 0 0 28px rgba(198,242,77,.6); } }
+        /* Glitch на заголовке */
+        .ys-h1 { text-shadow: 0 0 20px rgba(198,242,77,.15); animation: ys-glitch-idle 8s steps(1) infinite; }
+        @keyframes ys-glitch-idle {
+          0%, 94%, 100% { text-shadow: 0 0 20px rgba(198,242,77,.15); }
+          95% { text-shadow: 2px 0 rgba(255,60,60,.6), -2px 0 rgba(0,200,255,.5), 0 0 20px rgba(198,242,77,.15); transform: skewX(-1deg); }
+          96% { text-shadow: 0 0 20px rgba(198,242,77,.15); transform: none; }
+        }
+        /* Card rise + acid glow on hover */
         .ys-card { animation: ys-rise .5s cubic-bezier(.2,.7,.3,1) both; }
         .ys-card:nth-child(2){ animation-delay: .05s; }
         .ys-card:nth-child(3){ animation-delay: .10s; }
@@ -413,7 +452,10 @@ const THEMES = {
         .ys-card:nth-child(n+6){ animation-delay: .24s; }
         @keyframes ys-rise { from { transform: translateY(10px); } to { transform: none; } }
         .ys-brand > div:first-child { box-shadow: 0 6px 22px rgba(198,242,77,.34); }
-        .ys-h1 { text-shadow: 0 0 20px rgba(198,242,77,.12); }
+        /* Nav active indicator: kислотный ping */
+        .ys-nav-item.ys-nav-active { position: relative; }
+        .ys-nav-item.ys-nav-active::after { content: ""; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 6px; height: 6px; border-radius: 50%; background: #D4FF5E; box-shadow: 0 0 10px rgba(198,242,77,.9); animation: ys-ping 1.8s ease-in-out infinite; }
+        @keyframes ys-ping { 0%,100% { transform: translateY(-50%) scale(1); opacity: 1; } 50% { transform: translateY(-50%) scale(1.6); opacity: 0.4; } }
       }
       .ys-modal input[type="checkbox"] + span { color: #E7E9EC !important; }
       .ys-modal input[type="checkbox"]:checked + span { color: #6B7280 !important; }
@@ -585,6 +627,7 @@ const THEMES = {
       .ys-calcell:hover { background: rgba(128,128,128,.09) !important; }
       .ys-calcell:hover .ys-cal-add { opacity: 1 !important; }
       .ys-cal-add:hover { transform: scale(1.25); }
+      .ys-news-link:hover { text-decoration: underline !important; opacity: 0.85; }
       .ys-fin-tab { transition: all .15s; }
       .ys-fin-row { transition: background .12s; border-radius: 8px; }
       .ys-fin-row:hover { background: rgba(128,128,128,.08); }
@@ -667,6 +710,10 @@ export default function Yasnost() {
   const [calBacklogOver, setCalBacklogOver] = useState(false);    // backlog drop-target highlight
   const [boardSort,      setBoardSort]      = useState(() => localStorage.getItem("ys-board-sort") || "manual"); // manual | priority | due
   const [doneCollapsed,  setDoneCollapsed]  = useState(() => localStorage.getItem("ys-done-collapsed") === "1");
+  const [archiveOpen,    setArchiveOpen]    = useState(false);
+  const [newsData,       setNewsData]       = useState(null);     // {items:[], fetched_at}
+  const [newsLoading,    setNewsLoading]    = useState(false);
+  const [newsError,      setNewsError]      = useState("");
   const [toasts,         setToasts]         = useState([]);       // {id,msg,type,action?}
   const toastTimers   = useRef({});
   const searchRef     = useRef(null);
@@ -1395,14 +1442,28 @@ export default function Yasnost() {
     return { tone: "#6B7280", label: s };
   };
 
+  const loadNews = async (force = false) => {
+    if (newsLoading) return;
+    setNewsLoading(true); setNewsError("");
+    try {
+      const r = await fetch("/api/news" + (force ? "?force=1" : ""));
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      setNewsData(await r.json());
+    } catch (e) { setNewsError(e.message); }
+    finally { setNewsLoading(false); }
+  };
+  useEffect(() => { if (view === "news" && !newsData) loadNews(); }, [view]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const q            = searchQuery.toLowerCase();
   const visibleCards = cards
+    .filter((c) => !c.archived)
     .filter((c) => (q ? (c.title.toLowerCase().includes(q) || (c.desc || "").toLowerCase().includes(q) || (c.tags || []).some((t) => t.toLowerCase().includes(q.replace(/^#/, "")))) : true))
     .filter((c) => (priorityFilter === "all" ? true : (c.priority || "normal") === priorityFilter));
-  const todayCards   = cards.filter((c) => c.due && c.due <= TODAY).sort((a, b) => a.due.localeCompare(b.due));
-  const overdueCount = cards.filter((c) => c.status !== "done" && c.due && c.due < TODAY).length;
-  const todayTasks    = cards.filter((c) => c.status !== "done" && c.due && c.due <= TODAY).sort((a, b) => a.due.localeCompare(b.due));
-  const upcomingTasks = cards.filter((c) => c.status !== "done" && c.due && c.due > TODAY).sort((a, b) => a.due.localeCompare(b.due)).slice(0, 6);
+  const archiveCards  = cards.filter((c) => c.archived);
+  const todayCards   = cards.filter((c) => !c.archived && c.due && c.due <= TODAY).sort((a, b) => a.due.localeCompare(b.due));
+  const overdueCount = cards.filter((c) => !c.archived && c.status !== "done" && c.due && c.due < TODAY).length;
+  const todayTasks    = cards.filter((c) => !c.archived && c.status !== "done" && c.due && c.due <= TODAY).sort((a, b) => a.due.localeCompare(b.due));
+  const upcomingTasks = cards.filter((c) => !c.archived && c.status !== "done" && c.due && c.due > TODAY).sort((a, b) => a.due.localeCompare(b.due)).slice(0, 6);
   const navItem = (key, icon, label, badge) => (
     <div key={key} role="button" tabIndex={0}
       className={"ys-nav-item" + (view === key ? " ys-nav-active" : "")}
@@ -1481,7 +1542,13 @@ export default function Yasnost() {
       >
         <div style={st.cardTop}>
           <span style={{ ...st.cardStripe, background: colAccent }} />
-          <button style={st.cardDel} onClick={(e) => { e.stopPropagation(); removeCard(c.id); }}>×</button>
+          <div style={{ display: "flex" }}>
+            {c.status === "done" && (
+              <button style={{ ...st.cardDel, fontSize: 12, opacity: 0.5 }} title="В архив"
+                onClick={(e) => { e.stopPropagation(); updateCard(c.id, { archived: true }); toast("Задача в архиве", "info"); }}>▿</button>
+            )}
+            <button style={st.cardDel} onClick={(e) => { e.stopPropagation(); removeCard(c.id); }}>×</button>
+          </div>
         </div>
         <div style={st.cardTitle}>{c.title}</div>
         {c.desc && <div style={st.cardDesc}>{c.desc}</div>}
@@ -1513,7 +1580,7 @@ export default function Yasnost() {
   // canvases рендерим всегда чтобы refs были готовы до загрузки данных
 
   return (
-    <div style={st.app} className={"ys-app" + (IS_TMA ? " ys-tma" : "")}>
+    <div style={st.app} className={"ys-app" + (IS_TMA ? " ys-tma" : "") + (themeName === "signal" ? " ys-signal" : "")}>
       <style>{css}</style>
       <canvas ref={starsCanvas} className="ys-stars" style={{ display: themeName === "cosmos" ? "block" : "none" }} aria-hidden="true" />
       <canvas ref={trailCanvas} style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 999, display: themeName === "cosmos" ? "block" : "none" }} aria-hidden="true" />
@@ -1540,6 +1607,7 @@ export default function Yasnost() {
           {navItem("board", "board", "Доска задач", 0)}
           {navItem("calendar", "today", "Календарь", todayCards.length)}
           {navItem("finance", "wallet", "Финансы", 0)}
+          {navItem("news", "bell", "Новости", 0)}
           <div style={st.navDivider} />
           {[["doc", "Документы"], ["bell", "Напоминания"], ["plus", "Новый раздел"]].map(([icon, label]) => (
             <div key={label} role="button" tabIndex={0} className="ys-nav-item"
@@ -1586,9 +1654,9 @@ export default function Yasnost() {
 
         <header style={st.header} className="ys-header">
           <div>
-            <h1 style={st.h1} className="ys-h1">{view === "today" ? "Сегодня" : view === "board" ? "Доска задач" : view === "calendar" ? "Календарь" : "Финансы"}</h1>
+            <h1 style={st.h1} className="ys-h1">{view === "today" ? "Сегодня" : view === "board" ? "Доска задач" : view === "calendar" ? "Календарь" : view === "news" ? "Новости" : "Финансы"}</h1>
             <p style={st.sub}>
-              {view === "today" ? (() => { const p = String(TODAY).split("-"); return `${+p[2]} ${MONTHS_RU[+p[1] - 1]} · ${todayTasks.length} задач${overdueCount ? ` · ${overdueCount} просрочено` : ""}`; })() : view === "board" ? `${cards.length} задач · ${countBy("in_progress")} в работе` : view === "calendar" ? `${MONTHS_RU[calMonth.m]} ${calMonth.y}` : budgetData ? `Период ${fmtRu(budgetData.start_date)} — ${fmtRu(budgetData.end_date)}` : "Загрузка…"}
+              {view === "today" ? (() => { const p = String(TODAY).split("-"); return `${+p[2]} ${MONTHS_RU[+p[1] - 1]} · ${todayTasks.length} задач${overdueCount ? ` · ${overdueCount} просрочено` : ""}`; })() : view === "board" ? `${cards.length} задач · ${countBy("in_progress")} в работе` : view === "calendar" ? `${MONTHS_RU[calMonth.m]} ${calMonth.y}` : view === "news" ? (newsData ? `Обновлено ${new Date(newsData.fetched_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}` : "ИИ-сводка") : budgetData ? `Период ${fmtRu(budgetData.start_date)} — ${fmtRu(budgetData.end_date)}` : "Загрузка…"}
             </p>
           </div>
           <div style={st.headerRight}>
@@ -1602,6 +1670,17 @@ export default function Yasnost() {
               className="ys-btn-primary ys-header-new" style={{ ...st.btnPrimary, flex: "none", padding: "9px 15px", display: "inline-flex", alignItems: "center", gap: 7 }}>
               <Icon name="plus" /> Задача</button>
             <div style={st.avatar} className="ys-avatar">И</div>
+            {IS_TMA && (
+              <div style={{ display: "flex", gap: 5, marginLeft: 2 }}>
+                {THEME_DOTS.map(({ key, color }) => {
+                  const active = themeName === key;
+                  return (
+                    <button key={key} onClick={() => switchTheme(key)} title={key}
+                      style={{ width: 18, height: 18, borderRadius: "50%", background: color, border: active ? "2.5px solid rgba(255,255,255,.9)" : "2px solid transparent", cursor: "pointer", padding: 0, opacity: active ? 1 : 0.38, transition: "all .15s", outline: "none", flexShrink: 0 }} />
+                  );
+                })}
+              </div>
+            )}
           </div>
         </header>
 
@@ -1675,6 +1754,10 @@ export default function Yasnost() {
                     <span style={st.colCount}>{countBy(col.id)}</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    {col.id === "done" && visibleCards.filter(c => c.status === "done").length > 0 && (
+                      <button style={{ ...st.colAdd, fontSize: 11, opacity: 0.7 }} className="ys-add" title="Отправить всё в архив"
+                        onClick={() => { setCards(cs => cs.map(c => c.status === "done" ? { ...c, archived: true } : c)); toast("Выполненные — в архив", "info"); }}>▿</button>
+                    )}
                     {col.id === "done" && (
                       <button style={st.colAdd} className="ys-add" title="Свернуть колонку"
                         onClick={() => setDoneCollapsed(true)}>‹</button>
@@ -1717,6 +1800,32 @@ export default function Yasnost() {
             );
             })}
           </div>
+
+          {/* Архив */}
+          {archiveCards.length > 0 && (
+            <div style={{ padding: "4px 26px 16px", flexShrink: 0 }}>
+              <button onClick={() => setArchiveOpen(o => !o)} className="ys-btn-ghost"
+                style={{ ...st.btnGhost, fontSize: 12, padding: "5px 13px", display: "inline-flex", alignItems: "center", gap: 7, opacity: 0.75 }}>
+                <span style={{ fontSize: 15 }}>{archiveOpen ? "▾" : "▸"}</span>
+                {"Архив"} {archiveCards.length}
+              </button>
+              {archiveOpen && (
+                <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 7 }}>
+                  {archiveCards.map(c => {
+                    const pr = priorities[c.priority] || priorities.normal;
+                    return (
+                      <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(128,128,128,.07)", border: "1px solid rgba(128,128,128,.14)", borderRadius: 10, padding: "6px 10px", maxWidth: 260 }}>
+                        <span style={{ width: 7, height: 7, borderRadius: "50%", background: pr.color, flexShrink: 0, opacity: 0.6 }} />
+                        <span style={{ fontSize: 12.5, color: st.cardDesc.color, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "line-through", opacity: 0.65 }}>{c.title}</span>
+                        <button title="Вернуть на доску" onClick={() => updateCard(c.id, { archived: false })}
+                          style={{ border: "none", background: "transparent", cursor: "pointer", color: st.checkboxAccent, fontSize: 13, padding: 0, flexShrink: 0 }}>{"↩"}</button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
           </>
         )}
 
@@ -1840,10 +1949,11 @@ export default function Yasnost() {
                     <div key={c.id} draggable
                       onDragStart={(e) => { setCalDragId(c.id); e.dataTransfer.effectAllowed = "move"; wasDragging.current = true; }}
                       onDragEnd={() => { setCalDragId(null); setCalOverDay(null); setCalBacklogOver(false); setTimeout(() => { wasDragging.current = false; }, 0); }}
-                      onClick={(e) => { e.stopPropagation(); if (!wasDragging.current) setSelectedCardId(c.id); }} className="ys-calchip"
-                      style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: over ? RED : txt, background: over ? "rgba(229,87,92,.14)" : "rgba(128,128,128,.1)", borderRadius: 6, padding: "2px 5px", cursor: "grab", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", opacity: calDragId === c.id ? 0.4 : 1 }}>
-                      <span style={{ width: 6, height: 6, borderRadius: 999, background: over ? RED : pr.color, flexShrink: 0 }} />
-                      <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{c.title}</span>
+                      onClick={(e) => { e.stopPropagation(); if (!wasDragging.current) setSelectedCardId(c.id); }}
+                      className={"ys-calchip" + (c.status === "done" ? " ys-calchip-done" : "")}
+                      style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: c.status === "done" ? muted : (over ? RED : txt), background: c.status === "done" ? "rgba(128,128,128,.06)" : (over ? "rgba(229,87,92,.14)" : "rgba(128,128,128,.1)"), borderRadius: 6, padding: "2px 5px", cursor: "grab", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", opacity: c.status === "done" ? 0.55 : (calDragId === c.id ? 0.4 : 1) }}>
+                      <span style={{ width: 6, height: 6, borderRadius: 999, background: c.status === "done" ? muted : (over ? RED : pr.color), flexShrink: 0 }} />
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", textDecoration: c.status === "done" ? "line-through" : "none" }}>{c.title}</span>
                     </div>
                   );
                 })}
@@ -2481,6 +2591,29 @@ export default function Yasnost() {
                   </div>
                 )}
 
+                {b && b.configured && (() => {
+                  const todayExp = (b.personal_expenses || []).filter(e => e.date === TODAY);
+                  if (!todayExp.length) return null;
+                  return (
+                    <div style={panel}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                        <div style={lbl}>Расходы за сегодня</div>
+                        <span style={{ fontSize: 12, color: muted }}>{fmt(todayExp.reduce((s, e) => s + (e.amount || 0), 0))}</span>
+                      </div>
+                      {todayExp.slice().reverse().map((e, i) => (
+                        <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(128,128,128,.1)", fontSize: 13 }}>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <span style={{ color: txt }}>{e.note || e.category}</span>
+                            {e.note && e.category && <span style={{ color: muted, fontSize: 11, marginLeft: 6 }}>{e.category}</span>}
+                          </div>
+                          <span style={{ color: txt, fontWeight: 600, flexShrink: 0 }}>{fmt(e.amount)}</span>
+                        </div>
+                      ))}
+                      <button onClick={() => setView("finance")} style={{ ...st.btnGhost, marginTop: 10, padding: "7px 12px", fontSize: 12 }}>Все расходы →</button>
+                    </div>
+                  );
+                })()}
+
                 {unpaidMand.length > 0 && (
                   <div style={panel}>
                     <div style={lbl}>Неоплаченные обязательные</div>
@@ -2506,6 +2639,71 @@ export default function Yasnost() {
         })()}
       </main>
 
+      {/* News */}
+      {view === "news" && (() => {
+        const txt = st.cardTitle.color;
+        const muted = st.cardDesc.color;
+        const accent = st.checkboxAccent;
+        const panel = { ...st.card, cursor: "default", padding: "16px 18px" };
+        const SOURCE_ORDER = ["🔵 Claude · Anthropic", "OpenAI · ChatGPT", "Gemini · Google · DeepMind", "ИИ — главное", "Хабр · ИИ"];
+
+        const grouped = {};
+        if (newsData) {
+          newsData.items.forEach(it => {
+            (grouped[it.source] = grouped[it.source] || []).push(it);
+          });
+        }
+
+        return (
+          <div style={{ flex: 1, overflowY: "auto", padding: 26, position: "relative", zIndex: 1 }} className="ys-fade-in ys-view-wrap">
+            <div style={{ maxWidth: 760, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <button onClick={() => loadNews(true)} disabled={newsLoading}
+                  className="ys-btn-primary" style={{ ...st.btnPrimary, padding: "9px 18px", fontSize: 13, display: "inline-flex", alignItems: "center", gap: 7 }}>
+                  {newsLoading ? "Загружаю…" : "↻ Обновить"}
+                </button>
+                {newsData && <span style={{ fontSize: 12, color: muted }}>· {newsData.items.length} новостей</span>}
+              </div>
+
+              {newsError && <div style={{ ...panel, borderColor: "#E5575C55", color: "#E5575C", fontSize: 13 }}>Ошибка: {newsError}</div>}
+
+              {newsLoading && !newsData && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {[1,2,3].map(i => <div key={i} className="ys-skel" style={{ height: 90 }} />)}
+                </div>
+              )}
+
+              {!newsLoading && !newsData && !newsError && (
+                <div style={{ ...st.todayEmpty ?? panel, textAlign: "center", color: muted, padding: "40px 24px" }}>
+                  <div style={{ fontSize: 32, marginBottom: 12 }}>📡</div>
+                  <div style={{ fontSize: 14, marginBottom: 8 }}>Нажмите «Обновить» для загрузки новостей</div>
+                  <div style={{ fontSize: 12, opacity: 0.65 }}>Требуется /api/news на сервере</div>
+                </div>
+              )}
+
+              {newsData && SOURCE_ORDER.filter(s => grouped[s]?.length).map(source => (
+                <div key={source} style={panel}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: accent, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 12 }}>{source}</div>
+                  {grouped[source].map((it, i) => (
+                    <div key={i} style={{ padding: "9px 0", borderBottom: i < grouped[source].length - 1 ? "1px solid rgba(128,128,128,.1)" : "none" }}>
+                      <a href={it.link} target="_blank" rel="noreferrer"
+                        style={{ color: txt, fontSize: 13.5, fontWeight: 500, textDecoration: "none", lineHeight: 1.4, display: "block" }}
+                        className="ys-news-link">{it.title}</a>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+                        {it.pub && <span style={{ fontSize: 11, color: muted }}>{it.pub}</span>}
+                        {it.ts > 0 && <span style={{ fontSize: 11, color: muted, opacity: 0.7 }}>
+                          {new Date(it.ts).toLocaleDateString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                        </span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ── TMA: нижний таббар ── */}
       {IS_TMA && (
         <nav className="ys-tabbar" style={{
@@ -2515,7 +2713,7 @@ export default function Yasnost() {
           paddingBottom: "env(safe-area-inset-bottom, 0px)",
           background: st.header.background, borderTop: st.header.borderBottom,
         }}>
-          {[["finance", "wallet", "Финансы", 0], ["today", "sun", "Сегодня", overdueCount], ["board", "board", "Задачи", 0], ["calendar", "today", "Календарь", todayCards.length]].map(([key, icon, label, badge]) => {
+          {[["finance", "wallet", "Финансы", 0], ["today", "sun", "Сегодня", overdueCount], ["board", "board", "Задачи", 0], ["calendar", "today", "Кал.", todayCards.length], ["news", "bell", "Новости", 0]].map(([key, icon, label, badge]) => {
             const active = view === key;
             const color = active ? (st.navActive.color || st.cardTitle.color) : st.navItem.color;
             return (
