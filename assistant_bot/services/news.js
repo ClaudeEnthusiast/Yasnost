@@ -1,19 +1,26 @@
-// Новости ИИ из RSS/Atom-лент — без LLM и без платных API.
-// Парсер нарочно минимальный (axios + regex): хватает для title/link/date.
+// Новости ИИ на русском — без LLM и без платных API.
+// Источник — Google News RSS (hl=ru): выдаёт русскоязычные заголовки по запросу,
+// включая новости про Claude/Anthropic из первых рук (Хабр, 3DNews, Код Дурова и т.п.).
 const axios = require('axios');
 
-const FEEDS = [
-  { name: 'OpenAI', url: 'https://openai.com/news/rss.xml', cap: 3 },
-  { name: 'Google DeepMind', url: 'https://deepmind.google/blog/rss.xml', cap: 3 },
-  { name: 'The Verge · AI', url: 'https://www.theverge.com/rss/ai-artificial-intelligence/index.xml', cap: 3 },
-  { name: 'Ars Technica · AI', url: 'https://arstechnica.com/ai/feed/', cap: 3 },
-  { name: 'TechCrunch · AI', url: 'https://techcrunch.com/category/artificial-intelligence/feed/', cap: 3 },
-  { name: 'Hacker News 100+', url: 'https://hnrss.org/newest?points=100&count=50', cap: 4, aiOnly: true },
-  { name: 'Хабр · ИИ', url: 'https://habr.com/ru/rss/hub/artificial_intelligence/articles/?fl=ru', cap: 2 },
-  { name: 'Simon Willison', url: 'https://simonwillison.net/atom/everything/', cap: 2 },
+// Каждая секция — это поисковый запрос Google News. Порядок = порядок в дайджесте.
+// `when` — окно свежести Google News (Nd = N дней). `cap` — макс. новостей в секции.
+const SECTIONS = [
+  { label: '🔵 Claude · Anthropic', q: 'Anthropic OR Claude', when: '4d', cap: 5, pinned: true },
+  { label: 'OpenAI · ChatGPT',       q: 'OpenAI OR ChatGPT',   when: '2d', cap: 3 },
+  { label: 'Gemini · Google · DeepMind', q: 'Gemini OR DeepMind OR "Google AI"', when: '2d', cap: 3 },
+  { label: 'ИИ — главное',           q: '"искусственный интеллект" OR нейросети', when: '1d', cap: 3 },
 ];
 
-const AI_RE = /\b(ai|ии|llm|llms|gpt[-\s]?\d*|claude|anthropic|openai|chatgpt|gemini|deepmind|mistral|llama|qwen|deepseek|grok|copilot|stable diffusion|midjourney|neural|machine learning|deep learning|language model|genai|agentic|inference|transformer)\b/i;
+// Прямая лента Хабра по ИИ (русская, без Google News) — для глубины.
+const DIRECT_FEEDS = [
+  { label: 'Хабр · ИИ', url: 'https://habr.com/ru/rss/hub/artificial_intelligence/articles/?fl=ru', cap: 2 },
+];
+
+function gnewsUrl(q, when) {
+  const query = encodeURIComponent(`${q} when:${when}`);
+  return `https://news.google.com/rss/search?q=${query}&hl=ru&gl=RU&ceid=RU:ru`;
+}
 
 function decodeEntities(s) {
   return String(s || '')
@@ -31,12 +38,12 @@ function pick(block, tag) {
   return m ? m[1] : '';
 }
 
-// Поддерживает RSS (<item>) и Atom (<entry>).
+// RSS (<item>) и Atom (<entry>).
 function parseFeed(xml) {
   const items = [];
   const blocks = xml.match(/<item[\s>][\s\S]*?<\/item>|<entry[\s>][\s\S]*?<\/entry>/gi) || [];
   for (const b of blocks) {
-    const title = decodeEntities(pick(b, 'title'));
+    const rawTitle = decodeEntities(pick(b, 'title'));
     let link = decodeEntities(pick(b, 'link'));
     if (!link) {
       const alt = b.match(/<link[^>]*rel=["']alternate["'][^>]*href=["']([^"']+)["']/i)
@@ -45,66 +52,83 @@ function parseFeed(xml) {
     }
     const dateRaw = pick(b, 'pubDate') || pick(b, 'published') || pick(b, 'updated') || pick(b, 'dc:date');
     const ts = Date.parse(decodeEntities(dateRaw)) || 0;
-    if (title && link) items.push({ title, link, ts });
+    if (rawTitle && link) items.push({ rawTitle, link, ts });
   }
   return items;
 }
 
-function normLink(url) {
-  return String(url).replace(/[?#].*$/, '').replace(/\/+$/, '').toLowerCase();
+// Google News отдаёт заголовок в виде «Заголовок - Издание». Отделяем издание.
+function splitTitle(rawTitle) {
+  const idx = rawTitle.lastIndexOf(' - ');
+  if (idx > 0 && idx > rawTitle.length - 60) {
+    return { title: rawTitle.slice(0, idx).trim(), pub: rawTitle.slice(idx + 3).trim() };
+  }
+  return { title: rawTitle, pub: '' };
 }
 
-// Собирает свежие новости со всех лент.
-// windowMs — насколько в прошлое смотрим; seen — Set нормализованных ссылок, которые уже слали.
-async function collectNews({ windowMs = 24 * 3600 * 1000, seen = new Set(), totalCap = 14 } = {}) {
+function normTitle(t) {
+  return String(t).toLowerCase().replace(/[«»"'`.,!?:;()\-—\s]+/g, ' ').trim();
+}
+
+// Собирает русскоязычные новости. seen — Set нормализованных заголовков, что уже слали.
+async function collectNews({ windowMs = 26 * 3600 * 1000, seen = new Set(), totalCap = 16 } = {}) {
   const since = Date.now() - windowMs;
-  const results = await Promise.allSettled(FEEDS.map(async (f) => {
-    const res = await axios.get(f.url, {
-      timeout: 20000,
-      responseType: 'text',
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; YasnostBot/1.0)' },
-    });
-    let items = parseFeed(String(res.data))
+  const headers = { 'User-Agent': 'Mozilla/5.0 (compatible; YasnostBot/1.0)' };
+
+  const tasks = [
+    ...SECTIONS.map((s) => ({ ...s, url: gnewsUrl(s.q, s.when) })),
+    ...DIRECT_FEEDS,
+  ];
+
+  const results = await Promise.allSettled(tasks.map(async (t) => {
+    const res = await axios.get(t.url, { timeout: 20000, responseType: 'text', headers });
+    const parsed = parseFeed(String(res.data))
       .filter((it) => it.ts === 0 || it.ts >= since)
-      .filter((it) => !seen.has(normLink(it.link)));
-    if (f.aiOnly) items = items.filter((it) => AI_RE.test(it.title));
-    items.sort((a, b) => b.ts - a.ts);
-    return items.slice(0, f.cap).map((it) => ({ ...it, source: f.name }));
+      .map((it) => ({ ...it, ...splitTitle(it.rawTitle) }))
+      .filter((it) => it.title && !seen.has(normTitle(it.title)));
+    parsed.sort((a, b) => b.ts - a.ts);
+    return parsed.slice(0, t.cap).map((it) => ({ title: it.title, pub: it.pub, link: it.link, ts: it.ts, source: t.label }));
   }));
 
-  const all = [];
+  const out = [];
   const dedupe = new Set();
   const errors = [];
   results.forEach((r, i) => {
-    if (r.status !== 'fulfilled') { errors.push(FEEDS[i].name); return; }
+    if (r.status !== 'fulfilled') { errors.push(tasks[i].label); return; }
     for (const it of r.value) {
-      const key = normLink(it.link);
+      const key = normTitle(it.title);
       if (dedupe.has(key)) continue;
       dedupe.add(key);
-      all.push(it);
+      out.push(it);
     }
   });
-  return { items: all.slice(0, totalCap), errors };
+  return { items: out.slice(0, totalCap), errors };
 }
 
 function escHtml(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-// Telegram-HTML дайджест, сгруппированный по источникам.
+// Telegram-HTML дайджест, сгруппированный по секциям (порядок секций сохраняется).
 function formatDigest(items, header) {
+  const order = [...SECTIONS.map((s) => s.label), ...DIRECT_FEEDS.map((f) => f.label)];
   const bySource = new Map();
   for (const it of items) {
     if (!bySource.has(it.source)) bySource.set(it.source, []);
     bySource.get(it.source).push(it);
   }
   const lines = [`🤖 <b>${escHtml(header)}</b>`];
-  for (const [source, list] of bySource) {
+  for (const label of order) {
+    const list = bySource.get(label);
+    if (!list || !list.length) continue;
     lines.push('');
-    lines.push(`<b>${escHtml(source)}</b>`);
-    for (const it of list) lines.push(`• <a href="${escHtml(it.link)}">${escHtml(it.title)}</a>`);
+    lines.push(`<b>${escHtml(label)}</b>`);
+    for (const it of list) {
+      const pub = it.pub ? ` <i>— ${escHtml(it.pub)}</i>` : '';
+      lines.push(`• <a href="${escHtml(it.link)}">${escHtml(it.title)}</a>${pub}`);
+    }
   }
   return lines.join('\n');
 }
 
-module.exports = { collectNews, formatDigest, normLink, FEEDS };
+module.exports = { collectNews, formatDigest, normTitle, SECTIONS };
