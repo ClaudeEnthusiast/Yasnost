@@ -9,8 +9,10 @@ const documents = require('./handlers/documents');
 const voice = require('./handlers/voice');
 const brief = require('./handlers/brief');
 const tinkoffImport = require('./handlers/tinkoffImport');
+const news = require('./handlers/news');
 const dailyBrief = require('./jobs/dailyBrief');
 const weeklyReport = require('./jobs/weeklyReport');
+const newsDigest = require('./jobs/newsDigest');
 
 if (!config.BOT_TOKEN) { console.error('BOT_TOKEN'); process.exit(1); }
 if (!config.TELEGRAM_USER_ID) { console.error('TELEGRAM_USER_ID'); process.exit(1); }
@@ -43,6 +45,7 @@ bot.onText(/\/start/, (msg) => {
     '/кп /нда /договор [описание]',
     '',
     '/бриф — сводка прямо сейчас',
+    '/новости — ИИ-дайджест (авто: 9:05 и 21:00)',
   ].join('\n');
   bot.sendMessage(msg.chat.id, text, { parse_mode: 'HTML' });
 });
@@ -52,10 +55,12 @@ budget.register(bot, isAllowed, deny);
 documents.register(bot, isAllowed, deny);
 brief.register(bot, isAllowed, deny);
 tinkoffImport.register(bot, isAllowed, deny);
+news.register(bot, isAllowed, deny);
 voice.register(bot, isAllowed, deny);
 
 dailyBrief.init(bot);
 weeklyReport.init(bot);
+newsDigest.init(bot);
 
 pool.connect()
   .then((client) => {
