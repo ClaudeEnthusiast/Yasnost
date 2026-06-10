@@ -655,6 +655,7 @@ export default function Yasnost() {
   const [calDragId,      setCalDragId]      = useState(null);     // task id being dragged over calendar
   const [calOverDay,     setCalOverDay]     = useState(null);     // ISO of day cell hovered during DnD
   const [finSearch,      setFinSearch]      = useState("");       // expense search query
+  const [finDetails,     setFinDetails]     = useState(false);    // показать графики/аналитику
   const [calMode,        setCalMode]        = useState(() => localStorage.getItem("ys-cal-mode") || "month"); // 'month' | 'week'
   const [calWeekStart,   setCalWeekStart]   = useState(() => { const n = new Date(); const off = (n.getDay() + 6) % 7; return iso(new Date(n.getFullYear(), n.getMonth(), n.getDate() - off)); });
   const [calBacklogOver, setCalBacklogOver] = useState(false);    // backlog drop-target highlight
@@ -1997,6 +1998,13 @@ export default function Yasnost() {
               const _h2 = (n) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, "0");
               const mix = (c1, c2, t) => { const a = _rgb(c1), b2 = _rgb(c2), k = Math.max(0, Math.min(1, t)); return `#${_h2(Math.round(a[0] + (b2[0] - a[0]) * k))}${_h2(Math.round(a[1] + (b2[1] - a[1]) * k))}${_h2(Math.round(a[2] + (b2[2] - a[2]) * k))}`; };
               const heat = (t) => t <= 0 ? "rgba(128,128,128,.18)" : t < 0.5 ? mix(accent, AMBER, t / 0.5) : mix(AMBER, RED, (t - 0.5) / 0.5);
+              const hero = (label, numValue, color, sub, onClick) => (
+                <div style={{ ...panel, "--ys-accent": color, cursor: onClick ? "pointer" : "default" }} className="ys-stat" onClick={onClick} title={onClick ? "Сверить с реальным остатком на счёте" : undefined}>
+                  <div style={{ fontSize: 10, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>{label}</div>
+                  <div className="ys-num" style={{ fontSize: 26, fontWeight: 800, color, letterSpacing: "-0.02em" }}><CountUp value={numValue || 0} format={fmt} /></div>
+                  {sub && <div style={{ fontSize: 11, color: muted, marginTop: 5 }}>{sub}</div>}
+                </div>
+              );
               const stat = (label, numValue, color) => (
                 <div style={{ ...panel, "--ys-accent": color }} className="ys-stat">
                   <div style={{ fontSize: 10, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>{label}</div>
@@ -2198,35 +2206,22 @@ export default function Yasnost() {
                     {tbtn(<span style={ic}><Icon name="plus" /> Приход</span>, () => { setFinForm({ amount: "" }); setFinError(""); setFinModal("income"); })}
                     {tbtn(<span style={ic}><Icon name="coins" /> Копилка</span>, () => { setFinForm({ action: "add", amount: "" }); setFinError(""); setFinModal("piggybank"); })}
                     {tbtn(<span style={ic}><Icon name="download" /> CSV</span>, exportCsv)}
-                    <button onClick={runBudgetAnalysis} disabled={aiBudgetLoading} className="ys-btn-primary"
-                      style={{ ...st.btnPrimary, flex: "none", padding: "9px 16px", opacity: aiBudgetLoading ? .6 : 1 }}>
-                      {aiBudgetLoading ? "Анализирую…" : <span style={ic}><Icon name="sparkle" /> AI-анализ</span>}
-                    </button>
                   </div>
 
-                  {(aiAnalysis || aiBudgetError) && (
-                    <div style={aiBudgetError ? { ...st.aiPanel, borderColor: AMBER + "55", color: muted } : st.aiPanel}>
-                      {aiBudgetError || aiAnalysis}
-                    </div>
-                  )}
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 10 }}>
+                    {hero("Свободно", available, available < 0 ? RED : GREEN, `до ${fmtRu(b.end_date)} · обязательств не оплачено ${fmt(unpaidObligations)}`)}
+                    {hero("На сегодня", Math.round(availableDaily - (b.today_spent || 0)), (availableDaily - (b.today_spent || 0)) < 0 ? RED : accent, `лимит ${fmt(availableDaily)} · потрачено ${fmt(b.today_spent)}`)}
+                    {hero("На руках ⟳", expectedOnHand, txt, "по расчёту · нажмите для сверки", () => { setFinForm({ amount: "" }); setFinError(""); setFinModal("reconcile"); })}
+                  </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
-                    {stat("Свободно", available, available < 0 ? RED : GREEN)}
-                    {stat("Дневной лимит", availableDaily, availableDaily < 0 ? RED : accent)}
-                    {stat("Потрачено сегодня", b.today_spent, txt)}
-                    {stat("Осталось на сегодня", Math.round(availableDaily - (b.today_spent || 0)), (availableDaily - (b.today_spent || 0)) < 0 ? RED : GREEN)}
-                    {stat("План на период", b.monthly_budget, accent)}
-                    {stat("Копилка", b.piggybank, AMBER)}
-                    <div style={{ ...panel, "--ys-accent": accent, cursor: "pointer" }} className="ys-stat" title="Сверить с реальным остатком на счёте" onClick={() => { setFinForm({ amount: "" }); setFinError(""); setFinModal("reconcile"); }}>
-                      <div style={{ fontSize: 10, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Сверка ⟳</div>
-                      <div className="ys-num" style={{ fontSize: 22, fontWeight: 800, color: txt, letterSpacing: "-0.02em" }}><CountUp value={expectedOnHand} format={fmt} /></div>
-                      <div style={{ fontSize: 10, color: muted, marginTop: 4 }}>по расчёту на руках</div>
-                    </div>
-                    <div style={{ ...panel, "--ys-accent": forecast.over ? RED : GREEN }} className="ys-stat">
-                      <div style={{ fontSize: 10, color: muted, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Прогноз до конца периода</div>
-                      <div className="ys-num" style={{ fontSize: 22, fontWeight: 800, color: forecast.over ? RED : GREEN, letterSpacing: "-0.02em" }}><CountUp value={Math.round(forecast.projected)} format={fmt} /></div>
-                      <div style={{ fontSize: 11, color: forecast.over ? RED : GREEN, marginTop: 4, fontWeight: 600 }}>{forecast.budgetRef > 0 ? (forecast.over ? "превышение бюджета" : "в рамках бюджета") : "—"}</div>
-                    </div>
+                  <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center", fontSize: 12, color: muted, padding: "0 2px" }}>
+                    <span>План: <b style={{ color: txt }}>{fmt(b.monthly_budget)}</b></span>
+                    <span>Копилка: <b style={{ color: AMBER }}>{fmt(b.piggybank)}</b></span>
+                    <span>Прогноз трат: <b style={{ color: forecast.over ? RED : GREEN }}>{fmt(Math.round(forecast.projected))}</b>{forecast.budgetRef > 0 && <span> ({forecast.over ? "выше бюджета" : "в рамках"})</span>}</span>
+                    <button onClick={() => setFinDetails((v) => !v)} className="ys-btn-ghost"
+                      style={{ ...st.btnGhost, padding: "5px 12px", fontSize: 12, marginLeft: "auto" }}>
+                      {finDetails ? "Скрыть графики" : "Графики и аналитика"}
+                    </button>
                   </div>
 
                   <div style={panel}>
@@ -2240,19 +2235,19 @@ export default function Yasnost() {
                     <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 11, color: muted, flexWrap: "wrap", gap: 8 }}>
                       <span>Бюджет: {fmt(b.monthly_budget)}</span>
                       <span>Обязательные: {fmt(b.mandatory_total)}</span>
-                      <span>Свободно: {fmt(b.free)}</span>
+                      <span>Свободно по плану: {fmt(b.free)}</span>
                     </div>
                   </div>
 
-                  {(donut || burndown) && (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14 }}>
+                  {finDetails && (donut || burndown) && (
+                    <div className="ys-fade-in" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14 }}>
                       {donut && <div style={panel}><div style={lbl}>Расходы по категориям</div>{donut}</div>}
                       {burndown && <div style={panel}><div style={lbl}>Сгорание бюджета</div>{burndown}</div>}
                     </div>
                   )}
 
-                  {dailyBars && (
-                    <div style={panel}><div style={lbl}>Траты по дням</div>{dailyBars}</div>
+                  {finDetails && dailyBars && (
+                    <div className="ys-fade-in" style={panel}><div style={lbl}>Траты по дням</div>{dailyBars}</div>
                   )}
 
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14 }}>
